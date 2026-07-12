@@ -1,0 +1,65 @@
+name: Collector
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 15 * * *'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  collect-status:
+    name: Run collectors
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Choose collector config
+        shell: bash
+        env:
+          PROJECTS_CONFIG_JSON: ${{ secrets.PROJECTS_CONFIG_JSON }}
+        run: |
+          if [ -n "$PROJECTS_CONFIG_JSON" ]; then
+            printf '%s' "$PROJECTS_CONFIG_JSON" > "$RUNNER_TEMP/projects.config.json"
+            echo "PROJECTS_CONFIG_PATH=$RUNNER_TEMP/projects.config.json" >> "$GITHUB_ENV"
+          else
+            echo "PROJECTS_CONFIG_PATH=projects.example.json" >> "$GITHUB_ENV"
+          fi
+
+      # This env block is deployment config, not code: it must pass through every env
+      # var name that the collector config's `${...}` placeholders reference. Forks edit
+      # this block (and repository secrets) to match their own projects.config.json.
+      - name: Run configured collectors
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          HUB_SUPABASE_JWT_SERVICE_ROLE_KEY: ${{ secrets.HUB_SUPABASE_JWT_SERVICE_ROLE_KEY }}
+          MY_APP_SUPABASE_URL: ${{ secrets.MY_APP_SUPABASE_URL }}
+          MY_APP_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.MY_APP_SUPABASE_SERVICE_ROLE_KEY }}
+          MY_APP_SUPABASE_ANON_KEY: ${{ secrets.MY_APP_SUPABASE_ANON_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          OPENAI_ADMIN_API_KEY: ${{ secrets.OPENAI_ADMIN_API_KEY }}
+          GH_ACTIONS_TOKEN: ${{ secrets.GH_ACTIONS_TOKEN || github.token }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          HTTP_HEALTH_CHECK_HEADER_NAME: ${{ secrets.HTTP_HEALTH_CHECK_HEADER_NAME }}
+          HTTP_HEALTH_CHECK_HEADER_VALUE: ${{ secrets.HTTP_HEALTH_CHECK_HEADER_VALUE }}
+        run: npm run collect:status -- --config "$PROJECTS_CONFIG_PATH"

@@ -1,0 +1,3 @@
+# Normalize all text files to LF in the repository regardless of the committer's
+# platform or local git config; working-tree line endings stay platform-native.
+* text=auto

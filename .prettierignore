@@ -1,0 +1,16 @@
+# Generated output and dependencies.
+dist
+node_modules
+coverage
+
+# Secrets/local config (never read these at all).
+.env
+.env.*
+!.env.example
+
+# npm owns this file's formatting; formatting it only creates churn.
+package-lock.json
+
+# Docs are hand-wrapped; prettier's markdown emphasis/list normalization is not
+# idempotent on these files and has corrupted literal `_`/`*` text in them.
+*.md

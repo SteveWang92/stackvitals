@@ -1,0 +1,76 @@
+# -----------------------------------------------------------------------------
+# Allowlist-style ignore: everything at the repo root is ignored by default and
+# only reviewed paths are un-ignored below. A new top-level file or directory
+# stays invisible to git until it is deliberately added here — fail-closed, so a
+# stray credential or private config can't be committed by accident.
+# -----------------------------------------------------------------------------
+/*
+
+# --- Tracked directories ------------------------------------------------------
+!/.github/
+!/.husky/
+!/docs/
+!/public/
+!/scripts/
+!/src/
+!/supabase/
+
+# Claude Code project skills are committed so contributor guidance ships with the
+# repo; every other .claude/ file (settings.local.json, launch.json, worktrees/)
+# stays local. Re-include the dir, re-ignore its contents, then allow skills only.
+!/.claude/
+/.claude/*
+!/.claude/skills/
+
+# --- Tracked root files -------------------------------------------------------
+!/.env.example
+!/.gitattributes
+!/.gitignore
+!/.prettierignore
+!/.prettierrc.json
+!/CHANGELOG.md
+!/CLAUDE.md
+!/CONTRIBUTING.md
+!/LICENSE
+!/README.md
+!/SECURITY.md
+!/commitlint.config.cjs
+!/eslint.config.js
+!/index.html
+!/package.json
+!/package-lock.json
+!/projects.example.json
+!/tsconfig.json
+!/tsconfig.app.json
+!/tsconfig.node.json
+!/vite.config.ts
+
+# --- Never track, anywhere in the tree ----------------------------------------
+# Secrets and private local config; the committed *.example files are the safe
+# templates (projects.config.json and seed.local.sql hold real resource IDs).
+.env
+.env.*
+!.env.example
+# Local-only files: `.local` as a suffix (foo.local) OR anywhere in the name
+# (OPEN_SOURCE_PLAN.local.md), and any folder named `local/` at any depth. Rename
+# a doc to a `.local.` form (or move it into a `local/` folder) to keep it out of
+# the repo instead of deleting it.
+*.local
+*.local.*
+local/
+projects.config.json
+supabase/seed.local.sql
+
+# Dependencies and build/test output.
+node_modules/
+dist/
+coverage/
+
+# Local scratch and generated artifacts.
+.temp/
+scripts/demo-screenshots/output/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.DS_Store

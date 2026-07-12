@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  # Base-branch filter, not a typo: pull_request fires on the PR's target branch. Feature
+  # PRs target dev and run here; the dev->main release PR is validated by the push run on
+  # dev's commit (same SHA), so it isn't double-triggered as both a push and a PR.
+  pull_request:
+    branches: [dev]
+  push:
+    branches: [main, dev]
+
+# One run per commit: a newer push to a branch cancels its in-flight run. main is exempt so
+# a release commit's check always completes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Test, lint, and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        id: test
+        run: npm test
+
+      - name: Lint
+        id: lint
+        run: npm run lint
+
+      - name: Build
+        id: build
+        run: npm run build
+
+      # Mirrors the collector workflow's job summary so PR checks are readable at a glance.
+      - name: Write job summary
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.test.outcome }}
+          LINT_OUTCOME: ${{ steps.lint.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+        run: |
+          icon() { case "$1" in success) echo "✅";; failure) echo "❌";; skipped) echo "⏭️";; *) echo "❓";; esac; }
+          {
+            echo "## CI: test, lint, and build"
+            echo ""
+            echo "| Step | Result |"
+            echo "| --- | --- |"
+            echo "| Test | $(icon "$TEST_OUTCOME") $TEST_OUTCOME |"
+            echo "| Lint | $(icon "$LINT_OUTCOME") $LINT_OUTCOME |"
+            echo "| Build | $(icon "$BUILD_OUTCOME") $BUILD_OUTCOME |"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,76 @@
+{
+  "projects": [
+    {
+      "slug": "my_site",
+      "name": "My Site",
+      "publicUrl": "https://example.com",
+      "resources": {
+        "amplifyAppId": "fake-amplify-app-id",
+        "amplifyBranchName": "main",
+        "githubRepository": "example/my-site",
+        "githubActionsEnabled": false,
+        "healthCheckUrl": "https://main.fake-amplify-app-id.amplifyapp.com"
+      }
+    },
+    {
+      "slug": "my_app",
+      "name": "My App",
+      "publicUrl": "https://app.example.com",
+      "resources": {
+        "amplifyAppId": "fake-amplify-app-id",
+        "amplifyBranchName": "main",
+        "githubRepository": "example/my-app",
+        "supabaseProjectRef": "fake-project-ref",
+        "supabaseAggregateRpcName": "collect_app_status",
+        "supabaseUrl": "${MY_APP_SUPABASE_URL}",
+        "supabaseServiceRoleKey": "${MY_APP_SUPABASE_SERVICE_ROLE_KEY}",
+        "supabaseAnonKey": "${MY_APP_SUPABASE_ANON_KEY}",
+        "resendDomain": "mail.example.com",
+        "resendVerificationCategory": "verification_email"
+      }
+    },
+    {
+      "slug": "my_second_app",
+      "name": "My Second App",
+      "publicUrl": "https://second.example.com",
+      "resources": {
+        "amplifyAppId": "fake-amplify-app-id",
+        "amplifyBranchName": "main",
+        "githubRepository": "example/my-second-app"
+      }
+    },
+    {
+      "slug": "status_hub",
+      "name": "Status Hub",
+      "publicUrl": "https://status.example.com",
+      "resources": {
+        "amplifyAppId": "fake-amplify-app-id",
+        "amplifyBranchName": "main",
+        "githubRepository": "example/status-hub",
+        "supabaseProjectRef": "fake-project-ref",
+        "hubSupabase": true
+      }
+    }
+  ],
+  "domains": [
+    {
+      "provider": "cloudflare",
+      "projectSlug": "my_site",
+      "domains": ["example.com", "example.org"]
+    },
+    {
+      "provider": "cloudflare",
+      "domains": ["shared.example"]
+    }
+  ],
+  "githubActions": {
+    "usageLookbackDays": 30,
+    "runLimit": 50
+  },
+  "openAi": {
+    "usageLookbackDays": 30,
+    "apiKeyLabels": {
+      "key_example": "Example API key"
+    }
+  }
+}
