@@ -9,6 +9,11 @@ below as its notes.
 
 ## [Unreleased]
 
+### Added
+
+- Project site with landing page and docs, built with Astro Starlight in `site/`, deployed to
+  GitHub Pages at [stackvitals.dev](https://stackvitals.dev).
+
 ## [1.0.0] - 2026-07-12
 
 Initial public release of StackVitals — a self-hosted, single-owner operations dashboard

@@ -1,0 +1,55 @@
+---
+title: Database Schema
+description: Overview of the Supabase Postgres schema used by StackVitals.
+---
+
+StackVitals uses Supabase Postgres with migrations applied from `supabase/migrations/*.sql` in
+numeric order.
+
+## Core tables
+
+| Table | Purpose |
+|---|---|
+| `projects` | One row per tracked app, keyed by a free-form `slug` matching the collector config |
+| `providers` | Provider registry — `aws`, `amplify`, `supabase`, `resend`, `openai`, `github`, `cloudflare` |
+| `resources` | Provider resources — deployments, domains, databases, API accounts, etc. |
+| `metric_snapshots` | Status, counts, usage, latency, and deploy state over time |
+| `cost_snapshots` | Daily or monthly cost by provider/service; account-level by default |
+| `health_checks` | Uptime, HTTP status, response time, and last successful check |
+| `collector_runs` | Audit trail for each collection run, including errors |
+| `dashboard_users` | Email allowlist for RLS-based access control |
+
+## Key design decisions
+
+### Append-only snapshots
+
+`metric_snapshots`, `cost_snapshots`, and `health_checks` are append-only. The read layer picks
+the latest per logical key rather than updating in place. This preserves history and avoids
+update conflicts.
+
+### Account-level costs
+
+Cost rows stay account-level (`project_id` null) unless a collector can map a cost to a specific
+project. The dashboard does not guess per-project cost splits.
+
+### Provider slugs
+
+`projects.slug` is a free-form string that must match the slugs in `projects.config.json`.
+`providers.key` maps to the `ProviderKey` TypeScript type. New provider keys are added together
+with their collector adapter, never ahead of it.
+
+### RLS
+
+Row-level security restricts all reads to authenticated users whose email appears in
+`dashboard_users`. This is the durable data boundary — the frontend email allowlist
+(`VITE_DASHBOARD_ALLOWED_EMAIL`) is an additional gate, not a replacement.
+
+## Migrations
+
+Migrations are applied in numeric order from `supabase/migrations/`:
+
+1. Core schema (projects, providers, resources, snapshots, health checks, collector runs)
+2. Dashboard users table + RLS policies
+3. Additional indexes and refinements
+
+Run `npx supabase db reset` to reapply all migrations and seeds from scratch during development.

@@ -1,0 +1,42 @@
+---
+title: Contributing
+description: How to contribute to StackVitals — repo conventions, adding adapters, and data boundaries.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+This is a small, config-driven dashboard template. Contributions that add a new provider adapter,
+fix a bug, or improve docs are welcome. Contributions that add multi-tenant auth, a plugin
+marketplace, or other scope well beyond "single-owner ops dashboard" are probably better as a
+fork — open an issue first if you're unsure.
+
+<Aside type="tip">
+This page is adapted from the repo's
+[`CONTRIBUTING.md`](https://github.com/SteveWang92/stackvitals/blob/main/CONTRIBUTING.md).
+</Aside>
+
+## Repo conventions
+
+- **Commits**: [Conventional Commits](https://www.conventionalcommits.org/), one line, no body
+  unless there's a reason. Enforced by commitlint + Husky.
+- **Tests**: live under `src/tests/`, mirroring the source tree — do not colocate `*.test.ts`
+  beside implementation files. Vitest globals are enabled.
+- **Formatting/linting**: `npm run format` (Prettier, single quotes, `printWidth: 140`),
+  `npm run lint` (ESLint). Both should pass before opening a PR.
+- **Build**: `npm run build` should pass.
+- **CI**: `.github/workflows/ci.yml` runs test, lint, and build on every PR.
+- Add mocked tests for provider adapters — never gate a PR on hitting a real external service.
+
+## Adding a provider adapter
+
+See the [dedicated guide](/guides/adding-a-provider/) for the full step-by-step process.
+
+## Data boundaries
+
+This tool collects **aggregate operational signals only**. A new adapter must not change that.
+See the [architecture page](/guides/architecture/) for the full data-safety rules.
+
+## Security
+
+Never commit credentials, API keys, service-role keys, `.env`, or `projects.config.json`.
+See the [security page](/about/security/) for how to report a vulnerability.
