@@ -1,7 +1,9 @@
 ---
 import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
-import { Image } from 'astro:assets';
-import overviewImg from '../assets/screenshots/01-overview.png';
+import { Image, getImage } from 'astro:assets';
+import overviewImg from '../assets/screenshots/01-overview-cropped.png';
+
+const heroImage = await getImage({ src: overviewImg, width: 695 });
 import appDetailImg from '../assets/screenshots/02-app-detail.png';
 import collectorsImg from '../assets/screenshots/03-collectors.png';
 import domainsImg from '../assets/screenshots/04-domains.png';
@@ -20,8 +22,7 @@ import costsImg from '../assets/screenshots/06-costs.png';
       tagline:
         'Uptime, deploy health, cloud cost, and AI/CI usage — in one lightweight, self-hosted, single-database dashboard built for solo developers.',
       image: {
-        file: overviewImg,
-        alt: 'StackVitals overview dashboard showing deploy status, uptime, and cost for multiple projects',
+        html: `<img src="${heroImage.src}" alt="StackVitals overview dashboard showing deploy status, uptime, and cost for multiple projects" width="${heroImage.attributes.width}" height="${heroImage.attributes.height}" loading="eager" decoding="async" class="hero-screenshot" />`,
       },
       actions: [
         { text: 'Get Started', link: '/getting-started/self-hosting/', icon: 'right-arrow' },
