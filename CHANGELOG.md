@@ -13,6 +13,11 @@ below as its notes.
 
 - Project site with landing page and docs, built with Astro Starlight in `site/`, deployed to
   GitHub Pages at [stackvitals.dev](https://stackvitals.dev).
+- `dev:demo` script for running the dev server with fictional demo data and no auth required.
+
+### Changed
+
+- Replace logo with stack-and-heartbeat design and update favicon to match.
 
 ## [1.0.0] - 2026-07-12
 
