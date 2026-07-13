@@ -7,7 +7,8 @@ export default defineConfig({
     starlight({
       title: 'StackVitals',
       logo: {
-        src: './src/assets/stackvitals-icon.svg',
+        dark: './src/assets/stackvitals-icon-light.svg',
+        light: './src/assets/stackvitals-icon-dark.svg',
         replacesTitle: false,
       },
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/SteveWang92/stackvitals' }],
