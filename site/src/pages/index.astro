@@ -19,6 +19,10 @@ import costsImg from '../assets/screenshots/06-costs.png';
       title: 'One dashboard for all your side projects',
       tagline:
         'Uptime, deploy health, cloud cost, and AI/CI usage — in one lightweight, self-hosted, single-database dashboard built for solo developers.',
+      image: {
+        file: overviewImg,
+        alt: 'StackVitals overview dashboard showing deploy status, uptime, and cost for multiple projects',
+      },
       actions: [
         { text: 'Get Started', link: '/getting-started/self-hosting/', icon: 'right-arrow' },
         {
@@ -33,10 +37,6 @@ import costsImg from '../assets/screenshots/06-costs.png';
   }}
 >
   <div class="landing">
-    <!-- Hero screenshot -->
-    <section class="hero-screenshot">
-      <Image src={overviewImg} alt="StackVitals overview dashboard showing deploy status, uptime, and cost for multiple projects" />
-    </section>
 
     <!-- Features grid -->
     <section class="features">
