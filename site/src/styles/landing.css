@@ -24,7 +24,8 @@
   line-height: 1.6;
 }
 
-/* Hero image (Starlight splash hero) */
+/* Hero image — overrides Starlight's default splash hero grid.
+   If this breaks after a Starlight upgrade, check the hero class/specificity here. */
 .hero {
   grid-template-columns: 1fr 1fr !important;
 }
@@ -45,7 +46,8 @@ img.hero-screenshot {
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
 }
 
-/* Feature grid */
+/* Feature grid — fixed row height keeps cards aligned; if card text grows,
+   check that content doesn't overflow at this height. */
 .feature-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

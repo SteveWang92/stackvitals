@@ -13,7 +13,11 @@ for (const file of files) {
   cpSync(join(srcDir, file), join(destDir, file));
 }
 
-// Generate a cropped overview for the hero (trims blank left/right margins)
+// Generate a cropped overview for the hero (trims blank left/right margins).
+// The screenshot is captured at 1920px viewport (scripts/demo-screenshots/capture.mjs)
+// and the app content is max 1180px (src/styles.css .app-shell), giving ~370px of
+// whitespace per side. Cropping 265px keeps ~105px of visual padding around the content.
+// If the viewport width or app max-width changes, recalculate this value.
 const overviewSrc = join(destDir, '01-overview.png');
 const overviewDest = join(destDir, '01-overview-cropped.png');
 const meta = await sharp(overviewSrc).metadata();

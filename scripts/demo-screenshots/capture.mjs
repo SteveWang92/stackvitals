@@ -3,6 +3,11 @@
 // from src/data/demoDashboardData.ts instead of Supabase), drives a local Edge/Chrome
 // with puppeteer-core, and writes PNGs to scripts/demo-screenshots/output/.
 //
+// Viewport size is 1920x1080. The site's copy-assets.mjs crops the overview screenshot
+// using a margin derived from this width and the app's content max-width (see
+// src/styles.css .app-shell). If you change the viewport here, update the crop margin
+// in site/scripts/copy-assets.mjs.
+//
 // Usage: npm run demo:screenshots
 
 /* global document, window -- page.evaluate callbacks run in the browser */
