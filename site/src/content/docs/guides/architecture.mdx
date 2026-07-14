@@ -1,0 +1,98 @@
+---
+title: Architecture
+description: How StackVitals is structured — collector pipeline, frontend read path, and data model.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="tip">
+This page is adapted from the repo's
+[`docs/STACKVITALS_PLAN.md`](https://github.com/SteveWang92/stackvitals/blob/main/docs/STACKVITALS_PLAN.md).
+</Aside>
+
+## High-level structure
+
+```text
+stackvitals/
+  src/
+    collectors/
+      providers/       # Pure adapter logic per provider
+      liveClients/     # Real API calls, isolated from adapters
+      stores/          # DB write layer (Supabase recorder)
+    services/          # Frontend data-fetching and aggregation
+    lib/               # Supabase client setup
+    tests/             # Mirrors source tree
+  supabase/
+    migrations/        # Applied in numeric order
+```
+
+Supabase is the backend database and auth layer. The frontend is a static React/Vite app deployed
+on any static host. There are no always-on servers — collection runs on a schedule plus manual
+refresh.
+
+## Collector pipeline
+
+Everything flows through the `ProviderAdapter` contract in `src/collectors/types.ts`. Each
+provider implements `collect(context) → CollectorAdapterResult`, returning a uniform shape:
+`resources`, `metrics`, `costs`, `healthChecks`, `errors`, plus a `status`.
+
+- **`runCollectors.ts`** runs adapters sequentially, catches errors (converting them to a `failed`
+  result rather than aborting), optionally hands each result to a `CollectorRunRecorder`, and
+  derives an overall run status.
+- **`runConfiguredCollectors.ts`** is the entry point. It reads env vars and
+  `projects.config.json`, then conditionally assembles the adapter list — an adapter is only
+  added if its credentials are present.
+- **`stores/supabaseCollectorRunRecorder.ts`** maps results into the DB tables, resolving
+  provider/project slugs to UUIDs with an in-memory cache.
+
+Dependency injection is the testing seam: adapters receive a client interface, real
+implementations live in `liveClients/`, and tests inject fakes.
+
+## Frontend read path
+
+`src/services/dashboardData.ts` is the heart of the read side. `fetchDashboardData(client)`
+issues parallel Supabase selects, then does client-side aggregation:
+
+- Dedup-to-latest per key
+- Month-to-date vs. last-month cost bounds
+- OpenAI usage roll-ups
+- GitHub Actions summaries
+- Per-project provider status
+- Collector-error scoping (errors are suppressed once a newer successful run exists)
+
+The raw DB `snake_case` row shapes are defined in `dashboardData.ts`; the app-facing `camelCase`
+types live in `src/types.ts`. `App.tsx` renders the returned `DashboardData` across tabs.
+
+## Data model
+
+Supabase Postgres, schema in `supabase/migrations/*.sql`. Core tables:
+
+| Table | Purpose |
+|---|---|
+| `projects` | One row per tracked app, keyed by a free-form `slug` |
+| `providers` | Provider registry (`aws`, `amplify`, `supabase`, `openai`, etc.) |
+| `resources` | Deployments, domains, databases, API accounts, and other provider resources |
+| `metric_snapshots` | Status, counts, usage, latency, deploy state over time |
+| `cost_snapshots` | Daily or monthly cost by provider/service; account-level by default |
+| `health_checks` | Uptime, HTTP status, response time, last successful check |
+| `collector_runs` | Audit trail for each collection run, including errors |
+
+Snapshots are **append-only** — the read layer picks the latest per logical key rather than
+updating in place.
+
+## Data safety rules
+
+- Only aggregate operational data is stored (status, counts, durations, costs).
+- Never copy raw user data, request payloads, message bodies, or table dumps from watched apps.
+- For watched-app databases, use count-only RPCs or aggregate views only.
+- Keep the hub's Supabase credentials separate from every watched app's.
+- Prefer read-only provider credentials for collectors.
+- Collector/service secrets never reach the frontend (only `VITE_*` env is exposed to the browser).
+- Access is gated twice: frontend email allowlist + Supabase RLS.
+
+## Cost strategy
+
+- Track apps where they already run — the dashboard adapts, it doesn't require migration.
+- Use daily collection frequency before adding deeper monitoring.
+- Avoid always-on infrastructure or paid monitoring services.
+- Keep provider costs account-level rather than guessing per-project splits.

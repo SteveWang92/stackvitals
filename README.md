@@ -1,5 +1,7 @@
 # StackVitals
 
+**[stackvitals.dev](https://stackvitals.dev)**
+
 Uptime, deploy status, cloud cost, and AI/CI usage for a handful of your own projects, in one
 lightweight, self-hosted, single-database dashboard — built for a solo developer running a few
 side projects who wants one page instead of five provider dashboards.

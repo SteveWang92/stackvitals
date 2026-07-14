@@ -1,0 +1,136 @@
+---
+title: Self-Hosting Guide
+description: Full walkthrough for deploying your own StackVitals instance.
+---
+
+import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Everything here applies to any fork or clone. Nothing assumes a particular hosting provider — the
+frontend is a static Vite build that deploys the same way to Amplify, Vercel, Netlify, or
+Cloudflare Pages, and the collector is a Node script that runs the same way from the committed
+GitHub Actions cron or any other scheduler.
+
+<Aside type="tip">
+This page is adapted from the repo's
+[`docs/SELF_HOSTING.md`](https://github.com/SteveWang92/stackvitals/blob/main/docs/SELF_HOSTING.md).
+</Aside>
+
+## Local development
+
+<Aside type="caution">
+Never point local `.env` at your production Supabase project. Local dev uses a separate local
+Supabase stack so testing never writes into prod.
+</Aside>
+
+<Steps>
+1. Install Docker Desktop and make sure it's running.
+2. Run `npx supabase start` — boots a local Postgres/Auth/REST stack with all migrations and seeds.
+3. Point local `.env` at the printed `API_URL`, `ANON_KEY`, and `SERVICE_ROLE_KEY`.
+4. Create a local login user and allowlist row (the local stack starts with no users):
+   ```bash
+   curl -X POST "http://127.0.0.1:54321/auth/v1/admin/users" \
+     -H "apikey: <local service_role key>" \
+     -H "Authorization: Bearer <local service_role key>" \
+     -H "Content-Type: application/json" \
+     -d '{"email":"you@example.com","password":"<a local-only password>","email_confirm":true}'
+   ```
+   ```sql
+   INSERT INTO public.dashboard_users (email, note)
+   VALUES ('you@example.com', 'local dev')
+   ON CONFLICT (email) DO NOTHING;
+   ```
+</Steps>
+
+## 1. Create your Supabase project
+
+<Steps>
+1. Create a Supabase project for your dashboard instance.
+2. Apply migrations in `supabase/migrations/`.
+3. Run `supabase/seed.sql` (providers registry), then insert your own project rows — use a
+   git-ignored `supabase/seed.local.sql` so real slugs, names, and URLs never land in git.
+4. In Supabase Auth, disable public signup if you want single-owner access.
+5. Create your Auth user manually in the Supabase dashboard.
+6. Add the same email to the allowlist:
+   ```sql
+   INSERT INTO public.dashboard_users (email, note)
+   VALUES ('you@example.com', 'owner')
+   ON CONFLICT (email) DO NOTHING;
+   ```
+</Steps>
+
+You manually create the login user in Supabase. The app checks that signed-in user's email
+against `VITE_DASHBOARD_ALLOWED_EMAIL`, and the database checks the same email against
+`dashboard_users` through RLS. To allow more than one person in, use a comma-separated list and
+add each email to both gates.
+
+## 2. Configure the collector
+
+Real IDs and secrets never belong in git — put them in `.env` files or your scheduler's secret
+store.
+
+<Steps>
+1. Copy `projects.example.json` to `projects.config.json` (git-ignored).
+2. Replace placeholder URLs and resource IDs with your own. Any field can use `${ENV_VAR}`
+   placeholders — the collector resolves them from the environment at runtime.
+3. Add secrets to your local env or scheduler.
+4. Run `npm test`, then `npm run collect:status`.
+5. After it works locally, add the same config/secrets to your scheduled workflow.
+</Steps>
+
+See [Environment Variables](/reference/environment-variables/) for the full list of required and
+optional secrets.
+
+## 3. Set frontend secrets
+
+Set these in your hosting provider's environment variables:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_DASHBOARD_ALLOWED_EMAIL`
+
+<Aside type="danger">
+Do not put `HUB_SUPABASE_JWT_SERVICE_ROLE_KEY`, any watched app's service-role key, AWS keys, or
+Resend keys in frontend hosting env vars — only `VITE_*` variables are exposed to the browser.
+</Aside>
+
+## 4. Deploy the static site
+
+```bash
+npm run build
+```
+
+Output directory: `dist`
+
+Any static host works — Amplify, Vercel, Netlify, Cloudflare Pages. Most hosts also offer
+branch-level access control as an optional first layer; keep Supabase Auth and RLS regardless.
+
+## 5. Add the dashboard to itself
+
+The dashboard can track itself: add a row for it in your projects table, and set
+`"hubSupabase": true` in the collector config so the self-health collector targets it.
+
+## 6. Run the scheduled collector
+
+The committed `.github/workflows/collect.yml` runs `npm run collect:status` on a daily cron and
+works as-is on any fork — just add the required secrets. Any other scheduler that can run
+`npm run collect:status` works the same way.
+
+<Aside type="note">
+If your repo is public, workflow run logs are publicly visible. The collector prints project slugs,
+URLs, health status, and error messages — this publishes a daily operational status feed. Keep the
+collector in a private repo if that matters.
+</Aside>
+
+## 7. Verify
+
+```bash
+npm test
+npm run lint
+npm run build
+```
+
+Then open the deployed site and check:
+- Signed out → login form appears
+- Wrong email → sign-in is rejected
+- Allowed email → dashboard renders
+- Browser anon queries → RLS only returns rows for allowlisted users

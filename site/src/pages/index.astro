@@ -1,0 +1,243 @@
+---
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import { Image, getImage } from 'astro:assets';
+import overviewImg from '../assets/screenshots/01-overview-cropped.png';
+
+const heroImage = await getImage({ src: overviewImg, width: 695 });
+import appDetailImg from '../assets/screenshots/02-app-detail.png';
+import collectorsImg from '../assets/screenshots/03-collectors.png';
+import domainsImg from '../assets/screenshots/04-domains.png';
+import usageImg from '../assets/screenshots/05-usage.png';
+import costsImg from '../assets/screenshots/06-costs.png';
+
+const features = [
+  { icon: '🟢', title: 'Uptime monitoring', desc: 'HTTP health checks against your public URLs. Response time, status codes, up/down history.' },
+  { icon: '🚀', title: 'Deploy health', desc: 'AWS Amplify build status, branch, and latest deploy timestamp at a glance.' },
+  { icon: '💰', title: 'Cloud costs', desc: 'AWS Cost Explorer month-to-date vs. last month, broken down by service.' },
+  { icon: '🤖', title: 'AI usage', desc: 'OpenAI token totals, request counts, cached tokens, and spend by API key and model.' },
+  { icon: '⚙️', title: 'CI status', desc: 'GitHub Actions workflow run counts, latest status, trigger types, and scheduled-run health.' },
+  { icon: '🌐', title: 'Domain health', desc: 'Cloudflare zone status, DNS record counts, apex/www/MX presence, and registrar expiration.' },
+  { icon: '✉️', title: 'Email delivery', desc: 'Resend sending-domain verification status for your transactional email setup.' },
+  { icon: '🗄️', title: 'Database health', desc: 'Supabase project reachability and count-only aggregate stats from your apps.' },
+];
+
+const screenshots = [
+  { src: appDetailImg, alt: 'App detail view showing per-project provider status and health checks', caption: 'App Detail' },
+  { src: collectorsImg, alt: 'Collector diagnostics showing run history and error status', caption: 'Collectors' },
+  { src: domainsImg, alt: 'Domain inventory showing Cloudflare zone and DNS status', caption: 'Domains' },
+  { src: usageImg, alt: 'Usage view showing OpenAI token counts and GitHub Actions runs', caption: 'Usage' },
+  { src: costsImg, alt: 'Cost breakdown showing month-to-date vs last month by AWS service', caption: 'Costs' },
+];
+---
+
+<StarlightPage
+  frontmatter={{
+    title: 'StackVitals',
+    description:
+      'Uptime, deploy status, cloud cost, and AI/CI usage for your side projects — in one lightweight, self-hosted dashboard.',
+    template: 'splash',
+    hero: {
+      title: 'One dashboard for all your side projects',
+      tagline:
+        'Uptime, deploy health, cloud cost, and AI/CI usage — in one lightweight, self-hosted, single-database dashboard built for solo developers.',
+      image: {
+        html: `<img src="${heroImage.src}" alt="StackVitals overview dashboard showing deploy status, uptime, and cost for multiple projects" width="${heroImage.attributes.width}" height="${heroImage.attributes.height}" loading="eager" decoding="async" class="hero-screenshot" />`,
+      },
+      actions: [
+        { text: 'Get Started', link: '/getting-started/self-hosting/', icon: 'right-arrow' },
+        {
+          text: 'View on GitHub',
+          link: 'https://github.com/SteveWang92/stackvitals',
+          icon: 'external',
+          variant: 'minimal',
+          attrs: { rel: 'me' },
+        },
+      ],
+    },
+  }}
+>
+  <div class="landing">
+
+    <!-- Features grid -->
+    <section class="features">
+      <h2>What it tracks</h2>
+      <p class="section-subtitle">
+        Every adapter is opt-in — it activates only when its credentials are present. Turn on exactly the ones you use.
+      </p>
+      <div class="feature-grid">
+        {features.map(f => (
+          <div class="feature-card">
+            <div class="feature-icon">{f.icon}</div>
+            <h3>{f.title}</h3>
+            <p>{f.desc}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Screenshots -->
+    <section class="screenshots">
+      <h2>See every angle</h2>
+      <p class="section-subtitle">
+        Tabbed views for app detail, collector diagnostics, domain inventory, usage roll-ups, and cost breakdowns.
+      </p>
+      <div class="screenshot-grid">
+        {screenshots.map(s => (
+          <figure>
+            <Image src={s.src} alt={s.alt} />
+            <figcaption>{s.caption}</figcaption>
+          </figure>
+        ))}
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="how-it-works">
+      <h2>How it works</h2>
+      <p class="section-subtitle">Two moving parts, both in one repo. No always-on servers.</p>
+      <div class="architecture-cards">
+        <div class="arch-card">
+          <div class="arch-number">1</div>
+          <h3>Collectors gather data</h3>
+          <p>
+            Node scripts call provider APIs (AWS, Supabase, OpenAI, GitHub, Cloudflare, Resend) and write append-only
+            snapshots to your Supabase database. They run on a schedule from GitHub Actions — never in the browser.
+          </p>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-card">
+          <div class="arch-number">2</div>
+          <h3>Dashboard reads and renders</h3>
+          <p>
+            A static React/Vite frontend reads pre-aggregated rows from Supabase and renders them. No raw application
+            data ever leaves your source projects — only counts, statuses, and costs.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Adapter table -->
+    <section class="adapters">
+      <h2>Supported adapters</h2>
+      <p class="section-subtitle">
+        Each adapter collects only what the dashboard needs, with the minimum permissions required.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Adapter</th>
+              <th>Collects</th>
+              <th>Credentials</th>
+              <th>Minimum permissions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>HTTP health</td>
+              <td>Public URL up/down, response time</td>
+              <td>None (just the project's public URL)</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>Amplify</td>
+              <td>Deploy status, branch, latest build</td>
+              <td>AWS access key/secret, region</td>
+              <td>Read-only Amplify access</td>
+            </tr>
+            <tr>
+              <td>AWS Cost Explorer</td>
+              <td>Account-level month-to-date / last-month cost per AWS service</td>
+              <td>AWS access key/secret, region</td>
+              <td>Read-only Cost Explorer access</td>
+            </tr>
+            <tr>
+              <td>Supabase project health</td>
+              <td>Reachability of the hub's own project or a watched app's</td>
+              <td>Supabase project URL + service-role key</td>
+              <td>Project-scoped service-role key</td>
+            </tr>
+            <tr>
+              <td>Watched-app Supabase aggregate</td>
+              <td>Count-only aggregate stats from a custom RPC</td>
+              <td>App's Supabase URL, anon key, service-role key, RPC name</td>
+              <td>Service-role key (count-only RPC — never raw reads)</td>
+            </tr>
+            <tr>
+              <td>Resend</td>
+              <td>Sending-domain verification status</td>
+              <td>Resend API key</td>
+              <td>Read-only API key</td>
+            </tr>
+            <tr>
+              <td>OpenAI usage</td>
+              <td>Token totals, request counts, cached tokens, spend by key/model</td>
+              <td>OpenAI admin API key</td>
+              <td>Admin key (required by usage endpoints)</td>
+            </tr>
+            <tr>
+              <td>GitHub Actions</td>
+              <td>Workflow run counts, latest status, trigger type, branch, duration</td>
+              <td>Repo owner/repo mapping + read token</td>
+              <td>Actions: read</td>
+            </tr>
+            <tr>
+              <td>Cloudflare domains</td>
+              <td>Zone status, DNS record counts, apex/www/MX, registrar expiry</td>
+              <td>Cloudflare API token, optional account ID</td>
+              <td>Read-only token scoped to zones/DNS</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Quick start -->
+    <section class="quickstart">
+      <h2>Get started in five steps</h2>
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">1</span>
+          <div>
+            <strong>Clone the repo</strong>
+            <code>git clone https://github.com/SteveWang92/stackvitals && cd stackvitals && npm install</code>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">2</span>
+          <div>
+            <strong>Create a Supabase project</strong>
+            <span>Apply the migrations in <code>supabase/migrations/</code> and run <code>supabase/seed.sql</code>.</span>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">3</span>
+          <div>
+            <strong>Configure environment</strong>
+            <span>Copy <code>.env.example</code> → <code>.env</code> and fill in your Supabase URL, anon key, and allowed email.</span>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">4</span>
+          <div>
+            <strong>Describe your projects</strong>
+            <span>
+              Copy <code>projects.example.json</code> → <code>projects.config.json</code> — at minimum a slug, name, and public URL
+              gets you HTTP health monitoring.
+            </span>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">5</span>
+          <div>
+            <strong>Run it</strong>
+            <code>npm run collect:status</code> <span>to collect, then</span> <code>npm run dev</code> <span>to view the dashboard.</span>
+          </div>
+        </div>
+      </div>
+      <div class="quickstart-cta">
+        <a href="/getting-started/self-hosting/" class="cta-button">Full self-hosting guide →</a>
+      </div>
+    </section>
+  </div>
+</StarlightPage>

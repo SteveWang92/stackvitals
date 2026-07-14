@@ -1,0 +1,70 @@
+---
+title: Environment Variables
+description: Complete list of environment variables used by StackVitals.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## Frontend variables
+
+Set these in your hosting provider's environment. Only `VITE_*` variables are exposed to the
+browser.
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `VITE_SUPABASE_URL` | Yes | Your dashboard's Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Yes | Your dashboard's Supabase anon key |
+| `VITE_DASHBOARD_ALLOWED_EMAIL` | Yes | Comma-separated list of emails allowed to view the dashboard |
+| `VITE_DEMO_MODE` | No | Set to `true` to render fictional demo data without auth |
+
+<Aside type="danger">
+Never put service-role keys, AWS keys, or other collector secrets in frontend hosting env vars.
+</Aside>
+
+## Collector secrets
+
+These are used by `npm run collect:status` and the GitHub Actions workflow.
+
+### Core
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `PROJECTS_CONFIG_JSON` | CI only | Collector config JSON (used by the GitHub Actions workflow) |
+| `HUB_SUPABASE_JWT_SERVICE_ROLE_KEY` | Yes | Dashboard's JWT service-role key for collector writes |
+
+### AWS
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `AWS_REGION` | For AWS adapters | AWS region |
+| `AWS_ACCESS_KEY_ID` | For AWS adapters | IAM access key |
+| `AWS_SECRET_ACCESS_KEY` | For AWS adapters | IAM secret key |
+
+### Provider-specific
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `RESEND_API_KEY` | For Resend | Resend API key |
+| `OPENAI_ADMIN_API_KEY` | For OpenAI | OpenAI admin API key |
+| `GH_ACTIONS_TOKEN` | For GitHub Actions | GitHub PAT with Actions read access |
+| `CLOUDFLARE_API_TOKEN` | For Cloudflare | Read-only Cloudflare API token |
+| `CLOUDFLARE_ACCOUNT_ID` | Optional | Enables registrar expiration lookup |
+
+### HTTP health check
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `HTTP_HEALTH_CHECK_HEADER_NAME` | Optional | Custom header name for health check requests |
+| `HTTP_HEALTH_CHECK_HEADER_VALUE` | Optional | Custom header value (for Cloudflare WAF bypass) |
+
+### Per-app placeholders
+
+Any project resource field in `projects.config.json` can use `${ENV_VAR}` placeholders. Create a
+secret per referenced variable and pass it through in your workflow's env block. Common per-app
+variables:
+
+- `${MY_APP_SUPABASE_URL}` — watched app's Supabase URL
+- `${MY_APP_SUPABASE_ANON_KEY}` — watched app's anon key
+- `${MY_APP_SUPABASE_SERVICE_ROLE_KEY}` — watched app's service-role key
+
+Use `$$` to escape a literal `$` in config values.
