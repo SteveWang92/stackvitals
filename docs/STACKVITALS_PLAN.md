@@ -34,6 +34,7 @@ stay on their existing hosting; low cost is preferred over high-frequency monito
 - Dashboard views for overview cards, tabbed app detail, tabbed collector diagnostics/settings, cost snapshots, OpenAI usage, GitHub Actions usage, loading, empty, stale, and failure states.
 - Mocked provider tests and focused status/data tests.
 - `${ENV_VAR}` placeholder interpolation in the collector config, so adapter credentials are declared in config and supplied by the environment — nothing app-specific lives in code.
+- Astro Starlight documentation site in `site/`, deployed to GitHub Pages at stackvitals.dev via `.github/workflows/deploy-site.yml`. Landing page, self-hosting guide, architecture overview, adapter reference, and contributing/security/changelog docs.
 
 Operational setup (live secrets, owner allowlist, deployed verification) is documented in
 `docs/SELF_HOSTING.md`.
@@ -68,6 +69,7 @@ stackvitals/
     services/
     lib/
     tests/
+  site/             # Astro Starlight docs site, deployed to GitHub Pages
   supabase/
     migrations/
   docs/
@@ -130,6 +132,10 @@ from `main`. The frontend stays static with no always-on server.
 
 Development flow: feature work happens on short-lived `feat/*` branches that merge into `dev` for
 a combined manual check; the owner merges `dev` into `main` to trigger the production deploy.
+
+The project documentation site (`site/`) deploys separately to GitHub Pages via
+`.github/workflows/deploy-site.yml`, triggered by pushes to `main` that change `site/**` or
+`docs/screenshots/**`.
 
 ## Dashboard Views
 

@@ -20,9 +20,11 @@ for (const file of files) {
 // If the viewport width or app max-width changes, recalculate this value.
 const overviewSrc = join(destDir, '01-overview.png');
 const overviewDest = join(destDir, '01-overview-cropped.png');
-const meta = await sharp(overviewSrc).metadata();
+const img = sharp(overviewSrc);
+const meta = await img.metadata();
 const margin = 265;
-await sharp(overviewSrc)
+await img
+  .clone()
   .extract({ left: margin, top: 0, width: meta.width - margin * 2, height: meta.height })
   .toFile(overviewDest);
 

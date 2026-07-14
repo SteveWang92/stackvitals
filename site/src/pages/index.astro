@@ -9,6 +9,25 @@ import collectorsImg from '../assets/screenshots/03-collectors.png';
 import domainsImg from '../assets/screenshots/04-domains.png';
 import usageImg from '../assets/screenshots/05-usage.png';
 import costsImg from '../assets/screenshots/06-costs.png';
+
+const features = [
+  { icon: '🟢', title: 'Uptime monitoring', desc: 'HTTP health checks against your public URLs. Response time, status codes, up/down history.' },
+  { icon: '🚀', title: 'Deploy health', desc: 'AWS Amplify build status, branch, and latest deploy timestamp at a glance.' },
+  { icon: '💰', title: 'Cloud costs', desc: 'AWS Cost Explorer month-to-date vs. last month, broken down by service.' },
+  { icon: '🤖', title: 'AI usage', desc: 'OpenAI token totals, request counts, cached tokens, and spend by API key and model.' },
+  { icon: '⚙️', title: 'CI status', desc: 'GitHub Actions workflow run counts, latest status, trigger types, and scheduled-run health.' },
+  { icon: '🌐', title: 'Domain health', desc: 'Cloudflare zone status, DNS record counts, apex/www/MX presence, and registrar expiration.' },
+  { icon: '✉️', title: 'Email delivery', desc: 'Resend sending-domain verification status for your transactional email setup.' },
+  { icon: '🗄️', title: 'Database health', desc: 'Supabase project reachability and count-only aggregate stats from your apps.' },
+];
+
+const screenshots = [
+  { src: appDetailImg, alt: 'App detail view showing per-project provider status and health checks', caption: 'App Detail' },
+  { src: collectorsImg, alt: 'Collector diagnostics showing run history and error status', caption: 'Collectors' },
+  { src: domainsImg, alt: 'Domain inventory showing Cloudflare zone and DNS status', caption: 'Domains' },
+  { src: usageImg, alt: 'Usage view showing OpenAI token counts and GitHub Actions runs', caption: 'Usage' },
+  { src: costsImg, alt: 'Cost breakdown showing month-to-date vs last month by AWS service', caption: 'Costs' },
+];
 ---
 
 <StarlightPage
@@ -46,46 +65,13 @@ import costsImg from '../assets/screenshots/06-costs.png';
         Every adapter is opt-in — it activates only when its credentials are present. Turn on exactly the ones you use.
       </p>
       <div class="feature-grid">
-        <div class="feature-card">
-          <div class="feature-icon">🟢</div>
-          <h3>Uptime monitoring</h3>
-          <p>HTTP health checks against your public URLs. Response time, status codes, up/down history.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🚀</div>
-          <h3>Deploy health</h3>
-          <p>AWS Amplify build status, branch, and latest deploy timestamp at a glance.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">💰</div>
-          <h3>Cloud costs</h3>
-          <p>AWS Cost Explorer month-to-date vs. last month, broken down by service.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🤖</div>
-          <h3>AI usage</h3>
-          <p>OpenAI token totals, request counts, cached tokens, and spend by API key and model.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">⚙️</div>
-          <h3>CI status</h3>
-          <p>GitHub Actions workflow run counts, latest status, trigger types, and scheduled-run health.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🌐</div>
-          <h3>Domain health</h3>
-          <p>Cloudflare zone status, DNS record counts, apex/www/MX presence, and registrar expiration.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">✉️</div>
-          <h3>Email delivery</h3>
-          <p>Resend sending-domain verification status for your transactional email setup.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🗄️</div>
-          <h3>Database health</h3>
-          <p>Supabase project reachability and count-only aggregate stats from your apps.</p>
-        </div>
+        {features.map(f => (
+          <div class="feature-card">
+            <div class="feature-icon">{f.icon}</div>
+            <h3>{f.title}</h3>
+            <p>{f.desc}</p>
+          </div>
+        ))}
       </div>
     </section>
 
@@ -96,26 +82,12 @@ import costsImg from '../assets/screenshots/06-costs.png';
         Tabbed views for app detail, collector diagnostics, domain inventory, usage roll-ups, and cost breakdowns.
       </p>
       <div class="screenshot-grid">
-        <figure>
-          <Image src={appDetailImg} alt="App detail view showing per-project provider status and health checks" />
-          <figcaption>App Detail</figcaption>
-        </figure>
-        <figure>
-          <Image src={collectorsImg} alt="Collector diagnostics showing run history and error status" />
-          <figcaption>Collectors</figcaption>
-        </figure>
-        <figure>
-          <Image src={domainsImg} alt="Domain inventory showing Cloudflare zone and DNS status" />
-          <figcaption>Domains</figcaption>
-        </figure>
-        <figure>
-          <Image src={usageImg} alt="Usage view showing OpenAI token counts and GitHub Actions runs" />
-          <figcaption>Usage</figcaption>
-        </figure>
-        <figure>
-          <Image src={costsImg} alt="Cost breakdown showing month-to-date vs last month by AWS service" />
-          <figcaption>Costs</figcaption>
-        </figure>
+        {screenshots.map(s => (
+          <figure>
+            <Image src={s.src} alt={s.alt} />
+            <figcaption>{s.caption}</figcaption>
+          </figure>
+        ))}
       </div>
     </section>
 
