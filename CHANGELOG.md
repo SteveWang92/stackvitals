@@ -9,6 +9,8 @@ below as its notes.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-07-14
+
 ### Added
 
 - Project site with landing page and docs, built with Astro Starlight in `site/`, deployed to
@@ -49,5 +51,6 @@ source projects.
   to the GitHub Actions job summary.
 - Self-hosting guide and contributing guide (including how to add a new adapter).
 
-[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/SteveWang92/stackvitals/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/SteveWang92/stackvitals/releases/tag/v1.0.0
