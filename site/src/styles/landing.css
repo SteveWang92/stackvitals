@@ -277,24 +277,3 @@ img.hero-screenshot {
   opacity: 0.85;
 }
 
-/* Language toggle on landing page (Starlight's built-in picker only covers docs pages) */
-.lang-toggle {
-  text-align: center;
-  margin-bottom: -1.5rem;
-  padding-top: 1rem;
-}
-
-.lang-toggle a {
-  font-size: 0.8125rem;
-  color: var(--sl-color-gray-3);
-  text-decoration: none;
-  border: 1px solid var(--sl-color-gray-5);
-  padding: 0.25rem 0.75rem;
-  border-radius: 2rem;
-  transition: border-color 0.15s, color 0.15s;
-}
-
-.lang-toggle a:hover {
-  color: var(--sl-color-white);
-  border-color: var(--sl-color-gray-3);
-}

@@ -16,7 +16,10 @@ export default defineConfig({
         light: './src/assets/stackvitals-icon-dark.svg',
         replacesTitle: false,
       },
-      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/SteveWang92/stackvitals' }],
+      social: [
+        { icon: 'open-book', label: 'Docs', href: '/getting-started/overview/' },
+        { icon: 'github', label: 'GitHub', href: 'https://github.com/SteveWang92/stackvitals' },
+      ],
       customCss: ['./src/styles/landing.css'],
       sidebar: [
         {
