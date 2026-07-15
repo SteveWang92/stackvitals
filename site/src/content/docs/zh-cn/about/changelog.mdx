@@ -1,0 +1,27 @@
+---
+title: 更新日志
+description: StackVitals 版本历史。
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="tip">
+最新的更新日志请查看仓库中的
+[`CHANGELOG.md`](https://github.com/SteveWang92/stackvitals/blob/main/CHANGELOG.md)
+或 [GitHub releases](https://github.com/SteveWang92/stackvitals/releases)。
+</Aside>
+
+## 1.0.0 — 2026-07-12
+
+StackVitals 首次公开发布——一个自托管的、单用户运维仪表盘，为少量个人 Web 项目提供正常运行时间、部署状态、提供商状态、当月云成本和 AI/CI 使用情况的监控，同时不会从源项目中复制原始应用数据。
+
+### 新增
+
+- Vite + React + TypeScript 前端，从 Supabase 读取预聚合行，渲染部署状态、正常运行时间、提供商状态、域名健康、使用量汇总、采集器诊断以及当月与上月成本对比，通过详情 / 采集器 / 使用量 / 成本四个标签页展示。
+- 基于统一 `ProviderAdapter` 契约的 Node 采集器管道，通过 GitHub Actions 定时运行，将追加写入的快照写回 Supabase。
+- 采集器适配器：HTTP 健康检查、AWS Amplify 部署状态、AWS Cost Explorer、Supabase 项目健康、被监控应用 Supabase 聚合、Resend 域名验证、OpenAI 使用量、GitHub Actions 使用量和 Cloudflare 域名。
+- 配置驱动的可选设置：适配器仅在凭证存在时激活，`projects.config.json` 解析 `${ENV_VAR}` 占位符，确保密钥不会被提交。
+- 单用户访问模型，包含邮箱允许列表和 Supabase RLS。
+- 带有虚构数据的演示模式和截图捕获脚本。
+- CI 工作流和带有 GitHub Actions 作业摘要的定时采集器工作流。
+- 自托管指南和贡献指南。

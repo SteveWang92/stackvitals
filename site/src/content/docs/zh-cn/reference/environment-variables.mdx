@@ -1,0 +1,67 @@
+---
+title: 环境变量
+description: StackVitals 使用的所有环境变量的完整列表。
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## 前端变量
+
+在你的托管平台的环境中设置这些变量。只有 `VITE_*` 变量会暴露给浏览器。
+
+| 变量 | 必需 | 用途 |
+|---|---|---|
+| `VITE_SUPABASE_URL` | 是 | 你的仪表盘 Supabase 项目 URL |
+| `VITE_SUPABASE_ANON_KEY` | 是 | 你的仪表盘 Supabase anon key |
+| `VITE_DASHBOARD_ALLOWED_EMAIL` | 是 | 允许查看仪表盘的邮箱列表（逗号分隔） |
+| `VITE_DEMO_MODE` | 否 | 设为 `true` 可在无需认证的情况下渲染虚构的演示数据 |
+
+<Aside type="danger">
+永远不要将 service-role key、AWS 密钥或其他采集器密钥放在前端托管的环境变量中。
+</Aside>
+
+## 采集器密钥
+
+这些由 `npm run collect:status` 和 GitHub Actions 工作流使用。
+
+### 核心
+
+| 变量 | 必需 | 用途 |
+|---|---|---|
+| `PROJECTS_CONFIG_JSON` | 仅 CI | 采集器配置 JSON（由 GitHub Actions 工作流使用） |
+| `HUB_SUPABASE_JWT_SERVICE_ROLE_KEY` | 是 | 仪表盘的 JWT service-role key，用于采集器写入 |
+
+### AWS
+
+| 变量 | 必需 | 用途 |
+|---|---|---|
+| `AWS_REGION` | AWS 适配器需要 | AWS 区域 |
+| `AWS_ACCESS_KEY_ID` | AWS 适配器需要 | IAM access key |
+| `AWS_SECRET_ACCESS_KEY` | AWS 适配器需要 | IAM secret key |
+
+### 提供商专用
+
+| 变量 | 必需 | 用途 |
+|---|---|---|
+| `RESEND_API_KEY` | Resend 需要 | Resend API key |
+| `OPENAI_ADMIN_API_KEY` | OpenAI 需要 | OpenAI admin API key |
+| `GH_ACTIONS_TOKEN` | GitHub Actions 需要 | 具有 Actions read 权限的 GitHub PAT |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare 需要 | 只读 Cloudflare API token |
+| `CLOUDFLARE_ACCOUNT_ID` | 可选 | 启用注册商过期信息查询 |
+
+### HTTP 健康检查
+
+| 变量 | 必需 | 用途 |
+|---|---|---|
+| `HTTP_HEALTH_CHECK_HEADER_NAME` | 可选 | 健康检查请求的自定义请求头名称 |
+| `HTTP_HEALTH_CHECK_HEADER_VALUE` | 可选 | 自定义请求头值（用于 Cloudflare WAF 绕过） |
+
+### 每应用占位符
+
+`projects.config.json` 中的任何项目资源字段都可以使用 `${ENV_VAR}` 占位符。为每个引用的变量创建一个密钥，并在工作流的 env 块中传递它们。常见的每应用变量：
+
+- `${MY_APP_SUPABASE_URL}` — 被监控应用的 Supabase URL
+- `${MY_APP_SUPABASE_ANON_KEY}` — 被监控应用的 anon key
+- `${MY_APP_SUPABASE_SERVICE_ROLE_KEY}` — 被监控应用的 service-role key
+
+使用 `$$` 来转义配置值中的字面 `$`。

@@ -1,0 +1,34 @@
+---
+title: 参与贡献
+description: 如何为 StackVitals 做贡献——仓库约定、添加适配器和数据边界。
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+这是一个小型的、配置驱动的仪表盘模板。欢迎添加新的提供商适配器、修复 bug 或改进文档的贡献。如果贡献涉及多租户认证、插件市场或其他远超"单用户运维仪表盘"范围的内容，最好通过 fork 实现——如果不确定，请先开一个 issue。
+
+<Aside type="tip">
+本页面改编自仓库中的
+[`CONTRIBUTING.md`](https://github.com/SteveWang92/stackvitals/blob/main/CONTRIBUTING.md)。
+</Aside>
+
+## 仓库约定
+
+- **提交**: [约定式提交](https://www.conventionalcommits.org/)，单行，除非有特殊原因否则不写正文。由 commitlint + Husky 强制执行。
+- **测试**: 放在 `src/tests/` 下，镜像源代码树——不要将 `*.test.ts` 与实现文件放在一起。已启用 Vitest 全局变量。
+- **格式化/代码检查**: `npm run format`（Prettier，单引号，`printWidth: 140`），`npm run lint`（ESLint）。提交 PR 前两者都应通过。
+- **构建**: `npm run build` 应该通过。
+- **CI**: `.github/workflows/ci.yml` 在每个 PR 上运行测试、代码检查和构建。
+- 为提供商适配器添加模拟测试——不要让 PR 依赖于调用真实的外部服务。
+
+## 添加提供商适配器
+
+完整的步骤指南请参阅[专门的指南](/zh-cn/guides/adding-a-provider/)。
+
+## 数据边界
+
+此工具**仅采集聚合运维信号**。新适配器不得改变这一原则。完整的数据安全规则请参阅[架构页面](/zh-cn/guides/architecture/)。
+
+## 安全
+
+永远不要提交凭证、API 密钥、service-role key、`.env` 或 `projects.config.json`。如何报告漏洞请参阅[安全页面](/zh-cn/about/security/)。

@@ -1,0 +1,41 @@
+---
+title: 添加提供商
+description: 如何为 StackVitals 添加新的提供商适配器。
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+每个提供商都遵循相同的接口，定义在 `src/collectors/types.ts` 中的 `ProviderAdapter` 契约：一个 `collect(context)` 函数返回统一的结果——`resources`、`metrics`、`costs`、`healthChecks`、`errors` 以及一个 `status`（`success | partial_success | skipped | failed`）。
+
+<Aside type="tip">
+本页面改编自仓库中的
+[`CONTRIBUTING.md`](https://github.com/SteveWang92/stackvitals/blob/main/CONTRIBUTING.md)。
+</Aside>
+
+## 依赖注入
+
+适配器从不自行构造网络客户端——它们接收一个客户端接口，真正的实现单独放在 `liveClients/` 目录中。测试注入假客户端；`providers/` 中的代码不会发起真正的网络调用。添加新提供商时请保持这一分离。
+
+## 步骤
+
+以现有适配器（如 `src/collectors/providers/cloudflare.ts`）为参考。
+
+<Steps>
+1. **扩展 `ProviderKey`**——在 `src/types.ts` 中添加你的提供商键值。
+2. **添加 `src/collectors/providers/<name>.ts`**——纯适配器逻辑。接收一个类型化的客户端接口，将响应映射为 `CollectorAdapterResult` 格式。此处不使用 `fetch`、不构造 SDK 客户端、不读取环境变量。
+3. **添加 `src/collectors/liveClients/<name>.ts`**——该客户端接口的真正实现（实际的 API/SDK 调用，凭证作为普通参数传入）。
+4. **接入 `src/collectors/runConfiguredCollectors.ts`**——在凭证检查之后添加适配器，只有当所需的环境变量/配置字段存在时才将适配器加入运行。这个文件是唯一读取环境变量和配置的地方。
+5. **添加标签和图标**——在 `src/App.tsx` 中的 `providerLabels` / 图标映射中添加条目，使前端能正确显示你的提供商。
+6. **添加模拟测试**——在 `src/tests/collectors/providers/<name>.test.ts` 中至少覆盖成功、部分成功/降级和错误三种情况，使用假客户端——CI 中不进行真正的网络调用。
+7. **记录凭证信息**——在
+   [`docs/SELF_HOSTING.md`](https://github.com/SteveWang92/stackvitals/blob/main/docs/SELF_HOSTING.md)
+   的配置表和必需密钥列表中添加说明，并将环境变量添加到 `.env.example`。
+</Steps>
+
+## 数据边界
+
+<Aside type="caution">
+此工具**仅采集聚合运维信号**——状态、计数、持续时间、成本。它从不存储被监控应用的原始用户数据、请求内容、消息体或数据表转储。新适配器不得改变这一原则。
+</Aside>
+
+完整的数据安全规则请参阅[架构页面](/zh-cn/guides/architecture/)。
