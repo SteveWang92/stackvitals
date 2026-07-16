@@ -1,6 +1,6 @@
 {
   "name": "stackvitals",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Self-hosted operations dashboard for your web projects — uptime, deploy health, cloud cost, and AI/CI usage in one place.",
   "keywords": [
     "dashboard",
