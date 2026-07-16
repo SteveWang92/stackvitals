@@ -150,6 +150,19 @@ a {
   letter-spacing: 0;
 }
 
+.demo-badge {
+  margin-left: 0.3em;
+  padding: 0.1em 0.45em;
+  font-size: 0.32em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  border-radius: 5px;
+  background: #e8a308;
+  color: #fff;
+}
+
 .topbar p {
   max-width: 620px;
   margin: 12px 0 0;
