@@ -1,0 +1,85 @@
+---
+title: 架构
+description: StackVitals 的结构——采集器管道、前端读取路径和数据模型。
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="tip">
+本页面改编自仓库中的
+[`docs/STACKVITALS_PLAN.md`](https://github.com/SteveWang92/stackvitals/blob/main/docs/STACKVITALS_PLAN.md)。
+</Aside>
+
+## 高层结构
+
+```text
+stackvitals/
+  src/
+    collectors/
+      providers/       # 每个提供商的纯适配器逻辑
+      liveClients/     # 真正的 API 调用，与适配器隔离
+      stores/          # 数据库写入层（Supabase recorder）
+    services/          # 前端数据获取和聚合
+    lib/               # Supabase 客户端配置
+    tests/             # 镜像源代码树
+  supabase/
+    migrations/        # 按编号顺序应用
+```
+
+Supabase 是后端数据库和认证层。前端是部署在任意静态主机上的静态 React/Vite 应用。没有常驻服务——采集通过定时任务和手动刷新运行。
+
+## 采集器管道
+
+所有数据流都通过 `src/collectors/types.ts` 中的 `ProviderAdapter` 契约。每个提供商实现 `collect(context) → CollectorAdapterResult`，返回统一的结构：`resources`、`metrics`、`costs`、`healthChecks`、`errors` 以及 `status`。
+
+- **`runCollectors.ts`** 按顺序运行适配器，捕获错误（将其转换为 `failed` 结果而非中止运行），可选地将每个结果传递给 `CollectorRunRecorder`，并推导出总体运行状态。
+- **`runConfiguredCollectors.ts`** 是入口点。它读取环境变量和 `projects.config.json`，然后有条件地组装适配器列表——只有在凭证存在时才添加适配器。
+- **`stores/supabaseCollectorRunRecorder.ts`** 将结果映射到数据库表中，通过内存缓存将提供商/项目 slug 解析为 UUID。
+
+依赖注入是测试的接缝：适配器接收客户端接口，真正的实现在 `liveClients/` 中，测试注入假客户端。
+
+## 前端读取路径
+
+`src/services/dashboardData.ts` 是读取侧的核心。`fetchDashboardData(client)` 并行发起 Supabase 查询，然后进行客户端聚合：
+
+- 按键去重取最新值
+- 当月与上月成本范围
+- OpenAI 使用量汇总
+- GitHub Actions 摘要
+- 按项目的提供商状态
+- 采集器错误范围限定（当某提供商有更新的成功运行时，旧错误会被抑制）
+
+原始数据库的 `snake_case` 行结构定义在 `dashboardData.ts` 中；面向应用的 `camelCase` 类型在 `src/types.ts` 中。`App.tsx` 将返回的 `DashboardData` 渲染到各个标签页中。
+
+## 数据模型
+
+Supabase Postgres，schema 在 `supabase/migrations/*.sql` 中。核心表：
+
+| 表 | 用途 |
+|---|---|
+| `projects` | 每个被跟踪的应用一行，以自由格式的 `slug` 为键 |
+| `providers` | 提供商注册表（`aws`、`amplify`、`supabase`、`openai` 等） |
+| `resources` | 部署、域名、数据库、API 账户和其他提供商资源 |
+| `metric_snapshots` | 状态、计数、使用量、延迟、部署状态的时间序列 |
+| `cost_snapshots` | 按提供商/服务的每日或每月成本；默认为账户级别 |
+| `health_checks` | 正常运行时间、HTTP 状态、响应时间、最后成功检查 |
+| `collector_runs` | 每次采集运行的审计跟踪，包括错误 |
+
+快照是**追加写入**的——读取层按逻辑键取最新值，而非就地更新。
+
+## 数据安全规则
+
+- 只存储聚合运维数据（状态、计数、持续时间、成本）。
+- 永远不复制被监控应用的原始用户数据、请求内容、消息体或数据表转储。
+- 对于被监控应用的数据库，只使用仅计数 RPC 或聚合视图。
+- 保持仪表盘的 Supabase 凭证与每个被监控应用的凭证分离。
+- 采集器优先使用只读提供商凭证。
+- 采集器/服务密钥永远不会到达前端（只有 `VITE_*` 环境变量暴露给浏览器）。
+- 访问控制有两层：前端邮箱允许列表 + Supabase RLS。
+
+## 成本策略
+
+- 在应用已有的平台上跟踪它们——仪表盘进行适配，不要求迁移。
+- 在添加更深层监控之前，先使用每日采集频率。
+- 避免常驻基础设施或付费监控服务。
+- 保持提供商成本在账户级别，而不是猜测项目级别的拆分。

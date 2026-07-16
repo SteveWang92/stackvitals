@@ -1000,7 +1000,7 @@ function Dashboard() {
             <LayoutDashboard size={24} />
           </div>
           <div>
-            <h1>StackVitals</h1>
+            <h1>StackVitals{isDemoMode && <span className="demo-badge">Demo</span>}</h1>
             <p>Uptime, deploys, cost, and usage for your web projects.</p>
           </div>
         </div>

@@ -1,0 +1,118 @@
+---
+title: 自托管指南
+description: 部署你自己的 StackVitals 实例的完整教程。
+---
+
+import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+
+以下内容适用于任何 fork 或 clone。不假定任何特定的托管平台——前端是一个静态 Vite 构建，可以用同样的方式部署到 Amplify、Vercel、Netlify 或 Cloudflare Pages，采集器是一个 Node 脚本，可以通过已提交的 GitHub Actions 定时任务或任何其他调度器以同样的方式运行。
+
+<Aside type="tip">
+本页面改编自仓库中的
+[`docs/SELF_HOSTING.md`](https://github.com/SteveWang92/stackvitals/blob/main/docs/SELF_HOSTING.md)。
+</Aside>
+
+## 本地开发
+
+<Aside type="caution">
+不要将本地 `.env` 指向你的生产 Supabase 项目。本地开发使用独立的本地 Supabase 环境，以确保测试不会写入生产数据。
+</Aside>
+
+<Steps>
+1. 安装 Docker Desktop 并确保它正在运行。
+2. 运行 `npx supabase start`——启动一个包含所有迁移和种子数据的本地 Postgres/Auth/REST 环境。
+3. 将本地 `.env` 指向打印出来的 `API_URL`、`ANON_KEY` 和 `SERVICE_ROLE_KEY`。
+4. 创建一个本地登录用户和允许列表行（本地环境启动时没有用户）：
+   ```bash
+   curl -X POST "http://127.0.0.1:54321/auth/v1/admin/users" \
+     -H "apikey: <本地 service_role key>" \
+     -H "Authorization: Bearer <本地 service_role key>" \
+     -H "Content-Type: application/json" \
+     -d '{"email":"you@example.com","password":"<仅限本地使用的密码>","email_confirm":true}'
+   ```
+   ```sql
+   INSERT INTO public.dashboard_users (email, note)
+   VALUES ('you@example.com', 'local dev')
+   ON CONFLICT (email) DO NOTHING;
+   ```
+</Steps>
+
+## 1. 创建 Supabase 项目
+
+<Steps>
+1. 为你的仪表盘实例创建一个 Supabase 项目。
+2. 应用 `supabase/migrations/` 中的迁移。
+3. 运行 `supabase/seed.sql`（提供商注册表），然后插入你自己的项目行——使用一个被 git 忽略的 `supabase/seed.local.sql`，这样真实的 slug、名称和 URL 不会进入 git。
+4. 在 Supabase Auth 中，如果你想要单用户访问，请禁用公开注册。
+5. 在 Supabase 后台手动创建你的 Auth 用户。
+6. 将同一邮箱添加到允许列表：
+   ```sql
+   INSERT INTO public.dashboard_users (email, note)
+   VALUES ('you@example.com', 'owner')
+   ON CONFLICT (email) DO NOTHING;
+   ```
+</Steps>
+
+你需要在 Supabase 中手动创建登录用户。应用会将已登录用户的邮箱与 `VITE_DASHBOARD_ALLOWED_EMAIL` 进行比对，数据库通过 RLS 将同一邮箱与 `dashboard_users` 进行比对。如果需要允许多人访问，请使用逗号分隔的列表，并将每个邮箱添加到两个关卡中。
+
+## 2. 配置采集器
+
+真实的 ID 和密钥不应该出现在 git 中——将它们放在 `.env` 文件或调度器的密钥存储中。
+
+<Steps>
+1. 将 `projects.example.json` 复制为 `projects.config.json`（已被 git 忽略）。
+2. 将占位符 URL 和资源 ID 替换为你自己的。任何字段都可以使用 `${ENV_VAR}` 占位符——采集器会在运行时从环境中解析它们。
+3. 将密钥添加到你的本地环境或调度器中。
+4. 运行 `npm test`，然后运行 `npm run collect:status`。
+5. 在本地验证通过后，将相同的配置/密钥添加到你的定时工作流中。
+</Steps>
+
+完整的必需和可选密钥列表请参阅[环境变量](/zh-cn/reference/environment-variables/)。
+
+## 3. 设置前端密钥
+
+在你的托管平台的环境变量中设置以下内容：
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_DASHBOARD_ALLOWED_EMAIL`
+
+<Aside type="danger">
+不要将 `HUB_SUPABASE_JWT_SERVICE_ROLE_KEY`、任何被监控应用的 service-role key、AWS 密钥或 Resend 密钥放在前端托管的环境变量中——只有 `VITE_*` 变量会暴露给浏览器。
+</Aside>
+
+## 4. 部署静态网站
+
+```bash
+npm run build
+```
+
+输出目录：`dist`
+
+任何静态主机都可以——Amplify、Vercel、Netlify、Cloudflare Pages。大多数主机还提供分支级别的访问控制作为可选的第一层防护；无论如何都要保留 Supabase Auth 和 RLS。
+
+## 5. 将仪表盘添加到自身
+
+仪表盘可以监控自身：在你的项目表中添加一行，并在采集器配置中设置 `"hubSupabase": true`，这样自检采集器就会将其作为目标。
+
+## 6. 运行定时采集器
+
+已提交的 `.github/workflows/collect.yml` 通过每日定时任务运行 `npm run collect:status`，在任何 fork 上都可以直接使用——只需添加所需的密钥。任何其他可以运行 `npm run collect:status` 的调度器也同样适用。
+
+<Aside type="note">
+如果你的仓库是公开的，工作流运行日志是公开可见的。采集器会打印项目 slug、URL、健康状态和错误信息——这相当于发布了一个每日运维状态摘要。如果这对你很重要，请将采集器放在私有仓库中。
+</Aside>
+
+## 7. 验证
+
+```bash
+npm test
+npm run lint
+npm run build
+```
+
+然后打开已部署的网站并检查：
+- 未登录 → 出现登录表单
+- 错误邮箱 → 登录被拒绝
+- 允许的邮箱 → 仪表盘正常渲染
+- 浏览器匿名查询 → RLS 只返回允许列表用户的数据行

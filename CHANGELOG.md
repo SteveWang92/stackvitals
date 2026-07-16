@@ -9,6 +9,22 @@ below as its notes.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-07-16
+
+### Added
+
+- Chinese (zh-CN) documentation for the project site, covering all guides, references, and about pages.
+- Demo badge next to the brand heading when the dashboard is running in demo mode.
+- Docs link in the site header navigation.
+
+### Fixed
+
+- Escape backslashes in GitHub Actions step summary table cells so Markdown renders correctly.
+
+### Changed
+
+- Use colored logo in the project site instead of monochrome.
+
 ## [1.1.0] - 2026-07-14
 
 ### Added
@@ -51,6 +67,7 @@ source projects.
   to the GitHub Actions job summary.
 - Self-hosting guide and contributing guide (including how to add a new adapter).
 
-[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/SteveWang92/stackvitals/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/SteveWang92/stackvitals/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/SteveWang92/stackvitals/releases/tag/v1.0.0
