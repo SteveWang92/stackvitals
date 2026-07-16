@@ -8,7 +8,7 @@ const STATUS_EMOJI: Record<CollectorRunSummary['status'], string> = {
 };
 
 function escapeCell(value: string): string {
-  return value.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+  return value.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
 }
 
 export function buildGithubStepSummary(summary: CollectorRunSummary): string {
