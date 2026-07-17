@@ -1,6 +1,7 @@
 # StackVitals
 
-**[stackvitals.dev](https://stackvitals.dev)**
+[![CI](https://github.com/SteveWang92/stackvitals/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/SteveWang92/stackvitals/actions/workflows/ci.yml)
+[![Deploy site](https://github.com/SteveWang92/stackvitals/actions/workflows/deploy-site.yml/badge.svg?branch=main)](https://github.com/SteveWang92/stackvitals/actions/workflows/deploy-site.yml)
 
 Uptime, deploy status, cloud cost, and AI/CI usage for a handful of your own projects, in one
 lightweight, self-hosted, single-database dashboard — built for a solo developer running a few
