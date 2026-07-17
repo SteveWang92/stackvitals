@@ -22,6 +22,9 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+          # Without this, checkout persists GITHUB_TOKEN as an extraheader on all
+          # github.com git commands, which overrides HUB_SYNC_PAT on the mirror push.
+          persist-credentials: false
 
       - name: Force-push main to project-status-hub
         run: git push --force "https://x-access-token:${HUB_SYNC_PAT}@github.com/SteveWang92/project-status-hub.git" main:main
