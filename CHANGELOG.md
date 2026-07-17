@@ -9,6 +9,16 @@ below as its notes.
 
 ## [Unreleased]
 
+### Added
+
+- Live Demo link to the hosted demo at [stackvitals.app](https://stackvitals.app) on the
+  project-site landing page (English and Chinese).
+
+### Changed
+
+- Show CI and docs-deploy status badges at the top of the README instead of the bare
+  stackvitals.dev link.
+
 ## [1.2.0] - 2026-07-16
 
 ### Added
