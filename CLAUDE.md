@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Private, single-owner operations dashboard for a handful of personal web projects. It surfaces deploy health, uptime, provider status, aggregate usage, OpenAI/GitHub Actions usage, collector errors, and month-to-date cost **without copying raw app data** out of the source projects. Two moving parts:
+StackVitals — an open-source (AGPL-3.0), self-hosted, single-owner operations dashboard for a handful of personal web projects. Public repo at `SteveWang92/stackvitals`; the docs/landing site in `site/` (Astro Starlight) deploys to GitHub Pages at **stackvitals.dev**. It surfaces deploy health, uptime, provider status, aggregate usage, OpenAI/GitHub Actions usage, collector errors, and month-to-date cost **without copying raw app data** out of the source projects. Two moving parts:
 
 - A **Vite + React 19 + TypeScript** frontend (`src/App.tsx`, `src/services`, `src/lib`) that reads pre-aggregated rows from Supabase and renders them.
 - A set of **Node collectors** (`src/collectors`) that call external provider APIs and write snapshots back into the same Supabase project. Collectors run on a schedule from GitHub Actions, not in the browser.
@@ -62,6 +62,8 @@ Supabase Postgres, schema in `supabase/migrations/*.sql` (applied in numeric ord
 ## Deployment & runtime
 
 - **Amplify deploys from `main`.** The scheduled collector GitHub Action (`.github/workflows/collect.yml`) also runs only from `main` (guarded by `if: github.ref == 'refs/heads/main'`), on a daily cron. Its secrets are the canonical list of what each collector needs.
+- The docs/landing site in `site/` deploys to GitHub Pages at **stackvitals.dev** via `.github/workflows/deploy-site.yml`. A demo-mode build (`VITE_DEMO_MODE=true`, fictional data, no auth) is hosted at **stackvitals.app**.
+- **Steve's own production hub deploys from the separate `SteveWang92/project-status-hub` repo** — a deploy-only mirror synced from this repo's `main`. Never do feature work or commit in that repo/clone; all changes happen here and reach it only by sync.
 - Keep it low-cost by default: no always-on services, paid monitoring, or extra hosting unless the plan or user explicitly calls for it.
 
 ## Working conventions (from the previous AGENTS.md)
