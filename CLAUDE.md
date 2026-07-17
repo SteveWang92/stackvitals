@@ -63,7 +63,7 @@ Supabase Postgres, schema in `supabase/migrations/*.sql` (applied in numeric ord
 
 - **Amplify deploys from `main`.** The scheduled collector GitHub Action (`.github/workflows/collect.yml`) also runs only from `main` (guarded by `if: github.ref == 'refs/heads/main'`), on a daily cron. Its secrets are the canonical list of what each collector needs.
 - The docs/landing site in `site/` deploys to GitHub Pages at **stackvitals.dev** via `.github/workflows/deploy-site.yml`. A demo-mode build (`VITE_DEMO_MODE=true`, fictional data, no auth) is hosted at **stackvitals.app**.
-- **Steve's own production hub deploys from the separate `SteveWang92/project-status-hub` repo** — a deploy-only mirror synced from this repo's `main`. Never do feature work or commit in that repo/clone; all changes happen here and reach it only by sync.
+- **Steve's own production hub deploys from the separate `SteveWang92/project-status-hub` repo** — a deploy-only exact mirror of this repo's `main`, updated solely by the manual `Mirror to project-status-hub` workflow (`.github/workflows/mirror-hub.yml`, run from this repo's Actions tab after a release). Never do feature work or commit in that repo/clone.
 - Keep it low-cost by default: no always-on services, paid monitoring, or extra hosting unless the plan or user explicitly calls for it.
 
 ## Working conventions (from the previous AGENTS.md)

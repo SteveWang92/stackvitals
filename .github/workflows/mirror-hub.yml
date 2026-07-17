@@ -1,0 +1,29 @@
+# Mirrors main to SteveWang92/project-status-hub — the private deploy repo whose only job
+# is keeping the hub's Actions secrets and collector run logs private. The push makes hub
+# main an exact copy of this repo's main (no extra commits) and triggers its Amplify deploy.
+#
+# Manual-only: run from the Actions tab after a release lands on main. Fork-safe twice
+# over: the repository guard below skips the job anywhere but this repo, and forks never
+# receive the HUB_SYNC_PAT secret (a fine-grained PAT scoped to project-status-hub with
+# Contents and Workflows read/write).
+name: Mirror to project-status-hub
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  mirror:
+    if: github.repository == 'SteveWang92/stackvitals'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Force-push main to project-status-hub
+        run: git push --force "https://x-access-token:${HUB_SYNC_PAT}@github.com/SteveWang92/project-status-hub.git" main:main
+        env:
+          HUB_SYNC_PAT: ${{ secrets.HUB_SYNC_PAT }}
