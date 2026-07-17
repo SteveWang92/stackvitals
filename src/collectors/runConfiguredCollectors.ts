@@ -233,6 +233,7 @@ if (githubToken) {
         projectSlug: project.slug,
         owner: parts.owner,
         repo: parts.repo,
+        deployWorkflow: project.resources?.githubDeployWorkflow,
       },
     ];
   });

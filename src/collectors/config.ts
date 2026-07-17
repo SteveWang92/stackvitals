@@ -20,6 +20,10 @@ export interface ProjectCollectorConfig {
     resendVerificationCategory?: string;
     githubRepository?: string;
     githubActionsEnabled?: boolean;
+    // Workflow file name (e.g. "deploy-site.yml") whose latest run is the project's deploy
+    // status, for projects deployed via GitHub Actions (e.g. GitHub Pages) instead of
+    // Amplify. Requires githubRepository and GitHub Actions collection to be enabled.
+    githubDeployWorkflow?: string;
     healthCheckUrl?: string;
   };
 }

@@ -106,7 +106,7 @@ Implemented adapters:
 - Supabase (hub self-health): collect project status for the dashboard's own Supabase project, selected by the `hubSupabase` config flag.
 - Resend: collect sending-domain verification status and API health. Aggregate verification-email delivery/error counts are **deferred** — the live client currently stubs them to zero, so the `resend_verification_email_*_count` metrics are placeholders until the real Resend API integration lands.
 - OpenAI: collect aggregate organization API usage by API key/model plus cost totals without prompts, responses, files, user identifiers, or request payloads.
-- GitHub Actions: collect workflow status, CI failures, scheduled-run health, and runtime minutes from workflow run duration.
+- GitHub Actions: collect workflow status, CI failures, scheduled-run health, and runtime minutes from workflow run duration. Projects deployed by a GitHub Actions workflow (e.g. GitHub Pages) can name that workflow via `githubDeployWorkflow`; its latest run is reported as the project's deploy status, the same role Amplify metrics play for Amplify-hosted projects.
 - Cloudflare: collect zone status, paused state, relevant DNS record presence/counts, registrar name, and expiration days when the account exposes registrar data.
 
 ## Project Mapping

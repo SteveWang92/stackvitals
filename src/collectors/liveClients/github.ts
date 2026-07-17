@@ -83,5 +83,18 @@ export function createLiveGitHubActionsClient(token: string): GitHubActionsClien
 
       return (response?.workflow_runs ?? []).map(normalizeRun);
     },
+    listWorkflowRunsForWorkflow: async ({ owner, repo, workflow, limit }) => {
+      const response = await request<GitHubWorkflowRunsResponse>(
+        `/repos/${encodePathSegment(owner)}/${encodePathSegment(repo)}/actions/workflows/${encodePathSegment(workflow)}/runs`,
+        { per_page: limit },
+        true,
+      );
+
+      if (response === null) {
+        return null;
+      }
+
+      return (response.workflow_runs ?? []).map(normalizeRun);
+    },
   };
 }

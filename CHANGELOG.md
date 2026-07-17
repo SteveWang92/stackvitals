@@ -9,6 +9,12 @@ below as its notes.
 
 ## [Unreleased]
 
+### Added
+
+- Deploy status for projects deployed via a GitHub Actions workflow (e.g. GitHub Pages):
+  set `githubDeployWorkflow` in the collector config to report that workflow's latest run
+  as the project's deploy status, alongside the existing Amplify-based deploy status.
+
 ## [1.3.0] - 2026-07-17
 
 ### Added

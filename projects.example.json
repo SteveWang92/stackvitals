@@ -34,9 +34,8 @@
       "name": "My Second App",
       "publicUrl": "https://second.example.com",
       "resources": {
-        "amplifyAppId": "fake-amplify-app-id",
-        "amplifyBranchName": "main",
-        "githubRepository": "example/my-second-app"
+        "githubRepository": "example/my-second-app",
+        "githubDeployWorkflow": "deploy.yml"
       }
     },
     {
