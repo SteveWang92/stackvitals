@@ -9,6 +9,8 @@ below as its notes.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-07-19
+
 ### Added
 
 - Deploy status for projects deployed via a GitHub Actions workflow (e.g. GitHub Pages):
@@ -26,6 +28,7 @@ below as its notes.
 - A transient error from the GitHub Actions deploy-workflow API could discard all
   successfully-fetched workflow-run data for that repository; the deploy-workflow call is
   now isolated so general CI metrics survive independently.
+
 
 ## [1.3.0] - 2026-07-17
 
@@ -97,7 +100,8 @@ source projects.
   to the GitHub Actions job summary.
 - Self-hosting guide and contributing guide (including how to add a new adapter).
 
-[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/SteveWang92/stackvitals/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/SteveWang92/stackvitals/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/SteveWang92/stackvitals/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/SteveWang92/stackvitals/compare/v1.0.0...v1.1.0
