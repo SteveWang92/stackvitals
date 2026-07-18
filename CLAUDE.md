@@ -24,6 +24,9 @@ npm run collect:http     # scripts/manual-http-health.mjs — quick public-URL h
 npm run collect:status   # runs ALL configured collectors via vite-node
 
 npm run demo:screenshots # 1080p demo screenshots via scripts/demo-screenshots/capture.mjs (VITE_DEMO_MODE, fictional data, no auth)
+
+npm run release:prep     # create release PR from dev -> main (non-interactive)
+npm run release:ship     # finalize, squash-merge, tag, GitHub release (non-interactive)
 ```
 
 Run a single test file: `npx vitest run src/tests/services/dashboardData.test.ts`. Filter by name: `npx vitest run -t "openai"`. Vitest globals (`describe`, `it`, `expect`) are enabled — tests don't import them.
@@ -72,6 +75,6 @@ General commit, branch, reuse, and working rules live in the user-global `~/.cla
 
 - Add mocked tests for provider adapters before relying on live provider APIs.
 - Tests live under `src/tests/` mirroring the source tree — do **not** colocate `*.test.ts` beside implementation files.
-- No `release:tag` script here — release via the squash-merge `dev`→`main` PR using the **`/release` skill**, which also moves the `Unreleased` section of `CHANGELOG.md` into the new version and publishes the GitHub release after tagging.
+- Release uses `scripts/release.mjs` — a two-phase, non-interactive script. `npm run release:prep` creates the release PR; after review, `npm run release:ship` finalizes the version, squash-merges, tags, and publishes the GitHub release. See `.claude/skills/release/SKILL.md` for the full workflow.
 - Notable user-facing changes land in the `Unreleased` section of `CHANGELOG.md` in the same change that makes them. Use the **`changelog` skill** (`.claude/skills/changelog/`) for how to write entries (net change, noise filtering, Keep a Changelog categories).
 - This folder is a standalone project; do not touch `D:\Projects\Integration-Dashboard`.
