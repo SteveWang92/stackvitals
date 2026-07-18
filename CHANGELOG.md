@@ -18,6 +18,15 @@ below as its notes.
   collector config to report the latest production deployment status, using the same
   Cloudflare API token and account ID as the domain collector.
 
+### Fixed
+
+- Cloudflare Pages deploy status could report "no production deployments" when 5+ preview
+  deployments pushed the production deployment out of the API page; now uses server-side
+  environment filtering.
+- A transient error from the GitHub Actions deploy-workflow API could discard all
+  successfully-fetched workflow-run data for that repository; the deploy-workflow call is
+  now isolated so general CI metrics survive independently.
+
 ## [1.3.0] - 2026-07-17
 
 ### Added
