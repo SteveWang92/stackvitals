@@ -1,4 +1,5 @@
 import type { CloudflareClient, CloudflareDnsRecord, CloudflareRegistrarDomain, CloudflareZone } from '../providers/cloudflare';
+import type { CloudflarePagesClient, CloudflarePagesDeployment } from '../providers/cloudflarePages';
 
 interface CloudflareEnvelope<T> {
   success?: boolean;
@@ -35,6 +36,46 @@ interface CloudflareRegistrarDomainResponse {
   expires_on?: string | null;
   auto_renew?: boolean | null;
   locked?: boolean | null;
+}
+
+interface CloudflarePagesDeploymentResponse {
+  id?: string;
+  url?: string | null;
+  environment?: string;
+  latest_stage?: {
+    name?: string;
+    status?: string;
+  };
+  created_on?: string;
+  modified_on?: string;
+  deployment_trigger?: {
+    metadata?: {
+      branch?: string | null;
+      commit_hash?: string | null;
+      commit_message?: string | null;
+    };
+  };
+}
+
+function normalizeDeployment(deployment: CloudflarePagesDeploymentResponse): CloudflarePagesDeployment | null {
+  if (!deployment.id || !deployment.latest_stage?.name || !deployment.latest_stage?.status) {
+    return null;
+  }
+
+  return {
+    id: deployment.id,
+    url: deployment.url ?? null,
+    environment: deployment.environment ?? 'unknown',
+    latestStage: {
+      name: deployment.latest_stage.name,
+      status: deployment.latest_stage.status,
+    },
+    createdOn: deployment.created_on ?? '',
+    modifiedOn: deployment.modified_on ?? '',
+    branch: deployment.deployment_trigger?.metadata?.branch ?? null,
+    commitHash: deployment.deployment_trigger?.metadata?.commit_hash ?? null,
+    commitMessage: deployment.deployment_trigger?.metadata?.commit_message ?? null,
+  };
 }
 
 function errorDetail(errors: Array<{ message?: string }> | undefined): string {
@@ -93,8 +134,8 @@ function normalizeRegistrarDomain(domain: CloudflareRegistrarDomainResponse): Cl
   };
 }
 
-export function createLiveCloudflareClient(apiToken: string, accountId?: string): CloudflareClient {
-  async function request<T>(path: string): Promise<T> {
+function createApiRequest(apiToken: string) {
+  return async function request<T>(path: string): Promise<T> {
     const response = await fetch(`https://api.cloudflare.com/client/v4${path}`, {
       headers: {
         Authorization: `Bearer ${apiToken}`,
@@ -108,7 +149,11 @@ export function createLiveCloudflareClient(apiToken: string, accountId?: string)
     }
 
     return body.result;
-  }
+  };
+}
+
+export function createLiveCloudflareClient(apiToken: string, accountId?: string): CloudflareClient {
+  const request = createApiRequest(apiToken);
 
   async function optionalRequest<T>(path: string): Promise<T | null> {
     try {
@@ -144,6 +189,24 @@ export function createLiveCloudflareClient(apiToken: string, accountId?: string)
         dnsRecords,
         registrarDomain,
       };
+    },
+  };
+}
+
+export function createLiveCloudflarePagesClient(apiToken: string, accountId: string): CloudflarePagesClient {
+  const request = createApiRequest(apiToken);
+
+  return {
+    getLatestProductionDeployment: async (projectName) => {
+      const deployments = await request<CloudflarePagesDeploymentResponse[]>(
+        `/accounts/${encodeURIComponent(accountId)}/pages/projects/${encodeURIComponent(projectName)}/deployments?environment=production&per_page=1`,
+      );
+
+      if (deployments.length === 0) {
+        return null;
+      }
+
+      return normalizeDeployment(deployments[0]);
     },
   };
 }

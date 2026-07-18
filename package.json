@@ -1,6 +1,6 @@
 {
   "name": "stackvitals",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Self-hosted operations dashboard for your web projects — uptime, deploy health, cloud cost, and AI/CI usage in one place.",
   "keywords": [
     "dashboard",
@@ -32,6 +32,8 @@
     "test": "vitest run",
     "lint": "eslint .",
     "format": "prettier --write .",
+    "release:prep": "node scripts/release.mjs prep",
+    "release:ship": "node scripts/release.mjs ship",
     "prepare": "husky"
   },
   "dependencies": {

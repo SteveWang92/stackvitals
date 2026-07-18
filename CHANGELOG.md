@@ -9,6 +9,27 @@ below as its notes.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-07-19
+
+### Added
+
+- Deploy status for projects deployed via a GitHub Actions workflow (e.g. GitHub Pages):
+  set `githubDeployWorkflow` in the collector config to report that workflow's latest run
+  as the project's deploy status, alongside the existing Amplify-based deploy status.
+- Deploy status for Cloudflare Pages projects: set `cloudflarePagesProject` in the
+  collector config to report the latest production deployment status, using the same
+  Cloudflare API token and account ID as the domain collector.
+
+### Fixed
+
+- Cloudflare Pages deploy status could report "no production deployments" when 5+ preview
+  deployments pushed the production deployment out of the API page; now uses server-side
+  environment filtering.
+- A transient error from the GitHub Actions deploy-workflow API could discard all
+  successfully-fetched workflow-run data for that repository; the deploy-workflow call is
+  now isolated so general CI metrics survive independently.
+
+
 ## [1.3.0] - 2026-07-17
 
 ### Added
@@ -79,7 +100,8 @@ source projects.
   to the GitHub Actions job summary.
 - Self-hosting guide and contributing guide (including how to add a new adapter).
 
-[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/SteveWang92/stackvitals/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/SteveWang92/stackvitals/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/SteveWang92/stackvitals/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/SteveWang92/stackvitals/compare/v1.0.0...v1.1.0

@@ -7,9 +7,9 @@ description: Write and curate CHANGELOG.md entries for this repo. Use when addin
 
 This project keeps a single `CHANGELOG.md` in [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 format with an `[Unreleased]` section at the top and Semantic Versioning. Notable user-facing
-changes land in `[Unreleased]` **in the same change that makes them**. The `/release` skill
-moves `[Unreleased]` into a new dated `vX.Y.Z` section at release time and updates the compare
-links — do not hand-cut version sections here.
+changes land in `[Unreleased]` **in the same change that makes them**. The release script
+(`npm run release:ship`) moves `[Unreleased]` into a new dated `vX.Y.Z` section at release
+time and updates the compare links — do not hand-cut version sections here.
 
 This skill is the *how to write a good entry* layer. It adapts a battle-tested changelog
 discipline (net change, noise filtering, attribution) to this repo. Project rules win wherever
@@ -91,4 +91,4 @@ introduced:
 - [ ] Correct Keep a Changelog category; empty categories omitted.
 - [ ] Entry is user-facing and self-contained; no duplication of a published version.
 - [ ] Landed in `[Unreleased]` (never a hand-made version heading).
-- [ ] Compare links untouched (that's `/release`'s job).
+- [ ] Compare links untouched (that's `release:ship`'s job).

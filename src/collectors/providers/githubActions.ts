@@ -7,6 +7,9 @@ export interface GitHubActionsTarget {
   projectSlug: ProjectSlug;
   owner: string;
   repo: string;
+  // Workflow file name (e.g. "deploy-site.yml") whose latest run is reported as the
+  // project's deploy status, for projects deployed via GitHub Actions instead of Amplify.
+  deployWorkflow?: string;
 }
 
 export interface GitHubWorkflowRun {
@@ -23,6 +26,9 @@ export interface GitHubWorkflowRun {
 
 export interface GitHubActionsClient {
   listWorkflowRuns: (input: { owner: string; repo: string; since: string; limit: number }) => Promise<GitHubWorkflowRun[]>;
+  // Latest runs of one workflow file, newest first. Resolves null when the workflow
+  // does not exist (or the token cannot see it), so misconfiguration is reportable.
+  listWorkflowRunsForWorkflow: (input: { owner: string; repo: string; workflow: string; limit: number }) => Promise<GitHubWorkflowRun[] | null>;
 }
 
 export interface GitHubActionsOptions {
@@ -35,7 +41,11 @@ export interface GitHubActionsOptions {
 interface TargetCollection {
   target: GitHubActionsTarget;
   runs: GitHubWorkflowRun[];
+  // undefined: no deploy workflow configured; null: configured but not found.
+  deployRuns?: GitHubWorkflowRun[] | null;
 }
+
+const deployRunLimit = 5;
 
 function lookbackStart(options: GitHubActionsOptions): string {
   const now = options.now ?? new Date();
@@ -192,6 +202,46 @@ function targetMetrics(collection: TargetCollection, since: string, collectedAt:
       { since },
       collectedAt,
     ),
+    ...deployMetrics(collection, collectedAt),
+  ];
+}
+
+// Projects deployed by a GitHub Actions workflow (e.g. GitHub Pages) report the latest run
+// of that workflow as their deploy status, mirroring what Amplify metrics provide for
+// Amplify-hosted projects.
+function deployMetrics(collection: TargetCollection, collectedAt: string): CollectorMetric[] {
+  const workflow = collection.target.deployWorkflow;
+
+  if (!workflow || collection.deployRuns === undefined) {
+    return [];
+  }
+
+  if (collection.deployRuns === null) {
+    return [metric(collection.target, 'github_actions_deploy_status', 0, 'failed', { deployWorkflow: workflow }, collectedAt)];
+  }
+
+  const runs = collection.deployRuns;
+  const latestRun = runs.find((run) => run.status === 'completed') ?? runs[0];
+
+  return [
+    metric(
+      collection.target,
+      'github_actions_deploy_status',
+      latestRun ? 1 : undefined,
+      conclusionStatus(latestRun),
+      {
+        deployWorkflow: workflow,
+        workflowId: latestRun?.workflowId,
+        workflowName: latestRun?.workflowName,
+        status: latestRun?.status,
+        conclusion: latestRun?.conclusion,
+        branch: latestRun?.branch,
+        event: latestRun?.event,
+        runStartedAt: latestRun?.runStartedAt,
+        updatedAt: latestRun?.updatedAt,
+      },
+      collectedAt,
+    ),
   ];
 }
 
@@ -211,7 +261,34 @@ export async function collectGitHubActionsUsage(
     targets.map(async (target) => {
       try {
         const runs = await options.client.listWorkflowRuns({ owner: target.owner, repo: target.repo, since, limit });
-        const collection = { target, runs };
+
+        let deployRuns: GitHubWorkflowRun[] | null | undefined;
+        if (target.deployWorkflow) {
+          try {
+            deployRuns = await options.client.listWorkflowRunsForWorkflow({
+              owner: target.owner,
+              repo: target.repo,
+              workflow: target.deployWorkflow,
+              limit: deployRunLimit,
+            });
+            if (deployRuns === null) {
+              errors.push({
+                projectSlug: target.projectSlug,
+                message: `Deploy workflow "${target.deployWorkflow}" not found in ${repositoryName(target)}.`,
+                retryable: false,
+              });
+            }
+          } catch (deployError) {
+            deployRuns = null;
+            errors.push({
+              projectSlug: target.projectSlug,
+              message: getErrorMessage(deployError, `Deploy workflow "${target.deployWorkflow}" collection failed`),
+              retryable: true,
+            });
+          }
+        }
+
+        const collection = { target, runs, deployRuns };
 
         resources.push(...targetResources(collection));
         metrics.push(...targetMetrics(collection, since, collectedAt));

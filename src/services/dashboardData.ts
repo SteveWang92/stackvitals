@@ -801,7 +801,9 @@ function projectFromRows(project: ProjectRow, rows: DashboardRows): ProjectStatu
   const costs = rows.costs.filter((cost) => cost.project_id === project.id);
   const latestHttp = latestBy(healthChecks, (check) => check.checked_at);
   const latestDeploy = latestBy(
-    metrics.filter((metric) => providerKey(metric) === 'amplify'),
+    metrics.filter(
+      (metric) => providerKey(metric) === 'amplify' || metric.metric_key.endsWith('_deploy_status'),
+    ),
     (metric) => metric.collected_at,
   );
   const lastSync = latestBy(

@@ -380,6 +380,54 @@ describe('fetchDashboardData', () => {
     ]);
   });
 
+  it('derives deploy status from the GitHub Actions deploy-workflow metric for non-Amplify projects', async () => {
+    const client = createClient({
+      projects: [
+        {
+          id: 'docs-site',
+          slug: 'docs_site',
+          name: 'Docs Site',
+          public_url: 'https://docs.example.com',
+        },
+      ],
+      resources: [],
+      metric_snapshots: [
+        {
+          project_id: 'docs-site',
+          metric_key: 'github_actions_deploy_status',
+          metric_value: 1,
+          status: 'failed',
+          metadata: {
+            deployWorkflow: 'deploy-site.yml',
+            workflowName: 'Deploy site',
+            conclusion: 'failure',
+            branch: 'main',
+          },
+          collected_at: '2026-06-30T10:00:00.000Z',
+          providers: { key: 'github', name: 'GitHub Actions' },
+        },
+        {
+          project_id: 'docs-site',
+          metric_key: 'github_actions_latest_run_status',
+          metric_value: 1,
+          status: 'healthy',
+          metadata: {
+            repository: 'owner/docs-site',
+          },
+          collected_at: '2026-06-30T10:00:00.000Z',
+          providers: { key: 'github', name: 'GitHub Actions' },
+        },
+      ],
+      cost_snapshots: [],
+      health_checks: [],
+      collector_runs: [],
+    });
+
+    const data = await fetchDashboardData(client as never);
+
+    expect(data.projects.find((project) => project.slug === 'docs_site')?.deployStatus).toBe('failed');
+  });
+
   it('builds a domain summary from Cloudflare zone resources and metrics, and excludes them from the resource list', async () => {
     const client = createClient({
       projects: [

@@ -27,6 +27,7 @@ function createClient(overrides: Partial<GitHubActionsClient> = {}): GitHubActio
         updatedAt: '2026-06-28T15:19:00.000Z',
       },
     ]),
+    listWorkflowRunsForWorkflow: vi.fn().mockResolvedValue([]),
     ...overrides,
   };
 }
@@ -225,6 +226,149 @@ describe('collectGitHubActionsUsage', () => {
         }),
       ]),
     );
+  });
+
+  it('reports deploy status from the latest completed run of the configured deploy workflow', async () => {
+    const client = createClient({
+      listWorkflowRunsForWorkflow: vi.fn().mockResolvedValue([
+        {
+          id: 205,
+          workflowId: 20,
+          workflowName: 'Deploy site',
+          status: 'in_progress',
+          conclusion: null,
+          event: 'push',
+          branch: 'main',
+          runStartedAt: '2026-06-29T10:00:00.000Z',
+          updatedAt: '2026-06-29T10:00:00.000Z',
+        },
+        {
+          id: 204,
+          workflowId: 20,
+          workflowName: 'Deploy site',
+          status: 'completed',
+          conclusion: 'success',
+          event: 'push',
+          branch: 'main',
+          runStartedAt: '2026-06-28T09:00:00.000Z',
+          updatedAt: '2026-06-28T09:03:00.000Z',
+        },
+      ]),
+    });
+
+    const result = await collectGitHubActionsUsage(
+      [{ projectSlug: 'docs_site', owner: 'example', repo: 'docs-site', deployWorkflow: 'deploy-site.yml' }],
+      { client, now: new Date('2026-06-30T00:00:00.000Z') },
+    );
+
+    expect(client.listWorkflowRunsForWorkflow).toHaveBeenCalledWith({
+      owner: 'example',
+      repo: 'docs-site',
+      workflow: 'deploy-site.yml',
+      limit: 5,
+    });
+    expect(result.metrics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          metricKey: 'github_actions_deploy_status',
+          metricValue: 1,
+          status: 'healthy',
+          metadata: expect.objectContaining({
+            deployWorkflow: 'deploy-site.yml',
+            workflowName: 'Deploy site',
+            conclusion: 'success',
+            runStartedAt: '2026-06-28T09:00:00.000Z',
+          }),
+        }),
+      ]),
+    );
+  });
+
+  it('reports a failed deploy status when the latest completed deploy run failed', async () => {
+    const client = createClient({
+      listWorkflowRunsForWorkflow: vi.fn().mockResolvedValue([
+        {
+          id: 204,
+          workflowId: 20,
+          workflowName: 'Deploy site',
+          status: 'completed',
+          conclusion: 'failure',
+          event: 'push',
+          branch: 'main',
+          runStartedAt: '2026-06-28T09:00:00.000Z',
+          updatedAt: '2026-06-28T09:03:00.000Z',
+        },
+      ]),
+    });
+
+    const result = await collectGitHubActionsUsage(
+      [{ projectSlug: 'docs_site', owner: 'example', repo: 'docs-site', deployWorkflow: 'deploy-site.yml' }],
+      { client },
+    );
+
+    expect(result.metrics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          metricKey: 'github_actions_deploy_status',
+          status: 'failed',
+          metadata: expect.objectContaining({ conclusion: 'failure' }),
+        }),
+      ]),
+    );
+  });
+
+  it('keeps deploy status unknown when the deploy workflow has no runs yet', async () => {
+    const result = await collectGitHubActionsUsage(
+      [{ projectSlug: 'docs_site', owner: 'example', repo: 'docs-site', deployWorkflow: 'deploy-site.yml' }],
+      { client: createClient() },
+    );
+
+    expect(result.metrics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          metricKey: 'github_actions_deploy_status',
+          metricValue: undefined,
+          status: 'unknown',
+        }),
+      ]),
+    );
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('flags a missing deploy workflow as a failed deploy status with an error', async () => {
+    const client = createClient({ listWorkflowRunsForWorkflow: vi.fn().mockResolvedValue(null) });
+
+    const result = await collectGitHubActionsUsage(
+      [{ projectSlug: 'docs_site', owner: 'example', repo: 'docs-site', deployWorkflow: 'missing.yml' }],
+      { client },
+    );
+
+    expect(result.metrics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          metricKey: 'github_actions_deploy_status',
+          metricValue: 0,
+          status: 'failed',
+          metadata: expect.objectContaining({ deployWorkflow: 'missing.yml' }),
+        }),
+      ]),
+    );
+    expect(result.errors).toEqual([
+      {
+        projectSlug: 'docs_site',
+        message: 'Deploy workflow "missing.yml" not found in example/docs-site.',
+        retryable: false,
+      },
+    ]);
+  });
+
+  it('does not fetch or report deploy status without a configured deploy workflow', async () => {
+    const client = createClient();
+
+    const result = await collectGitHubActionsUsage([{ projectSlug: 'status_hub', owner: 'example', repo: 'status-hub' }], { client });
+
+    expect(client.listWorkflowRunsForWorkflow).not.toHaveBeenCalled();
+    expect(result.metrics.map((item) => item.metricKey)).not.toContain('github_actions_deploy_status');
   });
 
   it('skips cleanly when there are no configured repositories', async () => {
