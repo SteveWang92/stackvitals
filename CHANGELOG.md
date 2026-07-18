@@ -14,6 +14,9 @@ below as its notes.
 - Deploy status for projects deployed via a GitHub Actions workflow (e.g. GitHub Pages):
   set `githubDeployWorkflow` in the collector config to report that workflow's latest run
   as the project's deploy status, alongside the existing Amplify-based deploy status.
+- Deploy status for Cloudflare Pages projects: set `cloudflarePagesProject` in the
+  collector config to report the latest production deployment status, using the same
+  Cloudflare API token and account ID as the domain collector.
 
 ## [1.3.0] - 2026-07-17
 

@@ -6,6 +6,7 @@ import { createAmplifyAdapter } from './providers/amplify';
 import { createAwsCostExplorerAdapter } from './providers/awsCostExplorer';
 import { createHttpHealthAdapter } from './providers/httpHealth';
 import { createCloudflareDomainsAdapter } from './providers/cloudflare';
+import { createCloudfarePagesAdapter } from './providers/cloudflarePages';
 import { createGitHubActionsAdapter } from './providers/githubActions';
 import { createOpenAiUsageAdapter } from './providers/openaiUsage';
 import { createResendVerificationEmailAdapter } from './providers/resend';
@@ -23,7 +24,7 @@ import {
   createLiveSupabaseProjectHealthClient,
 } from './liveClients/supabase';
 import type { ProviderAdapter } from './types';
-import { createLiveCloudflareClient } from './liveClients/cloudflare';
+import { createLiveCloudflareClient, createLiveCloudfarePagesClient } from './liveClients/cloudflare';
 import { createLiveGitHubActionsClient } from './liveClients/github';
 import { createLiveOpenAiUsageClient } from './liveClients/openai';
 
@@ -199,6 +200,23 @@ if (process.env.CLOUDFLARE_API_TOKEN) {
       client: createLiveCloudflareClient(process.env.CLOUDFLARE_API_TOKEN, process.env.CLOUDFLARE_ACCOUNT_ID),
     }),
   );
+
+  if (process.env.CLOUDFLARE_ACCOUNT_ID) {
+    const pagesTargets = config.projects
+      .filter((project) => project.resources?.cloudflarePagesProject)
+      .map((project) => ({
+        projectSlug: project.slug,
+        projectName: project.resources!.cloudflarePagesProject!,
+      }));
+
+    if (pagesTargets.length > 0) {
+      adapters.push(
+        createCloudfarePagesAdapter(pagesTargets, {
+          client: createLiveCloudfarePagesClient(process.env.CLOUDFLARE_API_TOKEN, process.env.CLOUDFLARE_ACCOUNT_ID),
+        }),
+      );
+    }
+  }
 }
 
 if (process.env.OPENAI_ADMIN_API_KEY) {

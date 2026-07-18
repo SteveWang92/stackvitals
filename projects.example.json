@@ -35,7 +35,7 @@
       "publicUrl": "https://second.example.com",
       "resources": {
         "githubRepository": "example/my-second-app",
-        "githubDeployWorkflow": "deploy.yml"
+        "cloudflarePagesProject": "my-second-app"
       }
     },
     {

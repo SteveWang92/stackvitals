@@ -24,6 +24,9 @@ export interface ProjectCollectorConfig {
     // status, for projects deployed via GitHub Actions (e.g. GitHub Pages) instead of
     // Amplify. Requires githubRepository and GitHub Actions collection to be enabled.
     githubDeployWorkflow?: string;
+    // Cloudflare Pages project name whose latest production deployment is the project's
+    // deploy status. Requires CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID.
+    cloudflarePagesProject?: string;
     healthCheckUrl?: string;
   };
 }

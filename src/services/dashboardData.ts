@@ -800,10 +800,13 @@ function projectFromRows(project: ProjectRow, rows: DashboardRows): ProjectStatu
   const healthChecks = rows.healthChecks.filter((check) => check.project_id === project.id);
   const costs = rows.costs.filter((cost) => cost.project_id === project.id);
   const latestHttp = latestBy(healthChecks, (check) => check.checked_at);
-  // Deploy status sources: Amplify metrics for Amplify-hosted projects, or the dedicated
-  // GitHub Actions deploy-workflow metric for projects deployed via a workflow (e.g. Pages).
   const latestDeploy = latestBy(
-    metrics.filter((metric) => providerKey(metric) === 'amplify' || metric.metric_key === 'github_actions_deploy_status'),
+    metrics.filter(
+      (metric) =>
+        providerKey(metric) === 'amplify' ||
+        metric.metric_key === 'github_actions_deploy_status' ||
+        metric.metric_key === 'cloudflare_pages_deploy_status',
+    ),
     (metric) => metric.collected_at,
   );
   const lastSync = latestBy(
