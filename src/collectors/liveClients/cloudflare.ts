@@ -134,8 +134,8 @@ function normalizeRegistrarDomain(domain: CloudflareRegistrarDomainResponse): Cl
   };
 }
 
-export function createLiveCloudflareClient(apiToken: string, accountId?: string): CloudflareClient {
-  async function request<T>(path: string): Promise<T> {
+function createApiRequest(apiToken: string) {
+  return async function request<T>(path: string): Promise<T> {
     const response = await fetch(`https://api.cloudflare.com/client/v4${path}`, {
       headers: {
         Authorization: `Bearer ${apiToken}`,
@@ -149,7 +149,11 @@ export function createLiveCloudflareClient(apiToken: string, accountId?: string)
     }
 
     return body.result;
-  }
+  };
+}
+
+export function createLiveCloudflareClient(apiToken: string, accountId?: string): CloudflareClient {
+  const request = createApiRequest(apiToken);
 
   async function optionalRequest<T>(path: string): Promise<T | null> {
     try {
@@ -189,32 +193,20 @@ export function createLiveCloudflareClient(apiToken: string, accountId?: string)
   };
 }
 
-export function createLiveCloudfarePagesClient(apiToken: string, accountId: string): CloudflarePagesClient {
-  async function request<T>(path: string): Promise<T> {
-    const response = await fetch(`https://api.cloudflare.com/client/v4${path}`, {
-      headers: {
-        Authorization: `Bearer ${apiToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    const body = (await response.json()) as CloudflareEnvelope<T>;
-
-    if (!response.ok || body.success === false || body.result === undefined) {
-      throw new Error(`Cloudflare API request failed with ${response.status}${errorDetail(body.errors)}`);
-    }
-
-    return body.result;
-  }
+export function createLiveCloudflarePagesClient(apiToken: string, accountId: string): CloudflarePagesClient {
+  const request = createApiRequest(apiToken);
 
   return {
     getLatestProductionDeployment: async (projectName) => {
       const deployments = await request<CloudflarePagesDeploymentResponse[]>(
-        `/accounts/${encodeURIComponent(accountId)}/pages/projects/${encodeURIComponent(projectName)}/deployments?per_page=5`,
+        `/accounts/${encodeURIComponent(accountId)}/pages/projects/${encodeURIComponent(projectName)}/deployments?environment=production&per_page=1`,
       );
 
-      const production = deployments.find((deployment) => deployment.environment === 'production');
+      if (deployments.length === 0) {
+        return null;
+      }
 
-      return production ? normalizeDeployment(production) : null;
+      return normalizeDeployment(deployments[0]);
     },
   };
 }

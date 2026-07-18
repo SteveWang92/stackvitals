@@ -802,10 +802,7 @@ function projectFromRows(project: ProjectRow, rows: DashboardRows): ProjectStatu
   const latestHttp = latestBy(healthChecks, (check) => check.checked_at);
   const latestDeploy = latestBy(
     metrics.filter(
-      (metric) =>
-        providerKey(metric) === 'amplify' ||
-        metric.metric_key === 'github_actions_deploy_status' ||
-        metric.metric_key === 'cloudflare_pages_deploy_status',
+      (metric) => providerKey(metric) === 'amplify' || metric.metric_key.endsWith('_deploy_status'),
     ),
     (metric) => metric.collected_at,
   );

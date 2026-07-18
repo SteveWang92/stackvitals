@@ -6,7 +6,7 @@ import { createAmplifyAdapter } from './providers/amplify';
 import { createAwsCostExplorerAdapter } from './providers/awsCostExplorer';
 import { createHttpHealthAdapter } from './providers/httpHealth';
 import { createCloudflareDomainsAdapter } from './providers/cloudflare';
-import { createCloudfarePagesAdapter } from './providers/cloudflarePages';
+import { createCloudflarePagesAdapter } from './providers/cloudflarePages';
 import { createGitHubActionsAdapter } from './providers/githubActions';
 import { createOpenAiUsageAdapter } from './providers/openaiUsage';
 import { createResendVerificationEmailAdapter } from './providers/resend';
@@ -24,7 +24,7 @@ import {
   createLiveSupabaseProjectHealthClient,
 } from './liveClients/supabase';
 import type { ProviderAdapter } from './types';
-import { createLiveCloudflareClient, createLiveCloudfarePagesClient } from './liveClients/cloudflare';
+import { createLiveCloudflareClient, createLiveCloudflarePagesClient } from './liveClients/cloudflare';
 import { createLiveGitHubActionsClient } from './liveClients/github';
 import { createLiveOpenAiUsageClient } from './liveClients/openai';
 
@@ -211,8 +211,8 @@ if (process.env.CLOUDFLARE_API_TOKEN) {
 
     if (pagesTargets.length > 0) {
       adapters.push(
-        createCloudfarePagesAdapter(pagesTargets, {
-          client: createLiveCloudfarePagesClient(process.env.CLOUDFLARE_API_TOKEN, process.env.CLOUDFLARE_ACCOUNT_ID),
+        createCloudflarePagesAdapter(pagesTargets, {
+          client: createLiveCloudflarePagesClient(process.env.CLOUDFLARE_API_TOKEN, process.env.CLOUDFLARE_ACCOUNT_ID),
         }),
       );
     }

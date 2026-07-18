@@ -78,7 +78,7 @@ export async function collectCloudflarePages(
             projectSlug: target.projectSlug,
             provider: 'cloudflare',
             metricKey: 'cloudflare_pages_deploy_status',
-            metricValue: status === 'healthy' ? 1 : 0,
+            metricValue: 1,
             status,
             metadata: {
               deploymentId: deployment.id,
@@ -141,7 +141,7 @@ export async function collectCloudflarePages(
   };
 }
 
-export function createCloudfarePagesAdapter(targets: CloudflarePagesTarget[], options: CloudflarePagesOptions): ProviderAdapter {
+export function createCloudflarePagesAdapter(targets: CloudflarePagesTarget[], options: CloudflarePagesOptions): ProviderAdapter {
   return {
     provider: 'cloudflare',
     adapterKey: 'cloudflare_pages',

@@ -62,7 +62,7 @@ describe('collectCloudflarePages', () => {
 
     const metric = result.metrics.find((m) => m.metricKey === 'cloudflare_pages_deploy_status');
     expect(metric!.status).toBe('failed');
-    expect(metric!.metricValue).toBe(0);
+    expect(metric!.metricValue).toBe(1);
     expect(metric!.metadata).toMatchObject({ stageName: 'build', stageStatus: 'failure' });
   });
 
@@ -73,7 +73,7 @@ describe('collectCloudflarePages', () => {
 
     const metric = result.metrics.find((m) => m.metricKey === 'cloudflare_pages_deploy_status');
     expect(metric!.status).toBe('warning');
-    expect(metric!.metricValue).toBe(0);
+    expect(metric!.metricValue).toBe(1);
   });
 
   it('reports failed when deploy was canceled', async () => {

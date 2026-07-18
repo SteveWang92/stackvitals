@@ -260,29 +260,38 @@ export async function collectGitHubActionsUsage(
   await Promise.all(
     targets.map(async (target) => {
       try {
-        const [runs, deployRuns] = await Promise.all([
-          options.client.listWorkflowRuns({ owner: target.owner, repo: target.repo, since, limit }),
-          target.deployWorkflow
-            ? options.client.listWorkflowRunsForWorkflow({
-                owner: target.owner,
-                repo: target.repo,
-                workflow: target.deployWorkflow,
-                limit: deployRunLimit,
-              })
-            : Promise.resolve(undefined),
-        ]);
+        const runs = await options.client.listWorkflowRuns({ owner: target.owner, repo: target.repo, since, limit });
+
+        let deployRuns: GitHubWorkflowRun[] | null | undefined;
+        if (target.deployWorkflow) {
+          try {
+            deployRuns = await options.client.listWorkflowRunsForWorkflow({
+              owner: target.owner,
+              repo: target.repo,
+              workflow: target.deployWorkflow,
+              limit: deployRunLimit,
+            });
+            if (deployRuns === null) {
+              errors.push({
+                projectSlug: target.projectSlug,
+                message: `Deploy workflow "${target.deployWorkflow}" not found in ${repositoryName(target)}.`,
+                retryable: false,
+              });
+            }
+          } catch (deployError) {
+            deployRuns = null;
+            errors.push({
+              projectSlug: target.projectSlug,
+              message: getErrorMessage(deployError, `Deploy workflow "${target.deployWorkflow}" collection failed`),
+              retryable: true,
+            });
+          }
+        }
+
         const collection = { target, runs, deployRuns };
 
         resources.push(...targetResources(collection));
         metrics.push(...targetMetrics(collection, since, collectedAt));
-
-        if (target.deployWorkflow && deployRuns === null) {
-          errors.push({
-            projectSlug: target.projectSlug,
-            message: `Deploy workflow "${target.deployWorkflow}" not found in ${repositoryName(target)}.`,
-            retryable: false,
-          });
-        }
       } catch (error) {
         const message = getErrorMessage(error, 'GitHub Actions collection failed');
 
