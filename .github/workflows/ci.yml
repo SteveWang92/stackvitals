@@ -19,6 +19,33 @@ permissions:
   contents: read
 
 jobs:
+  # site/ has its own lockfile and is otherwise only ever built by deploy-site.yml, which runs
+  # after the merge to main. Without this job a broken Astro build is invisible until the Pages
+  # deploy fails, i.e. after release. Mirrors deploy-site.yml's build steps minus the upload.
+  site:
+    name: Build docs site
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: site
+
+      - name: Build
+        run: npm run build
+        working-directory: site
+
   verify:
     name: Test, lint, and build
     runs-on: ubuntu-latest
