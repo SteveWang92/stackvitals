@@ -20,6 +20,10 @@ below as its notes.
 - "Stack Status Hub" subtitle alongside the product name in the dashboard header and sign-in
   screen, the browser tab title, and the landing page, with a localized equivalent on the
   Chinese landing page.
+- "Needs Attention" panel below the summary row naming each failing or warning check, with the
+  project, provider, and the actual failure detail. The summary tile counted these but never said
+  what was wrong; each row now jumps straight to that project's detail view. Providers that have
+  simply gone quiet are reported separately, so a silent collector is not confused with a failure.
 - 30-day history on each project card and in App Detail: a median-response-time sparkline and a
   daily uptime strip, so a project reads as "healthy, and trending this way" rather than just
   "healthy right now". A day the collector never ran is shown as an explicit no-data cell rather

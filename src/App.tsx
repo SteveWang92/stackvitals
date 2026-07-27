@@ -1,6 +1,7 @@
 import { AlertTriangle, LayoutDashboard, RefreshCw, Server } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getOverallStatus } from './lib/status';
+import { buildAttentionItems, countStaleProviders } from './lib/attention';
 import { buildCostRows } from './lib/costRows';
 import { supabase } from './lib/supabase';
 import { demoDashboardData } from './data/demoDashboardData';
@@ -16,6 +17,7 @@ import type {
   UnallocatedCostSnapshot,
 } from './types';
 import { AppDetail } from './components/AppDetail';
+import { AttentionPanel } from './components/AttentionPanel';
 import { AuthGate } from './components/AuthGate';
 import { CollectorDiagnostics } from './components/CollectorDiagnostics';
 import { CostPanel } from './components/CostPanel';
@@ -73,9 +75,8 @@ function Dashboard() {
     [projects, selectedSlug],
   );
   const healthyProjects = projects.filter((project) => getOverallStatus([project.deployStatus, project.uptimeStatus]) === 'healthy').length;
-  const providersNeedingAttention = projects
-    .flatMap((project) => project.providers)
-    .filter((provider) => provider.status === 'warning' || provider.status === 'failed').length;
+  const attentionItems = buildAttentionItems(projects);
+  const staleProviders = countStaleProviders(projects);
   const costRows = buildCostRows(projects, unallocatedCosts);
   const monthToDateCost = costRows.reduce((total, row) => total + (row.amountUsd ?? 0), 0);
 
@@ -177,8 +178,17 @@ function Dashboard() {
       <SummaryTiles
         trackedApps={projects.length}
         healthyProjects={healthyProjects}
-        providersNeedingAttention={providersNeedingAttention}
+        providersNeedingAttention={attentionItems.length}
         monthToDateCost={monthToDateCost}
+      />
+
+      <AttentionPanel
+        items={attentionItems}
+        staleCount={staleProviders}
+        onSelect={(slug) => {
+          setSelectedSlug(slug);
+          setActiveTab('detail');
+        }}
       />
 
       <section className="project-grid" aria-label="Projects">
