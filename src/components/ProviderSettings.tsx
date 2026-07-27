@@ -2,6 +2,7 @@ import { KeyRound } from 'lucide-react';
 import { formatRelativeSync } from '../lib/status';
 import type { ProjectStatus } from '../types';
 import { EmptyState } from './EmptyState';
+import { StaleBadge } from './StaleBadge';
 
 export function ProviderSettings({ projects }: { projects: ProjectStatus[] }) {
   const providerRows = projects.flatMap((project) =>
@@ -40,7 +41,12 @@ export function ProviderSettings({ projects }: { projects: ProjectStatus[] }) {
                   </td>
                 )}
                 <td>{provider.label}</td>
-                <td>{formatRelativeSync(provider.lastSync)}</td>
+                <td>
+                  <div className="table-sync-cell">
+                    {formatRelativeSync(provider.lastSync)}
+                    <StaleBadge freshness={provider.freshness} lastSync={provider.lastSync} />
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>

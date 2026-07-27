@@ -190,6 +190,9 @@ describe('fetchDashboardData', () => {
   });
 
   it('shows provider status from resources when provider metrics are not in the payload', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-30T12:00:00.000Z'));
+
     const client = createClient({
       projects: [
         {
@@ -227,6 +230,7 @@ describe('fetchDashboardData', () => {
         status: 'healthy',
         detail: 'Last seen 2026-06-30T10:00:00.000Z',
         lastSync: '2026-06-30T10:00:00.000Z',
+        freshness: 'fresh',
       },
     ]);
     expect(project.resources).toEqual([
@@ -619,6 +623,9 @@ describe('fetchDashboardData', () => {
   });
 
   it('leaves uptime status and provider rows untouched when no history rows exist', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-29T12:00:00.000Z'));
+
     const rows = {
       projects: [
         {
@@ -656,6 +663,7 @@ describe('fetchDashboardData', () => {
         status: 'warning',
         detail: '200 in 1940 ms',
         lastSync: '2026-06-29T10:00:00.000Z',
+        freshness: 'fresh',
       },
     ]);
   });

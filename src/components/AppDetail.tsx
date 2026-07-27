@@ -2,6 +2,7 @@ import { AlertTriangle, CircleHelp, Server } from 'lucide-react';
 import { formatRelativeSync } from '../lib/status';
 import type { ProjectStatus } from '../types';
 import { EmptyState } from './EmptyState';
+import { StaleBadge } from './StaleBadge';
 import { StatusPill } from './StatusPill';
 import { providerIcon } from './providerIcon';
 
@@ -41,6 +42,7 @@ export function AppDetail({ project }: { project: ProjectStatus }) {
                       <strong>{provider.label}</strong>
                       <span>{provider.detail}</span>
                     </div>
+                    <StaleBadge freshness={provider.freshness} lastSync={provider.lastSync} />
                     <StatusPill status={provider.status} />
                   </div>
                 );

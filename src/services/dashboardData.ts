@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { getOverallStatus } from '../lib/status';
+import { freshnessOf, getOverallStatus } from '../lib/status';
 import type {
   CollectorErrorSummary,
   CollectorRunSummary,
@@ -727,12 +727,15 @@ function latestProviderStatuses(
         (resource) => resource.last_seen_at,
       );
 
+      const lastSync = latestHealth?.checked_at ?? latestMetric?.collected_at ?? latestResource?.last_seen_at ?? null;
+
       return {
         provider,
         label: providerLabel(provider),
         status: latestHealth?.status ?? latestMetric?.status ?? (latestResource ? 'healthy' : 'unknown'),
         detail: providerDetail(provider, latestMetric, latestHealth, latestResource),
-        lastSync: latestHealth?.checked_at ?? latestMetric?.collected_at ?? latestResource?.last_seen_at ?? null,
+        lastSync,
+        freshness: freshnessOf(lastSync),
       };
     });
 }

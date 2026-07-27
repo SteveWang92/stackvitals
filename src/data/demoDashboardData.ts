@@ -80,13 +80,17 @@ const acmeSite: ProjectStatus = {
       status: 'healthy',
       detail: 'Branch main deployed 3 hours ago (build #214).',
       lastSync: hoursAgo(3),
+      freshness: 'fresh',
     },
     {
       provider: 'supabase',
       label: 'Supabase',
       status: 'healthy',
       detail: 'Database reachable, 12 active connections.',
-      lastSync: hoursAgo(3),
+      // Deliberately overdue: shows a last-known-healthy provider that stopped reporting, which
+      // is the case the freshness badge exists for. Status stays healthy; only the badge warns.
+      lastSync: hoursAgo(52),
+      freshness: 'stale',
     },
     {
       provider: 'resend',
@@ -94,6 +98,7 @@ const acmeSite: ProjectStatus = {
       status: 'warning',
       detail: 'Monthly email quota at 82% (2,460 of 3,000 sends).',
       lastSync: hoursAgo(3),
+      freshness: 'fresh',
     },
     {
       provider: 'http',
@@ -101,6 +106,7 @@ const acmeSite: ProjectStatus = {
       status: 'healthy',
       detail: 'Public URL returned 200 in 184 ms.',
       lastSync: hoursAgo(1),
+      freshness: 'fresh',
     },
   ],
   costs: [
@@ -149,6 +155,7 @@ const todoApp: ProjectStatus = {
       status: 'healthy',
       detail: 'Branch main deployed yesterday (build #98).',
       lastSync: hoursAgo(3),
+      freshness: 'fresh',
     },
     {
       provider: 'supabase',
@@ -156,6 +163,7 @@ const todoApp: ProjectStatus = {
       status: 'healthy',
       detail: '1,284 aggregate records, RPC checks passing.',
       lastSync: hoursAgo(3),
+      freshness: 'fresh',
     },
     {
       provider: 'http',
@@ -163,6 +171,7 @@ const todoApp: ProjectStatus = {
       status: 'healthy',
       detail: 'Public URL returned 200 in 231 ms.',
       lastSync: hoursAgo(1),
+      freshness: 'fresh',
     },
   ],
   costs: [
@@ -210,6 +219,7 @@ const recipeBox: ProjectStatus = {
       status: 'healthy',
       detail: 'Branch main deployed 2 days ago (build #61).',
       lastSync: hoursAgo(3),
+      freshness: 'fresh',
     },
     {
       provider: 'supabase',
@@ -217,6 +227,7 @@ const recipeBox: ProjectStatus = {
       status: 'healthy',
       detail: 'Database reachable, storage at 14% of quota.',
       lastSync: hoursAgo(3),
+      freshness: 'fresh',
     },
     {
       provider: 'http',
@@ -224,6 +235,7 @@ const recipeBox: ProjectStatus = {
       status: 'warning',
       detail: 'Public URL returned 200 in 1,940 ms (slow response).',
       lastSync: hoursAgo(1),
+      freshness: 'fresh',
     },
   ],
   costs: [{ provider: 'amplify', serviceName: 'AWS Amplify hosting', monthToDateUsd: 0.61 }],
@@ -267,6 +279,7 @@ const statusHub: ProjectStatus = {
       status: 'healthy',
       detail: 'Branch main deployed 5 hours ago (build #142).',
       lastSync: hoursAgo(3),
+      freshness: 'fresh',
     },
     {
       provider: 'supabase',
@@ -274,6 +287,7 @@ const statusHub: ProjectStatus = {
       status: 'healthy',
       detail: 'Hub database reachable, snapshots writing normally.',
       lastSync: hoursAgo(3),
+      freshness: 'fresh',
     },
     {
       provider: 'github',
@@ -281,6 +295,7 @@ const statusHub: ProjectStatus = {
       status: 'healthy',
       detail: 'Scheduled collector workflow passing on main.',
       lastSync: hoursAgo(3),
+      freshness: 'fresh',
     },
     {
       provider: 'http',
@@ -288,6 +303,7 @@ const statusHub: ProjectStatus = {
       status: 'healthy',
       detail: 'Public URL returned 200 in 152 ms.',
       lastSync: hoursAgo(1),
+      freshness: 'fresh',
     },
   ],
   costs: [{ provider: 'amplify', serviceName: 'AWS Amplify hosting', monthToDateUsd: 0.84 }],

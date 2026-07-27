@@ -368,6 +368,28 @@ a {
   color: #526072;
 }
 
+.stale-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  border: 1px solid #e0d3ab;
+  border-radius: 999px;
+  background: #fdf6e3;
+  padding: 5px 8px;
+  color: #7a6318;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.table-sync-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .project-card-bottom {
   display: flex;
   flex: 1;

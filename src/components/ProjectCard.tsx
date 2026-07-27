@@ -1,5 +1,5 @@
 import { Clock3, ExternalLink } from 'lucide-react';
-import { formatRelativeSync, isStaleSync } from '../lib/status';
+import { STALE_AFTER_HOURS, formatRelativeSync, isStaleSync } from '../lib/status';
 import type { ProjectStatus } from '../types';
 import { StatusPill } from './StatusPill';
 
@@ -35,7 +35,7 @@ export function ProjectCard({ project, selected, onSelect }: { project: ProjectS
       {stale && (
         <div className="state-banner state-banner-warning">
           <Clock3 aria-hidden="true" size={15} />
-          {project.lastSync ? 'Data is older than 24 hours' : 'Waiting for first collector sync'}
+          {project.lastSync ? `Data is older than ${STALE_AFTER_HOURS} hours` : 'Waiting for first collector sync'}
         </div>
       )}
 

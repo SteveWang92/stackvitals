@@ -14,6 +14,11 @@ below as its notes.
 - "Stack Status Hub" subtitle alongside the product name in the dashboard header and sign-in
   screen, the browser tab title, and the landing page, with a localized equivalent on the
   Chinese landing page.
+- Staleness badge on provider rows in App Detail and Provider Settings. A collector that
+  silently stops no longer leaves a confident green status with no indication of its age; the
+  badge shows how old the data is while the status pill keeps reporting the last known state.
+  The stale threshold is now 36 hours rather than 24, so ordinary drift in the daily collector
+  schedule no longer trips it.
 - Migration `007_history_indexes.sql` adds timestamp indexes to `health_checks`,
   `metric_snapshots`, and `cost_snapshots`. The dashboard's fleet-wide reads sort by
   timestamp without a project filter, which the existing `project_id`-leading indexes cannot

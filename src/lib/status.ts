@@ -1,4 +1,10 @@
-import type { CollectorRunSummary, StatusLevel } from '../types';
+import type { CollectorRunSummary, Freshness, StatusLevel } from '../types';
+
+/**
+ * The collector cron runs once a day, so a 24h threshold trips on ordinary scheduling drift.
+ * 36h leaves room for a late run while still catching a collector that actually stopped.
+ */
+export const STALE_AFTER_HOURS = 36;
 
 export const statusLabel: Record<StatusLevel, string> = {
   healthy: 'Healthy',
@@ -64,7 +70,19 @@ export function formatRelativeSync(value: string | null): string {
   }).format(new Date(value));
 }
 
-export function isStaleSync(value: string | null, now = new Date(), staleAfterHours = 24): boolean {
+/**
+ * Distinguishes "we have not heard from it" from "it is broken". Staleness annotates a provider
+ * rather than downgrading its status, so a stale-but-last-known-healthy provider stays readable.
+ */
+export function freshnessOf(lastSync: string | null, now = new Date()): Freshness {
+  if (!lastSync) {
+    return 'never';
+  }
+
+  return isStaleSync(lastSync, now, STALE_AFTER_HOURS) ? 'stale' : 'fresh';
+}
+
+export function isStaleSync(value: string | null, now = new Date(), staleAfterHours = STALE_AFTER_HOURS): boolean {
   if (!value) {
     return true;
   }

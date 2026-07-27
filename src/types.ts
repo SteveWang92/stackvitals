@@ -6,12 +6,16 @@ export type StatusLevel = 'healthy' | 'warning' | 'failed' | 'unknown';
 
 export type ProviderKey = 'aws' | 'amplify' | 'supabase' | 'resend' | 'cloudflare' | 'openai' | 'github' | 'http';
 
+/** Whether a provider's data is recent, overdue, or has never arrived. */
+export type Freshness = 'fresh' | 'stale' | 'never';
+
 export interface ProviderStatus {
   provider: ProviderKey;
   label: string;
   status: StatusLevel;
   detail: string;
   lastSync: string | null;
+  freshness: Freshness;
 }
 
 export interface CostSnapshot {
