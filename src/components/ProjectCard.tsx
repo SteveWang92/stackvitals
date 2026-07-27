@@ -60,19 +60,19 @@ export function ProjectCard({ project, selected, onSelect }: { project: ProjectS
             <dt>Last sync</dt>
             <dd>{formatRelativeSync(project.lastSync)}</dd>
           </div>
-          <div>
-            <dt>Latency ({project.history.windowDays}d)</dt>
-            <dd>
-              <Sparkline
-                points={project.history.latency.map((point) => point.p50Ms)}
-                label={`Median response time, last ${project.history.windowDays} days`}
-                valueLabel={formatLatencySummary(project.history.latency)}
-              />
-            </dd>
-          </div>
         </dl>
 
-        <UptimeStrip days={project.history.uptime} label={`Uptime, last ${project.history.windowDays} days`} />
+        {/* Full width rather than a fourth grid cell: at ~130px per cell the sparkline is
+            unreadable and its value label wraps to three lines. */}
+        <div className="project-history">
+          <h3>Latency &amp; uptime ({project.history.windowDays}d)</h3>
+          <Sparkline
+            points={project.history.latency.map((point) => point.p50Ms)}
+            label={`Median response time, last ${project.history.windowDays} days`}
+            valueLabel={formatLatencySummary(project.history.latency)}
+          />
+          <UptimeStrip days={project.history.uptime} label={`Uptime, last ${project.history.windowDays} days`} />
+        </div>
 
         <button className="detail-button" type="button" onClick={onSelect} aria-pressed={selected}>
           View detail

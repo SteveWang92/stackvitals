@@ -388,6 +388,27 @@ a {
   color: #3f6ad6;
 }
 
+.project-history {
+  margin: 0 0 16px;
+}
+
+.project-history h3 {
+  margin: 0 0 8px;
+  color: #657082;
+  font-size: 0.75rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.project-history .sparkline {
+  margin-bottom: 10px;
+}
+
+.project-history .sparkline svg {
+  height: 34px;
+}
+
 .sparkline svg {
   display: block;
   width: 100%;
