@@ -189,7 +189,7 @@ describe('fetchDashboardData', () => {
     expect(data.lastMonthCostUsd).toBe(2.91);
   });
 
-  it('shows provider status from resources when provider metrics are not in the payload', async () => {
+  it('lists a provider known only from resources, but does not claim it is healthy', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-06-30T12:00:00.000Z'));
 
@@ -227,7 +227,8 @@ describe('fetchDashboardData', () => {
       {
         provider: 'github',
         label: 'GitHub Actions',
-        status: 'healthy',
+        // A resource row alone is not a health signal; only a check or metric can make this green.
+        status: 'unknown',
         detail: 'Last seen 2026-06-30T10:00:00.000Z',
         lastSync: '2026-06-30T10:00:00.000Z',
         freshness: 'fresh',

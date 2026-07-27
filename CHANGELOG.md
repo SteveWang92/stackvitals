@@ -9,6 +9,12 @@ below as its notes.
 
 ## [Unreleased]
 
+### Fixed
+
+- A provider known only from a resource-inventory row reported as "Healthy" even though no
+  health check or metric had ever confirmed it. Existence is not health; such a provider now
+  reports "Unknown" until a check or metric arrives.
+
 ### Added
 
 - "Stack Status Hub" subtitle alongside the product name in the dashboard header and sign-in

@@ -732,7 +732,9 @@ function latestProviderStatuses(
       return {
         provider,
         label: providerLabel(provider),
-        status: latestHealth?.status ?? latestMetric?.status ?? (latestResource ? 'healthy' : 'unknown'),
+        // A resource-inventory row records that something exists, not that it is working, so it
+        // cannot stand in for a health signal. Without a check or a metric the status is unknown.
+        status: latestHealth?.status ?? latestMetric?.status ?? 'unknown',
         detail: providerDetail(provider, latestMetric, latestHealth, latestResource),
         lastSync,
         freshness: freshnessOf(lastSync),
