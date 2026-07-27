@@ -20,6 +20,11 @@ below as its notes.
 - "Stack Status Hub" subtitle alongside the product name in the dashboard header and sign-in
   screen, the browser tab title, and the landing page, with a localized equivalent on the
   Chinese landing page.
+- 30-day history on each project card and in App Detail: a median-response-time sparkline and a
+  daily uptime strip, so a project reads as "healthy, and trending this way" rather than just
+  "healthy right now". A day the collector never ran is shown as an explicit no-data cell rather
+  than an outage. Rendered as inline SVG — no charting dependency was added.
+- Cumulative month-to-date spend line on the Costs tab, scoped to the current billing period.
 - Staleness badge on provider rows in App Detail and Provider Settings. A collector that
   silently stops no longer leaves a confident green status with no indication of its age; the
   badge shows how old the data is while the status pill keeps reporting the last known state.

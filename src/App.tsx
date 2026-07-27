@@ -7,6 +7,7 @@ import { demoDashboardData } from './data/demoDashboardData';
 import { fetchDashboardData } from './services/dashboardData';
 import type {
   CollectorRunSummary,
+  CostPoint,
   DomainSummary,
   GitHubActionsUsageSummary,
   OpenAiUsageSummary,
@@ -61,6 +62,7 @@ function Dashboard() {
     rows: [],
   });
   const [lastMonthCostUsd, setLastMonthCostUsd] = useState<number | null>(null);
+  const [mtdCostSeries, setMtdCostSeries] = useState<CostPoint[]>([]);
   const [selectedSlug, setSelectedSlug] = useState<ProjectSlug | null>(null);
   const [activeTab, setActiveTab] = useState<DashboardTab>('detail');
   const [refreshing, setRefreshing] = useState(false);
@@ -99,6 +101,7 @@ function Dashboard() {
       setOpenAiUsage(liveData.openAiUsage);
       setGitHubActionsUsage(liveData.githubActionsUsage);
       setLastMonthCostUsd(liveData.lastMonthCostUsd);
+      setMtdCostSeries(liveData.mtdCostSeries);
       setSelectedSlug((current) => liveProjects.find((project) => project.slug === current)?.slug ?? liveProjects[0]?.slug ?? null);
     } catch (error: unknown) {
       setDataError(error instanceof Error ? error.message : 'Dashboard data failed to load.');
@@ -242,7 +245,12 @@ function Dashboard() {
         )}
 
         {activeTab === 'costs' && (
-          <CostPanel costRows={costRows} monthToDateCost={monthToDateCost} lastMonthCostUsd={lastMonthCostUsd} />
+          <CostPanel
+            costRows={costRows}
+            monthToDateCost={monthToDateCost}
+            lastMonthCostUsd={lastMonthCostUsd}
+            mtdCostSeries={mtdCostSeries}
+          />
         )}
       </div>
     </main>

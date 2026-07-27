@@ -1,4 +1,20 @@
-import type { DomainSummary } from '../types';
+import type { DomainSummary, LatencyPoint } from '../types';
+
+/** Plain-text companion to the latency sparkline, so the numbers never depend on the graphic. */
+export function formatLatencySummary(points: LatencyPoint[]): string {
+  const values = points.map((point) => point.p50Ms).filter((value): value is number => value !== null);
+
+  if (values.length === 0) {
+    return 'No response times recorded';
+  }
+
+  const sorted = values.slice().sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  const median = sorted.length % 2 === 0 ? Math.round((sorted[middle - 1] + sorted[middle]) / 2) : sorted[middle];
+  const latest = values[values.length - 1];
+
+  return `${formatCount(latest)} ms now · ${formatCount(median)} ms median`;
+}
 
 export function displayCostLabel(label: string | undefined): string {
   const normalized = label?.trim();

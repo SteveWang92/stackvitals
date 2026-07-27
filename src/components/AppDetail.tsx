@@ -1,9 +1,12 @@
 import { AlertTriangle, CircleHelp, Server } from 'lucide-react';
+import { formatLatencySummary } from '../lib/format';
 import { formatRelativeSync } from '../lib/status';
 import type { ProjectStatus } from '../types';
 import { EmptyState } from './EmptyState';
+import { Sparkline } from './Sparkline';
 import { StaleBadge } from './StaleBadge';
 import { StatusPill } from './StatusPill';
+import { UptimeStrip } from './UptimeStrip';
 import { providerIcon } from './providerIcon';
 
 export function AppDetail({ project }: { project: ProjectStatus }) {
@@ -24,6 +27,26 @@ export function AppDetail({ project }: { project: ProjectStatus }) {
       )}
 
       <div className="detail-grid">
+        <div className="detail-section detail-section-wide">
+          <h3>History</h3>
+          <div className="history-panel">
+            <div>
+              <h4>Median response time</h4>
+              <Sparkline
+                points={project.history.latency.map((point) => point.p50Ms)}
+                label={`Median response time, last ${project.history.windowDays} days`}
+                valueLabel={formatLatencySummary(project.history.latency)}
+                width={320}
+                height={56}
+              />
+            </div>
+            <div>
+              <h4>Uptime</h4>
+              <UptimeStrip days={project.history.uptime} label={`Uptime, last ${project.history.windowDays} days`} />
+            </div>
+          </div>
+        </div>
+
         <div className="detail-section">
           <h3>Providers</h3>
           {project.providers.length === 0 ? (

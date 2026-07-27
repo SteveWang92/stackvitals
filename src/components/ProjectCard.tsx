@@ -1,7 +1,10 @@
 import { Clock3, ExternalLink } from 'lucide-react';
+import { formatLatencySummary } from '../lib/format';
 import { STALE_AFTER_HOURS, formatRelativeSync, isStaleSync } from '../lib/status';
 import type { ProjectStatus } from '../types';
+import { Sparkline } from './Sparkline';
 import { StatusPill } from './StatusPill';
+import { UptimeStrip } from './UptimeStrip';
 
 function isThisSite(publicUrl: string): boolean {
   try {
@@ -57,7 +60,19 @@ export function ProjectCard({ project, selected, onSelect }: { project: ProjectS
             <dt>Last sync</dt>
             <dd>{formatRelativeSync(project.lastSync)}</dd>
           </div>
+          <div>
+            <dt>Latency ({project.history.windowDays}d)</dt>
+            <dd>
+              <Sparkline
+                points={project.history.latency.map((point) => point.p50Ms)}
+                label={`Median response time, last ${project.history.windowDays} days`}
+                valueLabel={formatLatencySummary(project.history.latency)}
+              />
+            </dd>
+          </div>
         </dl>
+
+        <UptimeStrip days={project.history.uptime} label={`Uptime, last ${project.history.windowDays} days`} />
 
         <button className="detail-button" type="button" onClick={onSelect} aria-pressed={selected}>
           View detail
