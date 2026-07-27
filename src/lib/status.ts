@@ -1,4 +1,27 @@
-import type { StatusLevel } from '../types';
+import type { CollectorRunSummary, StatusLevel } from '../types';
+
+export const statusLabel: Record<StatusLevel, string> = {
+  healthy: 'Healthy',
+  warning: 'Needs attention',
+  failed: 'Failed',
+  unknown: 'Unknown',
+};
+
+export function collectorRunStatusLevel(status: CollectorRunSummary['status']): StatusLevel {
+  if (status === 'success') {
+    return 'healthy';
+  }
+
+  if (status === 'failed') {
+    return 'failed';
+  }
+
+  if (status === 'partial_success') {
+    return 'warning';
+  }
+
+  return 'unknown';
+}
 
 export function getOverallStatus(statuses: StatusLevel[]): StatusLevel {
   if (statuses.includes('failed')) {
