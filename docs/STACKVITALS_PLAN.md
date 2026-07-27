@@ -25,6 +25,20 @@ Scope is status, cost, and basic aggregate usage for a single owner's projects. 
 stay on their existing hosting; low cost is preferred over high-frequency monitoring. Version
 `1.0.0` was the first baseline release.
 
+## Naming
+
+The name is always presented with the subtitle **Stack Status Hub** (中文：独立开发者的状态中心) —
+in the app header and sign-in screen, the `index.html` title, the README, the `package.json`
+description, and both landing pages. The subtitle explains the product at a glance and
+distinguishes it from `stackvital.com`, an unrelated nutrition site that uses the singular form
+of the name.
+
+Renaming was considered and rejected: the two occupy entirely different sectors, this is a
+single-owner tool rather than a product competing for the same audience, and a rename would
+mean buying new domains and reworking the Amplify app plus the GitHub Pages site. The subtitle
+is deliberately **not** "Project Status Hub", which would collide with the separate
+`project-status-hub` repository.
+
 ## Current State
 
 - Static React/Vite dashboard with Supabase Auth and RLS-protected reads.

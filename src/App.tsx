@@ -853,6 +853,7 @@ function AuthGate({ children }: { children: ReactNode }) {
         <form className="auth-panel" onSubmit={handleSignIn}>
           <LockKeyhole aria-hidden="true" size={26} />
           <h1>StackVitals</h1>
+          <p className="brand-subtitle">Stack Status Hub</p>
           <label>
             Email
             <input
@@ -1001,6 +1002,7 @@ function Dashboard() {
           </div>
           <div>
             <h1>StackVitals{isDemoMode && <span className="demo-badge">Demo</span>}</h1>
+            <p className="brand-subtitle">Stack Status Hub</p>
             <p>Uptime, deploys, cost, and usage for your web projects.</p>
           </div>
         </div>

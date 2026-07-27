@@ -9,6 +9,12 @@ below as its notes.
 
 ## [Unreleased]
 
+### Added
+
+- "Stack Status Hub" subtitle alongside the product name in the dashboard header and sign-in
+  screen, the browser tab title, and the landing page, with a localized equivalent on the
+  Chinese landing page.
+
 ## [1.4.0] - 2026-07-19
 
 ### Added

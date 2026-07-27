@@ -171,6 +171,23 @@ a {
   line-height: 1.55;
 }
 
+.topbar .brand-subtitle,
+.auth-panel .brand-subtitle {
+  color: #2e5b84;
+  font-size: 0.82rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.topbar .brand-subtitle {
+  margin: 8px 0 0;
+}
+
+.auth-panel .brand-subtitle {
+  margin-top: -8px;
+}
+
 .refresh-button {
   display: inline-flex;
   min-height: 42px;
