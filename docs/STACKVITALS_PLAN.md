@@ -106,6 +106,15 @@ Snapshots are append-only — the read layer picks the latest per logical key ra
 in place. Only aggregate operational data is stored; user records, transactions, and other raw
 app data never enter this tool.
 
+The one exception to "latest per key" is the trend history. `fetchDashboardData` issues a
+separate, narrowly-projected `health_checks` query bounded to the last 30 days
+(`HISTORY_WINDOW_DAYS`), which feeds per-project latency and uptime charts. It is deliberately
+kept in its own array and never merged into the latest-per-key rows, so the status read path is
+unaffected by it. Day bucketing is UTC, and a day the collector never wrote becomes an explicit
+`no-data` state rather than an outage — a missed run is silence, not downtime. Month-to-date
+cost history is scoped to the current billing period, because `cost_snapshots.amount_usd` is
+cumulative for its period and resets on the 1st.
+
 ## Provider Adapters
 
 Each adapter exposes a common interface for collecting resources, metrics, costs, and health.

@@ -1,28 +1,52 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fetchDashboardData } from '../../services/dashboardData';
+import { HISTORY_WINDOW_DAYS, buildMtdCostSeries, buildProjectHistory, fetchDashboardData } from '../../services/dashboardData';
+import type { StatusLevel } from '../../types';
 
 type TableName = 'projects' | 'resources' | 'metric_snapshots' | 'cost_snapshots' | 'health_checks' | 'collector_runs';
 
-interface MockQuery<T> extends PromiseLike<{ data: T[]; error: null }> {
-  select: () => MockQuery<T>;
-  eq: () => MockQuery<T>;
-  order: () => MockQuery<T>;
-  limit: () => MockQuery<T>;
+interface RecordedCall {
+  table: TableName;
+  method: string;
+  args: unknown[];
 }
 
-function query<T>(data: T[]): MockQuery<T> {
+interface MockQuery<T> extends PromiseLike<{ data: T[]; error: null }> {
+  select: (...args: unknown[]) => MockQuery<T>;
+  eq: (...args: unknown[]) => MockQuery<T>;
+  order: (...args: unknown[]) => MockQuery<T>;
+  limit: (...args: unknown[]) => MockQuery<T>;
+  gte: (...args: unknown[]) => MockQuery<T>;
+}
+
+/**
+ * Builder methods are identity for data and only record their arguments. Teaching this fake to
+ * actually apply filters would mean reimplementing PostgREST; instead, assert the filter
+ * argument here and test the row-shaping logic against the exported pure helpers.
+ */
+function query<T>(table: TableName, data: T[], calls: RecordedCall[]): MockQuery<T> {
+  const record =
+    (method: string) =>
+    (...args: unknown[]) => {
+      calls.push({ table, method, args });
+      return query(table, data, calls);
+    };
+
   return {
-    select: () => query(data),
-    eq: () => query(data),
-    order: () => query(data),
-    limit: () => query(data),
+    select: record('select'),
+    eq: record('eq'),
+    order: record('order'),
+    limit: record('limit'),
+    gte: record('gte'),
     then: (resolve, reject) => Promise.resolve({ data, error: null }).then(resolve, reject),
   };
 }
 
 function createClient(rows: Record<TableName, unknown[]>) {
+  const calls: RecordedCall[] = [];
+
   return {
-    from: (tableName: TableName) => query(rows[tableName]),
+    calls,
+    from: (tableName: TableName) => query(tableName, rows[tableName] ?? [], calls),
   };
 }
 
@@ -570,5 +594,183 @@ describe('fetchDashboardData', () => {
         occurredAt: '2026-06-30T10:00:01.000Z',
       },
     ]);
+  });
+
+  it('bounds the health check history query to the start of the 30 day window', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-29T12:00:00.000Z'));
+
+    const client = createClient({
+      projects: [],
+      resources: [],
+      metric_snapshots: [],
+      cost_snapshots: [],
+      health_checks: [],
+      collector_runs: [],
+    });
+
+    await fetchDashboardData(client as never);
+
+    expect(client.calls).toContainEqual({
+      table: 'health_checks',
+      method: 'gte',
+      args: ['checked_at', '2026-05-31T00:00:00.000Z'],
+    });
+  });
+
+  it('leaves uptime status and provider rows untouched when no history rows exist', async () => {
+    const rows = {
+      projects: [
+        {
+          id: 'acme-site',
+          slug: 'acme_site',
+          name: 'Acme Site',
+          public_url: 'https://example.com',
+        },
+      ],
+      resources: [],
+      metric_snapshots: [],
+      cost_snapshots: [],
+      health_checks: [
+        {
+          project_id: 'acme-site',
+          url: 'https://example.com',
+          status: 'warning',
+          http_status: 200,
+          response_time_ms: 1940,
+          error_message: null,
+          checked_at: '2026-06-29T10:00:00.000Z',
+        },
+      ],
+      collector_runs: [],
+    };
+
+    const data = await fetchDashboardData(createClient(rows) as never);
+    const project = data.projects[0];
+
+    expect(project.uptimeStatus).toBe('warning');
+    expect(project.providers).toEqual([
+      {
+        provider: 'http',
+        label: 'Public URL',
+        status: 'warning',
+        detail: '200 in 1940 ms',
+        lastSync: '2026-06-29T10:00:00.000Z',
+      },
+    ]);
+  });
+});
+
+describe('buildProjectHistory', () => {
+  const now = new Date('2026-06-29T12:00:00.000Z');
+
+  function check(projectId: string, checkedAt: string, status: StatusLevel, responseTimeMs: number | null) {
+    return { project_id: projectId, status, response_time_ms: responseTimeMs, checked_at: checkedAt };
+  }
+
+  it('emits one entry per day in the window, oldest first', () => {
+    const history = buildProjectHistory('acme-site', [], HISTORY_WINDOW_DAYS, now);
+
+    expect(history.windowDays).toBe(30);
+    expect(history.uptime).toHaveLength(30);
+    expect(history.latency).toHaveLength(30);
+    expect(history.uptime[0].day).toBe('2026-05-31');
+    expect(history.uptime[29].day).toBe('2026-06-29');
+  });
+
+  it('marks a day the collector skipped as no-data rather than down', () => {
+    const history = buildProjectHistory(
+      'acme-site',
+      [
+        check('acme-site', '2026-06-27T10:00:00.000Z', 'healthy', 180),
+        // 2026-06-28 deliberately missing.
+        check('acme-site', '2026-06-29T10:00:00.000Z', 'healthy', 190),
+      ],
+      HISTORY_WINDOW_DAYS,
+      now,
+    );
+    const gap = history.uptime.find((day) => day.day === '2026-06-28');
+
+    expect(gap).toEqual({ day: '2026-06-28', state: 'no-data', checks: 0, failed: 0 });
+    expect(history.latency.find((point) => point.day === '2026-06-28')?.p50Ms).toBeNull();
+  });
+
+  it('treats a day with both a failed and a passing check as degraded, not down', () => {
+    const history = buildProjectHistory(
+      'acme-site',
+      [check('acme-site', '2026-06-29T02:00:00.000Z', 'failed', null), check('acme-site', '2026-06-29T14:00:00.000Z', 'healthy', 210)],
+      HISTORY_WINDOW_DAYS,
+      now,
+    );
+
+    expect(history.uptime[29]).toEqual({ day: '2026-06-29', state: 'degraded', checks: 2, failed: 1 });
+  });
+
+  it('reports a day as down only when every check failed', () => {
+    const history = buildProjectHistory('acme-site', [check('acme-site', '2026-06-29T02:00:00.000Z', 'failed', null)], HISTORY_WINDOW_DAYS, now);
+
+    expect(history.uptime[29].state).toBe('down');
+  });
+
+  it('uses the median response time on days with several checks', () => {
+    const history = buildProjectHistory(
+      'acme-site',
+      [
+        check('acme-site', '2026-06-29T02:00:00.000Z', 'healthy', 100),
+        check('acme-site', '2026-06-29T08:00:00.000Z', 'healthy', 200),
+        check('acme-site', '2026-06-29T14:00:00.000Z', 'healthy', 3000),
+      ],
+      HISTORY_WINDOW_DAYS,
+      now,
+    );
+
+    expect(history.latency[29].p50Ms).toBe(200);
+  });
+
+  it('ignores checks belonging to other projects', () => {
+    const history = buildProjectHistory('acme-site', [check('todo-app', '2026-06-29T10:00:00.000Z', 'failed', 900)], HISTORY_WINDOW_DAYS, now);
+
+    expect(history.uptime[29].state).toBe('no-data');
+  });
+});
+
+describe('buildMtdCostSeries', () => {
+  const now = new Date('2026-06-29T12:00:00.000Z');
+
+  function cost(serviceName: string, amountUsd: number, collectedAt: string) {
+    return {
+      project_id: null,
+      service_name: serviceName,
+      period_start: '2026-06-01',
+      period_end: '2026-06-30',
+      amount_usd: amountUsd,
+      metadata: {},
+      collected_at: collectedAt,
+      providers: { key: 'aws' as const, name: 'AWS' },
+    };
+  }
+
+  it('sums providers per collection day and orders oldest first', () => {
+    const series = buildMtdCostSeries(
+      [
+        cost('AWS Amplify', 0.64, '2026-06-28T12:00:00.000Z'),
+        cost('Amazon Route 53', 0.51, '2026-06-28T12:00:00.000Z'),
+        cost('AWS Amplify', 0.77, '2026-06-29T12:00:00.000Z'),
+        cost('Amazon Route 53', 0.51, '2026-06-29T12:00:00.000Z'),
+      ],
+      now,
+    );
+
+    expect(series).toEqual([
+      { day: '2026-06-28', cumulativeUsd: 1.15 },
+      { day: '2026-06-29', cumulativeUsd: 1.28 },
+    ]);
+  });
+
+  it('excludes rows from other periods so the month rollover cannot show as a cliff', () => {
+    const lastMonth = { ...cost('AWS Amplify', 31.4, '2026-05-31T12:00:00.000Z'), period_start: '2026-05-01', period_end: '2026-06-01' };
+    const series = buildMtdCostSeries([lastMonth, cost('AWS Amplify', 0.77, '2026-06-29T12:00:00.000Z')], now);
+
+    expect(series).toEqual([{ day: '2026-06-29', cumulativeUsd: 0.77 }]);
   });
 });

@@ -99,6 +99,40 @@ export interface GitHubActionsUsageSummary {
   rows: GitHubActionsUsageRow[];
 }
 
+export interface LatencyPoint {
+  /** UTC day, YYYY-MM-DD. */
+  day: string;
+  /** Median response time for that day, or null when no check ran. */
+  p50Ms: number | null;
+}
+
+/** 'no-data' is a distinct state from 'down': a missed collector run is not an outage. */
+export type UptimeDayState = 'up' | 'degraded' | 'down' | 'no-data';
+
+export interface UptimeDay {
+  /** UTC day, YYYY-MM-DD. */
+  day: string;
+  state: UptimeDayState;
+  /** 0 means the collector wrote nothing that day, which yields 'no-data'. */
+  checks: number;
+  failed: number;
+}
+
+export interface ProjectHistory {
+  windowDays: number;
+  /** One entry per day in the window, oldest first, gaps included. */
+  latency: LatencyPoint[];
+  /** One entry per day in the window, oldest first, gaps included. */
+  uptime: UptimeDay[];
+}
+
+export interface CostPoint {
+  /** UTC day, YYYY-MM-DD. */
+  day: string;
+  /** Cumulative month-to-date spend as of that collection day, not daily spend. */
+  cumulativeUsd: number;
+}
+
 export interface ProjectStatus {
   slug: ProjectSlug;
   name: string;
@@ -111,6 +145,7 @@ export interface ProjectStatus {
   resources: ProjectResource[];
   recentSnapshots: SnapshotSummary[];
   collectorErrors: CollectorErrorSummary[];
+  history: ProjectHistory;
 }
 
 export interface DomainDnsRecord {

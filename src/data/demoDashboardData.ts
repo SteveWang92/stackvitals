@@ -1,5 +1,6 @@
+import { HISTORY_WINDOW_DAYS, utcDayRange } from '../services/dashboardData';
 import type { DashboardData } from '../services/dashboardData';
-import type { ProjectStatus } from '../types';
+import type { CostPoint, ProjectHistory, ProjectStatus } from '../types';
 
 function hoursAgo(hours: number): string {
   return new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
@@ -7,6 +8,62 @@ function hoursAgo(hours: number): string {
 
 function daysFromNow(days: number): string {
   return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+/**
+ * Deterministic jitter. The demo build feeds stackvitals.app and the committed screenshots, so
+ * this must never use Math.random() — the same day must always render the same chart.
+ */
+function jitter(index: number, seed: number): number {
+  const value = Math.sin(index * 12.9898 + seed * 78.233) * 43758.5453;
+
+  return value - Math.floor(value);
+}
+
+/**
+ * Fictional 30-day history. `degradedDay` and `gapDay` are indexes into the window (0 = oldest)
+ * so the demo can show all four uptime states — without them the strip is 30 identical green
+ * cells and the feature reads as decoration.
+ */
+function demoHistory(baseMs: number, options: { degradedDay?: number; gapDay?: number } = {}): ProjectHistory {
+  const days = utcDayRange(HISTORY_WINDOW_DAYS);
+
+  return {
+    windowDays: HISTORY_WINDOW_DAYS,
+    latency: days.map((day, index) => {
+      if (index === options.gapDay) {
+        return { day, p50Ms: null };
+      }
+
+      const spread = 0.82 + jitter(index, baseMs) * 0.36;
+
+      return { day, p50Ms: Math.round(baseMs * (index === options.degradedDay ? spread * 3.4 : spread)) };
+    }),
+    uptime: days.map((day, index) => {
+      if (index === options.gapDay) {
+        return { day, state: 'no-data' as const, checks: 0, failed: 0 };
+      }
+
+      if (index === options.degradedDay) {
+        return { day, state: 'degraded' as const, checks: 2, failed: 1 };
+      }
+
+      return { day, state: 'up' as const, checks: 1, failed: 0 };
+    }),
+  };
+}
+
+/** Cumulative month-to-date spend, one point per collection day, ending at the MTD total. */
+function demoMtdCostSeries(total: number): CostPoint[] {
+  const now = new Date();
+  const dayOfMonth = now.getUTCDate();
+
+  return Array.from({ length: dayOfMonth }, (_, index) => {
+    const day = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), index + 1)).toISOString().slice(0, 10);
+    const progress = Math.pow((index + 1) / dayOfMonth, 0.93);
+
+    return { day, cumulativeUsd: Number((total * progress).toFixed(2)) };
+  });
 }
 
 const acmeSite: ProjectStatus = {
@@ -75,6 +132,7 @@ const acmeSite: ProjectStatus = {
     { label: 'Email quota', provider: 'resend', status: 'warning', value: '82% of monthly quota', collectedAt: hoursAgo(3) },
   ],
   collectorErrors: [],
+  history: demoHistory(184),
 };
 
 const todoApp: ProjectStatus = {
@@ -135,6 +193,7 @@ const todoApp: ProjectStatus = {
     { label: 'HTTP latency', provider: 'http', status: 'healthy', value: '231 ms', collectedAt: hoursAgo(1) },
   ],
   collectorErrors: [],
+  history: demoHistory(231, { degradedDay: 12 }),
 };
 
 const recipeBox: ProjectStatus = {
@@ -191,6 +250,7 @@ const recipeBox: ProjectStatus = {
     { label: 'HTTP latency', provider: 'http', status: 'warning', value: '1,940 ms', collectedAt: hoursAgo(1) },
   ],
   collectorErrors: [{ provider: 'http', message: 'Response time exceeded the 1,500 ms warning threshold.', occurredAt: hoursAgo(1) }],
+  history: demoHistory(640, { degradedDay: 29 }),
 };
 
 const statusHub: ProjectStatus = {
@@ -255,6 +315,7 @@ const statusHub: ProjectStatus = {
     { label: 'HTTP latency', provider: 'http', status: 'healthy', value: '152 ms', collectedAt: hoursAgo(1) },
   ],
   collectorErrors: [],
+  history: demoHistory(152, { gapDay: 18 }),
 };
 
 export const demoDashboardData: DashboardData = {
@@ -514,4 +575,5 @@ export const demoDashboardData: DashboardData = {
     ],
   },
   lastMonthCostUsd: 33.06,
+  mtdCostSeries: demoMtdCostSeries(10.08),
 };
