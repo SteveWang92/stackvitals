@@ -14,6 +14,10 @@ below as its notes.
 - "Stack Status Hub" subtitle alongside the product name in the dashboard header and sign-in
   screen, the browser tab title, and the landing page, with a localized equivalent on the
   Chinese landing page.
+- Migration `007_history_indexes.sql` adds timestamp indexes to `health_checks`,
+  `metric_snapshots`, and `cost_snapshots`. The dashboard's fleet-wide reads sort by
+  timestamp without a project filter, which the existing `project_id`-leading indexes cannot
+  serve. Self-hosters should apply this migration; the dashboard works without it, just slower.
 
 ## [1.4.0] - 2026-07-19
 
