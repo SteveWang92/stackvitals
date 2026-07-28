@@ -11,27 +11,37 @@ Never point local `.env` at your production Supabase project. Local dev and any 
 `npm run collect:status` runs use a local Supabase stack instead, so testing never writes into
 prod or shows prod data mixed with test runs.
 
-1. Install Docker Desktop and make sure it's running.
-2. `npx supabase start` — boots a local Postgres/Auth/REST stack, applying every file in
-   `supabase/migrations/`, then `supabase/seed.sql` (providers registry + commented project
-   template), then the git-ignored `supabase/seed.local.sql` (your real project rows) when it
-   exists. Re-run `npx supabase db reset` any time you want a clean slate after adding a
-   migration.
-3. Point local `.env` at the printed `API_URL` (`http://127.0.0.1:54321`), `ANON_KEY`, and
-   `SERVICE_ROLE_KEY` instead of the prod values. Leave `VITE_DASHBOARD_ALLOWED_EMAIL` as your
-   own email.
-4. Create a local login user and allow-list row (the local stack starts with no users):
+Install Docker Desktop, put your email in `VITE_DASHBOARD_ALLOWED_EMAIL` in `.env`, then:
 
-   ```bash
-   curl -X POST "http://127.0.0.1:54321/auth/v1/admin/users" \
-     -H "apikey: <local service_role key>" -H "Authorization: Bearer <local service_role key>" \
-     -H "Content-Type: application/json" \
-     -d '{"email":"you@example.com","password":"<a local-only password>","email_confirm":true}'
-   ```
+```bash
+npm run db:up
+```
 
-   ```sql
-   insert into public.dashboard_users (email, note) values ('you@example.com', 'local dev') on conflict (email) do nothing;
-   ```
+That one command (`scripts/local-supabase.mjs`) starts Docker Desktop if it isn't running,
+boots the local Supabase stack, creates the login user and its allow-list row, and writes the
+local URL and keys to a git-ignored `.env.local`. Companion commands:
+
+- `npm run db:down` — stop the local stack (your data stays in its Docker volume).
+- `npm run db:reset` — wipe the local database, re-apply migrations and seeds, re-provision the
+  login user. Use it after adding a migration.
+- `npm run dev:local` — `db:up` followed by the Vite dev server.
+
+Details worth knowing:
+
+- **The Supabase CLI is not vendored in this repo.** The script uses `node_modules/.bin/supabase`
+  if you ran `npm i -D supabase`, otherwise a `supabase` already on your PATH (Homebrew, scoop,
+  winget), and only falls back to downloading it via `npx --yes supabase@latest`. Any of the
+  three works — you do not need a global install.
+- **Starting applies your schema and data**: every file in `supabase/migrations/`, then
+  `supabase/seed.sql` (providers registry + commented project template), then the git-ignored
+  `supabase/seed.local.sql` (your real project rows) when it exists.
+- **`.env.local` overrides `.env`** for both the frontend and the collectors, so
+  `npm run collect:status` writes into the local stack. Delete the file to point back at whatever
+  `.env` holds.
+- **The login password** is generated on first provision and stored as `LOCAL_DEV_PASSWORD` in
+  `.env.local`. Set `LOCAL_DEV_PASSWORD` (and optionally `LOCAL_DEV_EMAIL`) in `.env` yourself to
+  pin your own. Changing it only takes effect for a user that doesn't exist yet — run
+  `npm run db:reset` to recreate the user.
 
 Prod credentials only belong in your scheduler's secrets and your host's build-time env vars —
 never in a local file.
@@ -126,6 +136,7 @@ fresh clone with nothing but `PROJECTS_CONFIG_JSON` still runs the HTTP-health a
 - `npm test`
 - `npm run lint`
 - `npm run build`
+- `npm run db:up` / `db:down` / `db:reset` — local Supabase stack (see section 0)
 - `npm run collect:http` — quick public-URL probe only, prints JSON, writes nothing
 - `npm run collect:status` — runs every configured adapter and writes results to Supabase when
   hub write credentials are present

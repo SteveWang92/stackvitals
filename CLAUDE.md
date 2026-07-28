@@ -15,6 +15,10 @@ StackVitals — an open-source (AGPL-3.0), self-hosted, single-owner operations 
 
 ```bash
 npm run dev          # Vite dev server (frontend)
+npm run db:up        # scripts/local-supabase.mjs — Docker + local Supabase stack + local login user
+npm run db:down      # stop the local stack
+npm run db:reset     # wipe local DB, re-apply migrations/seeds, re-provision the login user
+npm run dev:local    # db:up then the dev server
 npm run build        # tsc -b then vite build
 npm test             # vitest run (all tests, no watch)
 npm run lint         # eslint .

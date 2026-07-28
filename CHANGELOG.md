@@ -17,6 +17,12 @@ below as its notes.
 
 ### Added
 
+- `npm run db:up` sets up local development in one command: starts Docker Desktop if it isn't
+  running, boots the local Supabase stack, creates the dashboard login user and its allow-list
+  row, and writes the local URL and keys to a git-ignored `.env.local`. `db:down`, `db:reset`,
+  and `dev:local` round it out. Replaces the manual `npx supabase start` + `curl` + SQL steps in
+  the self-hosting guide, and works with the Supabase CLI installed locally, globally, or not at
+  all.
 - "Stack Status Hub" subtitle alongside the product name in the dashboard header and sign-in
   screen, the browser tab title, and the landing page, with a localized equivalent on the
   Chinese landing page.
