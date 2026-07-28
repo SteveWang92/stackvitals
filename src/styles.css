@@ -221,6 +221,12 @@ a {
   padding: 10px 12px;
 }
 
+/* Inside a panel the banner is a direct child of an unpadded section, so it needs the panel's own
+   20px gutter; inside a card the card's padding already provides it. */
+.detail-panel > .state-banner {
+  margin: 0 20px 16px;
+}
+
 .state-banner-warning {
   border: 1px solid #f0d18a;
   background: #fff8e8;
@@ -464,10 +470,17 @@ a {
   stroke-dasharray: 1 1;
 }
 
+/* Stacked, not side by side: the sparkline and the uptime strip share an x axis, and reading one
+   against the other only works when they line up vertically, the way the project card shows them. */
 .history-panel {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Same reason as .panel-trend: full width would otherwise scale the height with the viewBox. */
+.history-panel .sparkline svg {
+  height: 72px;
 }
 
 .history-panel h4 {
@@ -488,10 +501,17 @@ a {
    stretches every sibling tile with it. */
 .attention-panel {
   border: 1px solid #e2e6ed;
-  border-radius: 12px;
+  border-radius: 8px;
   background: #fff;
-  padding: 18px 20px;
+  padding-bottom: 18px;
   margin-bottom: 18px;
+}
+
+/* Side padding lives on the children so the heading keeps the same 18px/20px box every other
+   panel heading uses; padding on the panel itself would double up on top of it. */
+.attention-panel .compact-list,
+.attention-panel .attention-footnote {
+  padding: 0 20px;
 }
 
 .attention-row {
@@ -515,13 +535,25 @@ a {
   font-weight: 600;
 }
 
-.cost-trend {
-  margin: 18px 0 4px;
+/* Panels have no padding of their own — their sections carry it — so the chart has to bring the
+   same 20px gutter or the line runs into the panel border. */
+.panel-trend {
+  padding: 0 20px 18px;
 }
 
-.cost-trend h3 {
+/* Fixed height: the SVG is full width, and letting it keep the viewBox aspect ratio would make a
+   full-width panel chart over 120px tall. */
+.panel-trend .sparkline svg {
+  height: 72px;
+}
+
+.panel-trend h3 {
   margin: 0 0 8px;
-  font-size: 0.82rem;
+  color: #657082;
+  font-size: 0.75rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .stale-badge {
