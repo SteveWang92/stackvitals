@@ -1,7 +1,7 @@
 import { SiGithub } from 'react-icons/si';
 import { formatCount, formatMinutes } from '../lib/format';
 import { formatRelativeSync } from '../lib/status';
-import { latestReading, peakReading } from '../lib/trend';
+import { trendSummary } from '../lib/trend';
 import type { GitHubActionsUsageSummary } from '../types';
 import { StatusPill } from './StatusPill';
 import { TrendChart } from './TrendChart';
@@ -42,7 +42,7 @@ export function GitHubActionsUsagePanel({ usage }: { usage: GitHubActionsUsageSu
         title="Runtime minutes by collection day"
         points={usage.runtimeSeries}
         label="Workflow runtime minutes reported on each collection day"
-        valueLabel={`${formatMinutes(latestReading(usage.runtimeSeries))} latest - ${formatMinutes(peakReading(usage.runtimeSeries))} peak`}
+        valueLabel={trendSummary(usage.runtimeSeries, formatMinutes)}
       />
 
       <table>

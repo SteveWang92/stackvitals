@@ -27,8 +27,12 @@ import { readFileSync } from 'node:fs';
 const DEMO_SEED_TAG = 'demo';
 const HISTORY_DAYS = 30;
 const COLLECTION_DAYS = 3;
-/** Kept under the read layer's 400-row cost_snapshots window: 11 keys x 20 days + 11 last month. */
-const COST_SERIES_DAYS = 20;
+/**
+ * Enough to reach the 1st of the month, so the daily-spend chart starts with real collections
+ * rather than the flat averaged lead-in the read layer draws before the first one. Kept under the
+ * read layer's 400-row cost_snapshots window: 11 keys x 28 days + 11 last month.
+ */
+const COST_SERIES_DAYS = 28;
 /**
  * The usage trend charts need more days than the rest of the fixture, so OpenAI and GitHub Actions
  * metrics carry on past COLLECTION_DAYS. Costed against the read layer's 1000-row metric window:

@@ -1,7 +1,7 @@
 import { Bot } from 'lucide-react';
 import { formatCount } from '../lib/format';
 import { formatCurrencyUsd } from '../lib/status';
-import { latestReading, peakReading } from '../lib/trend';
+import { trendSummary } from '../lib/trend';
 import type { OpenAiUsageSummary } from '../types';
 import { EmptyState } from './EmptyState';
 import { TrendChart } from './TrendChart';
@@ -48,7 +48,7 @@ export function OpenAiUsagePanel({ usage }: { usage: OpenAiUsageSummary }) {
         title="Total tokens by collection day"
         points={usage.tokenSeries}
         label="Total tokens reported on each collection day"
-        valueLabel={`${formatCount(latestReading(usage.tokenSeries) ?? 0)} latest - ${formatCount(peakReading(usage.tokenSeries) ?? 0)} peak`}
+        valueLabel={trendSummary(usage.tokenSeries, formatCount)}
       />
 
       {usage.rows.length === 0 ? (

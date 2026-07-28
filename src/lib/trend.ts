@@ -11,6 +11,22 @@ export function latestReading(points: TrendPoint[]): number | null {
   return null;
 }
 
+/**
+ * Caption for a usage trend. The peak is only worth naming when it is behind us — when today is
+ * the highest reading, printing the same number twice reads as a rendering fault, and saying so
+ * in words carries the meaning the repetition was meant to.
+ */
+export function trendSummary(points: TrendPoint[], format: (value: number) => string): string {
+  const latest = latestReading(points);
+  const peak = peakReading(points);
+
+  if (latest === null || peak === null) {
+    return 'No readings yet';
+  }
+
+  return peak > latest ? `${format(latest)} latest - ${format(peak)} peak` : `${format(latest)} latest, the highest yet`;
+}
+
 export function peakReading(points: TrendPoint[]): number | null {
   const values = points.map((point) => point.value).filter((value): value is number => value !== null);
 
