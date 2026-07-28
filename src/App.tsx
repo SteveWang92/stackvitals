@@ -55,6 +55,7 @@ function Dashboard() {
     lastMonthSpendUsd: null,
     lastSync: null,
     rows: [],
+    tokenSeries: [],
   });
   const [githubActionsUsage, setGitHubActionsUsage] = useState<GitHubActionsUsageSummary>({
     runtimeMinutes: 0,
@@ -62,6 +63,7 @@ function Dashboard() {
     recentFailures: 0,
     lastSync: null,
     rows: [],
+    runtimeSeries: [],
   });
   const [lastMonthCostUsd, setLastMonthCostUsd] = useState<number | null>(null);
   const [mtdCostSeries, setMtdCostSeries] = useState<CostPoint[]>([]);

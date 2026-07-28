@@ -14,9 +14,33 @@ below as its notes.
 - A provider known only from a resource-inventory row reported as "Healthy" even though no
   health check or metric had ever confirmed it. Existence is not health; such a provider now
   reports "Unknown" until a check or metric arrives.
+- Trend lines were drawn with an uneven stroke: the chart is stretched to the width of its
+  container, which stretched the line with it and left the steep segments visibly thicker than
+  the flat ones. Strokes and the end-of-line marker now keep the same width at any size.
+- The "Needs Attention" heading sat lower in its panel than every other panel heading, and the
+  warning banner and cost chart in App Detail ran edge to edge instead of keeping the panel's
+  margin.
+- App Detail showed the response-time chart and the uptime strip side by side, so the two could
+  not be read against each other. They are now stacked and aligned on a shared axis, as on the
+  project cards.
+
+### Changed
+
+- Timestamps use a 24-hour clock.
+- The Costs tab charts spend per day instead of a cumulative month-to-date line, which only ever
+  climbed. A day the collector skipped spreads its spend across the days it covers rather than
+  spiking on the day collection resumed, and days not yet collected stay empty rather than
+  reading as zero spend.
+- The dashboard reads a wider window of cost snapshots (400 rows rather than 100). With a dozen
+  cost lines on a daily collector the old window held about a week, which left most of the new
+  daily-spend chart flattened into a single averaged step.
 
 ### Added
 
+- Usage trend charts on the Usage tab: total OpenAI tokens and GitHub Actions runtime minutes
+  over time, matching the cost chart. Both providers report rolling-window totals rather than
+  per-day figures, so each point is what the collector reported that day — enough to see usage
+  climbing, and labelled so it is not mistaken for daily consumption.
 - `npm run db:up` sets up local development in one command: starts Docker Desktop if it isn't
   running, boots the local Supabase stack, creates the dashboard login user and its allow-list
   row, and writes the local URL and keys to a git-ignored `.env.local`. `db:down`, `db:reset`,

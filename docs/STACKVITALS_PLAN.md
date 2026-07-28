@@ -113,7 +113,14 @@ kept in its own array and never merged into the latest-per-key rows, so the stat
 unaffected by it. Day bucketing is UTC, and a day the collector never wrote becomes an explicit
 `no-data` state rather than an outage — a missed run is silence, not downtime. Month-to-date
 cost history is scoped to the current billing period, because `cost_snapshots.amount_usd` is
-cumulative for its period and resets on the 1st.
+cumulative for its period and resets on the 1st; the Costs tab charts the rise between
+collections as spend per day, spreading a skipped day's rise across the days it covers rather
+than spiking on the day collection resumed.
+
+The OpenAI and GitHub Actions usage charts are not the same kind of series. Those metrics are
+rolling-window totals, not period totals, so each point is the figure the collector reported
+that day rather than that day's own consumption — the charts show whether usage is climbing,
+and their headings say "by collection day" to keep that distinction visible.
 
 ## Provider Adapters
 

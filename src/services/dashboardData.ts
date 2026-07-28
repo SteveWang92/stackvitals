@@ -19,6 +19,7 @@ import type {
   ProviderStatus,
   SnapshotSummary,
   StatusLevel,
+  TrendPoint,
   UnallocatedCostSnapshot,
   UptimeDay,
 } from '../types';
@@ -296,6 +297,56 @@ export function buildMtdCostSeries(costs: CostSnapshotRow[], now = new Date()): 
     .sort((a, b) => a.day.localeCompare(b.day));
 }
 
+/**
+ * Sums a metric across its per-day snapshots, one point per day from the first reading to today.
+ *
+ * Unlike the cost series these metrics are rolling-window totals rather than period totals, so the
+ * point for a day is the value the collector reported that day, not the change since the day
+ * before — a difference the chart headings have to state. Where a day holds several snapshots for
+ * the same subject (a re-run), the newest wins before summing, and a day with no run stays null so
+ * the chart shows a gap instead of a drop to zero.
+ */
+function buildTrendSeries(
+  rows: MetricSnapshotRow[],
+  subjectKey: (row: MetricSnapshotRow) => string,
+  scale = 1,
+  now = new Date(),
+): TrendPoint[] {
+  const latestPerDay = new Map<string, Map<string, MetricSnapshotRow>>();
+
+  for (const row of rows) {
+    const day = utcDayKey(row.collected_at);
+    const daySubjects = latestPerDay.get(day) ?? new Map<string, MetricSnapshotRow>();
+    const existing = daySubjects.get(subjectKey(row));
+
+    if (!existing || new Date(row.collected_at).getTime() > new Date(existing.collected_at).getTime()) {
+      daySubjects.set(subjectKey(row), row);
+    }
+
+    latestPerDay.set(day, daySubjects);
+  }
+
+  if (latestPerDay.size === 0) {
+    return [];
+  }
+
+  const firstDay = Array.from(latestPerDay.keys()).sort()[0];
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const spanDays = Math.round((today - Date.parse(`${firstDay}T00:00:00Z`)) / 86_400_000) + 1;
+  // Same window as the uptime history, so a collector that stopped months ago cannot stretch the
+  // chart into a strip of empty days.
+  const windowDays = Math.min(HISTORY_WINDOW_DAYS, Math.max(1, spanDays));
+
+  return utcDayRange(windowDays, now).map((day) => {
+    const daySubjects = latestPerDay.get(day);
+
+    return {
+      day,
+      value: daySubjects ? Array.from(daySubjects.values()).reduce((total, row) => total + (row.metric_value ?? 0), 0) * scale : null,
+    };
+  });
+}
+
 function validateRequiredText(value: unknown, fieldName: string): string {
   if (typeof value !== 'string' || !value.trim()) {
     throw new Error(`Dashboard data is invalid: ${fieldName} is missing.`);
@@ -508,6 +559,19 @@ function openAiUsageSummary(metrics: MetricSnapshotRow[], costs: CostSnapshotRow
   }
 
   const rows = Array.from(usageByKey.values()).sort((a, b) => b.inputTokens + b.outputTokens - (a.inputTokens + a.outputTokens));
+  const tokenSeries = buildTrendSeries(
+    metrics.filter(
+      (row) =>
+        providerKey(row) === 'openai' &&
+        row.project_id === null &&
+        (row.metric_key === 'openai_input_tokens' || row.metric_key === 'openai_output_tokens') &&
+        metadataPeriod(row.metadata) !== 'last_month',
+    ),
+    (row) =>
+      [row.metric_key, metadataText(row.metadata, ['apiKeyLabel', 'apiKeyId']) ?? '', metadataText(row.metadata, ['model']) ?? ''].join(
+        ':',
+      ),
+  );
   const latestSpendMetric = latestBy(
     metrics.filter((metric) => providerKey(metric) === 'openai' && metric.metric_key === 'openai_spend_usd'),
     (metric) => metric.collected_at,
@@ -543,6 +607,7 @@ function openAiUsageSummary(metrics: MetricSnapshotRow[], costs: CostSnapshotRow
     lastMonthTokens: lastMonthUsageMetric?.metric_value ?? null,
     lastMonthSpendUsd: lastMonthSpendFromCosts ?? lastMonthSpendMetric?.metric_value ?? null,
     lastSync: lastSync ?? null,
+    tokenSeries,
     rows: rows.map((row) => ({
       apiKeyLabel: row.apiKeyLabel,
       model: row.model,
@@ -638,6 +703,11 @@ function githubActionsUsageSummary(metrics: MetricSnapshotRow[], projects: Proje
     recentFailures: rows.reduce((total, row) => total + (row.recentFailures ?? 0), 0),
     lastSync: lastSync ?? null,
     rows,
+    runtimeSeries: buildTrendSeries(
+      metrics.filter((row) => providerKey(row) === 'github' && row.metric_key === 'github_actions_recent_duration_seconds'),
+      (row) => `${row.project_id}:${metadataText(row.metadata, ['repository']) ?? ''}`,
+      1 / 60,
+    ),
   };
 }
 
@@ -963,9 +1033,7 @@ function projectFromRows(project: ProjectRow, rows: DashboardRows): ProjectStatu
   const costs = rows.costs.filter((cost) => cost.project_id === project.id);
   const latestHttp = latestBy(healthChecks, (check) => check.checked_at);
   const latestDeploy = latestBy(
-    metrics.filter(
-      (metric) => providerKey(metric) === 'amplify' || metric.metric_key.endsWith('_deploy_status'),
-    ),
+    metrics.filter((metric) => providerKey(metric) === 'amplify' || metric.metric_key.endsWith('_deploy_status')),
     (metric) => metric.collected_at,
   );
   const lastSync = latestBy(
@@ -1058,7 +1126,10 @@ export async function fetchDashboardData(client: SupabaseClient): Promise<Dashbo
         .from('cost_snapshots')
         .select('project_id, service_name, period_start, period_end, amount_usd, metadata, collected_at, providers(key, name)')
         .order('collected_at', { ascending: false })
-        .limit(100),
+        // Wide enough for a month of daily collection, which the daily-spend chart needs: at 100
+        // rows a fleet with a dozen cost lines only kept about a week and the rest of the month
+        // flattened into a single averaged step.
+        .limit(400),
     ),
     selectRows<HealthCheckRow>(
       client

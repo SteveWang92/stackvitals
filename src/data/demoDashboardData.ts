@@ -1,6 +1,6 @@
 import { HISTORY_WINDOW_DAYS, utcDayRange } from '../services/dashboardData';
 import type { DashboardData } from '../services/dashboardData';
-import type { CostPoint, ProjectHistory, ProjectStatus } from '../types';
+import type { CostPoint, ProjectHistory, ProjectStatus, TrendPoint } from '../types';
 
 function hoursAgo(hours: number): string {
   return new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
@@ -53,17 +53,41 @@ function demoHistory(baseMs: number, options: { degradedDay?: number; gapDay?: n
   };
 }
 
-/** Cumulative month-to-date spend, one point per collection day, ending at the MTD total. */
+/**
+ * Cumulative month-to-date spend, one point per collection day, ending exactly at the MTD total.
+ * Built by accumulating uneven daily amounts rather than a smooth curve: the Costs tab charts the
+ * day-over-day rise, and a smooth curve would flatten into a straight line there.
+ */
 function demoMtdCostSeries(total: number): CostPoint[] {
   const now = new Date();
   const dayOfMonth = now.getUTCDate();
+  const weights = Array.from({ length: dayOfMonth }, (_, index) => 0.55 + jitter(index, total) * 0.95);
+  const weightTotal = weights.reduce((sum, weight) => sum + weight, 0);
+  let running = 0;
 
-  return Array.from({ length: dayOfMonth }, (_, index) => {
-    const day = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), index + 1)).toISOString().slice(0, 10);
-    const progress = Math.pow((index + 1) / dayOfMonth, 0.93);
+  return weights.map((weight, index) => {
+    running += (total * weight) / weightTotal;
 
-    return { day, cumulativeUsd: Number((total * progress).toFixed(2)) };
+    return {
+      day: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), index + 1)).toISOString().slice(0, 10),
+      cumulativeUsd: Number(running.toFixed(2)),
+    };
   });
+}
+
+/**
+ * A usage trend that climbs to `latest` on the newest day, so the chart and the summary tile above
+ * it agree. `gapDay` is an index into the window (0 = oldest) and models a day the collector never
+ * ran, which the chart must render as a break rather than a drop to zero.
+ */
+function demoTrendSeries(days: number, latest: number, seed: number, gapDay?: number): TrendPoint[] {
+  const shape = Array.from({ length: days }, (_, index) => 0.58 + (index / days) * 0.42 + jitter(index, seed) * 0.14);
+  const scale = latest / shape[days - 1];
+
+  return utcDayRange(days).map((day, index) => ({
+    day,
+    value: index === gapDay ? null : Number((shape[index] * scale).toFixed(2)),
+  }));
 }
 
 const acmeSite: ProjectStatus = {
@@ -498,6 +522,7 @@ export const demoDashboardData: DashboardData = {
     lastMonthTokens: 3_921_050,
     lastMonthSpendUsd: 14.32,
     lastSync: hoursAgo(3),
+    tokenSeries: demoTrendSeries(14, 1_284_720, 41, 6),
     rows: [
       {
         apiKeyLabel: 'acme-site-prod',
@@ -531,6 +556,7 @@ export const demoDashboardData: DashboardData = {
     recentRuns: 58,
     recentFailures: 2,
     lastSync: hoursAgo(3),
+    runtimeSeries: demoTrendSeries(14, 96.4, 17),
     rows: [
       {
         projectSlug: 'acme_site',

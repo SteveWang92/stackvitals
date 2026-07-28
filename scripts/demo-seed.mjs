@@ -12,7 +12,9 @@
  *   - collectors: success, partial_success, failed, skipped, and a run that never finished
  *   - collector errors: project-scoped, unscoped, and one suppressed by a newer successful run
  *   - usage: multi-key/multi-model OpenAI roll-ups incl. last month; GitHub Actions with failures
- *   - costs: per-project, unallocated, last-month total, and a cumulative month-to-date series
+ *   - trends: enough collection days for the usage charts, including a day the collector missed
+ *   - costs: per-project, unallocated, last-month total, and a month-to-date series with uneven
+ *     daily amounts (a smooth curve would draw the daily-spend chart as a straight line)
  *   - domains: healthy, expiring-soon, and a pending zone with no expiration data
  *
  * Everything written here is tagged so re-seeding replaces it: `metadata.seed = 'demo'` on snapshot
@@ -25,8 +27,16 @@ import { readFileSync } from 'node:fs';
 const DEMO_SEED_TAG = 'demo';
 const HISTORY_DAYS = 30;
 const COLLECTION_DAYS = 3;
-/** Kept under the read layer's 100-row cost_snapshots window: 11 keys x 6 days + 11 last month. */
-const COST_SERIES_DAYS = 6;
+/** Kept under the read layer's 400-row cost_snapshots window: 11 keys x 20 days + 11 last month. */
+const COST_SERIES_DAYS = 20;
+/**
+ * The usage trend charts need more days than the rest of the fixture, so OpenAI and GitHub Actions
+ * metrics carry on past COLLECTION_DAYS. Costed against the read layer's 1000-row metric window:
+ * roughly 44 rows a day here, which leaves room for the per-project metrics.
+ */
+const USAGE_TREND_DAYS = 12;
+/** One day in the usage window with no collector run, so the charts have a gap to render. */
+const USAGE_GAP_DAY = 5;
 
 /** Deterministic pseudo-jitter — the same day always seeds the same numbers. */
 function jitter(index, seed) {
@@ -412,7 +422,16 @@ function githubMetricRows(project, projectId, at, dayOffset) {
   const rows = [
     metric(projectId, 'github', 'github_actions_recent_run_count', profile.runs - dayOffset, 'healthy', shared, at),
     metric(projectId, 'github', 'github_actions_recent_failure_count', profile.failures, failed ? 'failed' : 'healthy', shared, at),
-    metric(projectId, 'github', 'github_actions_recent_duration_seconds', profile.seconds, 'healthy', shared, at),
+    metric(
+      projectId,
+      'github',
+      'github_actions_recent_duration_seconds',
+      // Varies by day: a constant would draw the runtime trend as a flat line.
+      Math.round(profile.seconds * (1 - dayOffset * 0.02) * (0.82 + jitter(dayOffset, profile.runs) * 0.3)),
+      'healthy',
+      shared,
+      at,
+    ),
     metric(projectId, 'github', 'github_actions_latest_run_status', 1, failed ? 'failed' : 'healthy', latestRun, at),
     metric(projectId, 'github', 'github_actions_scheduled_run_count', profile.scheduled, 'healthy', shared, at),
     metric(projectId, 'github', 'github_actions_scheduled_failure_count', profile.scheduledFailures, 'healthy', shared, at),
@@ -439,7 +458,8 @@ function githubMetricRows(project, projectId, at, dayOffset) {
 /** Account-level OpenAI usage: project_id null, one set of rows per collection day. */
 function openAiMetricRows(now, dayOffset) {
   const at = collectedAt(now, dayOffset);
-  const decay = 1 - dayOffset * 0.04;
+  // Falls off towards the past with a wobble on top, so the token trend has a shape to read.
+  const decay = (1 - dayOffset * 0.035) * (0.93 + jitter(dayOffset, 3) * 0.14);
   const rows = [];
 
   for (const usage of OPENAI_USAGE) {
@@ -642,12 +662,18 @@ function costRows(now, projectIds) {
   const dayOfMonth = now.getUTCDate();
   const days = Math.min(COST_SERIES_DAYS, dayOfMonth);
   const rows = [];
+  // Uneven daily amounts rather than a smooth curve: the Costs tab charts the rise between
+  // collections, and a smooth curve would flatten into a straight line there.
+  const weights = Array.from({ length: days }, (_, index) => 0.55 + jitter(index, 11) * 0.95);
+  const weightTotal = weights.reduce((total, weight) => total + weight, 0);
+  let progress = 0;
 
   for (let step = 0; step < days; step += 1) {
     const dayOffset = days - 1 - step;
-    const progress = Math.pow((step + 1) / days, 0.93);
     const periodEnd = dayKey(now, dayOffset);
     const at = collectedAt(now, dayOffset);
+
+    progress += weights[step] / weightTotal;
 
     for (const cost of COSTS) {
       rows.push({
@@ -884,12 +910,27 @@ export async function seedDemoData({ apiUrl, serviceKey }, now = new Date()) {
   ];
   const metrics = [];
 
-  for (let dayOffset = COLLECTION_DAYS - 1; dayOffset >= 0; dayOffset -= 1) {
-    metrics.push(
-      ...PROJECTS.flatMap((project) => projectMetricRows(project, projectIds.get(project.slug), now, dayOffset)),
-      ...openAiMetricRows(now, dayOffset),
-      ...cloudflareMetricRows(now, dayOffset),
-    );
+  // Usage metrics run further back than the rest so the Usage tab charts have a trend to draw;
+  // everything else only needs enough days to exercise dedup-to-latest.
+  for (let dayOffset = USAGE_TREND_DAYS - 1; dayOffset >= 0; dayOffset -= 1) {
+    if (dayOffset === USAGE_GAP_DAY) {
+      continue;
+    }
+
+    if (dayOffset < COLLECTION_DAYS) {
+      metrics.push(
+        ...PROJECTS.flatMap((project) => projectMetricRows(project, projectIds.get(project.slug), now, dayOffset)),
+        ...cloudflareMetricRows(now, dayOffset),
+      );
+    } else {
+      metrics.push(
+        ...PROJECTS.flatMap((project) =>
+          project.repository ? githubMetricRows(project, projectIds.get(project.slug), collectedAt(now, dayOffset), dayOffset) : [],
+        ),
+      );
+    }
+
+    metrics.push(...openAiMetricRows(now, dayOffset));
   }
 
   // Acme Site's database went quiet four days ago: last known healthy, but stale.

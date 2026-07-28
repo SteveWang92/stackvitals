@@ -374,7 +374,12 @@ describe('fetchDashboardData', () => {
 
     const data = await fetchDashboardData(client as never);
 
-    expect(data.githubActionsUsage).toEqual({
+    // The runtime trend spans from the first collection day to today, so it is asserted on its
+    // readings rather than its length, which grows with the wall clock.
+    const { runtimeSeries, ...githubActionsUsage } = data.githubActionsUsage;
+
+    expect(runtimeSeries.filter((point) => point.value !== null)).toEqual([{ day: '2026-06-30', value: 9 }]);
+    expect(githubActionsUsage).toEqual({
       recentRuns: 12,
       recentFailures: 2,
       lastSync: '2026-06-30T10:00:00.000Z',
@@ -601,6 +606,50 @@ describe('fetchDashboardData', () => {
     ]);
   });
 
+  it('sums OpenAI tokens per collection day and leaves a day with no run empty', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-29T12:00:00.000Z'));
+
+    const tokens = (metricKey: string, value: number, model: string, collectedAt: string) => ({
+      project_id: null,
+      metric_key: metricKey,
+      metric_value: value,
+      status: 'healthy' as StatusLevel,
+      metadata: { apiKeyLabel: 'prod', model },
+      collected_at: collectedAt,
+      providers: { key: 'openai', name: 'OpenAI' },
+    });
+
+    const data = await fetchDashboardData(
+      createClient({
+        projects: [],
+        resources: [],
+        metric_snapshots: [
+          tokens('openai_input_tokens', 100, 'gpt-4o', '2026-06-27T10:00:00.000Z'),
+          tokens('openai_output_tokens', 20, 'gpt-4o', '2026-06-27T10:00:00.000Z'),
+          // Two models on the same day are summed; the later snapshot of a model replaces the earlier.
+          tokens('openai_input_tokens', 300, 'gpt-4o', '2026-06-29T10:00:00.000Z'),
+          tokens('openai_input_tokens', 350, 'gpt-4o', '2026-06-29T11:00:00.000Z'),
+          tokens('openai_input_tokens', 40, 'gpt-4o-mini', '2026-06-29T11:00:00.000Z'),
+          // Last month's totals are a separate metric and must stay out of the trend.
+          {
+            ...tokens('openai_input_tokens', 999_999, 'gpt-4o', '2026-06-29T11:00:00.000Z'),
+            metadata: { apiKeyLabel: 'prod', model: 'gpt-4o', period: 'last_month' },
+          },
+        ],
+        cost_snapshots: [],
+        health_checks: [],
+        collector_runs: [],
+      }) as never,
+    );
+
+    expect(data.openAiUsage.tokenSeries).toEqual([
+      { day: '2026-06-27', value: 120 },
+      { day: '2026-06-28', value: null },
+      { day: '2026-06-29', value: 390 },
+    ]);
+  });
+
   it('bounds the health check history query to the start of the 30 day window', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-06-29T12:00:00.000Z'));
@@ -716,7 +765,12 @@ describe('buildProjectHistory', () => {
   });
 
   it('reports a day as down only when every check failed', () => {
-    const history = buildProjectHistory('acme-site', [check('acme-site', '2026-06-29T02:00:00.000Z', 'failed', null)], HISTORY_WINDOW_DAYS, now);
+    const history = buildProjectHistory(
+      'acme-site',
+      [check('acme-site', '2026-06-29T02:00:00.000Z', 'failed', null)],
+      HISTORY_WINDOW_DAYS,
+      now,
+    );
 
     expect(history.uptime[29].state).toBe('down');
   });
@@ -737,7 +791,12 @@ describe('buildProjectHistory', () => {
   });
 
   it('ignores checks belonging to other projects', () => {
-    const history = buildProjectHistory('acme-site', [check('todo-app', '2026-06-29T10:00:00.000Z', 'failed', 900)], HISTORY_WINDOW_DAYS, now);
+    const history = buildProjectHistory(
+      'acme-site',
+      [check('todo-app', '2026-06-29T10:00:00.000Z', 'failed', 900)],
+      HISTORY_WINDOW_DAYS,
+      now,
+    );
 
     expect(history.uptime[29].state).toBe('no-data');
   });

@@ -1,8 +1,10 @@
 import { Bot } from 'lucide-react';
 import { formatCount } from '../lib/format';
 import { formatCurrencyUsd } from '../lib/status';
+import { latestReading, peakReading } from '../lib/trend';
 import type { OpenAiUsageSummary } from '../types';
 import { EmptyState } from './EmptyState';
+import { TrendChart } from './TrendChart';
 
 export function OpenAiUsagePanel({ usage }: { usage: OpenAiUsageSummary }) {
   return (
@@ -38,6 +40,16 @@ export function OpenAiUsagePanel({ usage }: { usage: OpenAiUsageSummary }) {
           <strong>{formatCurrencyUsd(usage.lastMonthSpendUsd)}</strong>
         </div>
       </div>
+
+      {/* Each point is the total the collector reported that day for its lookback window, not that
+          day's own usage, so the line tracks whether consumption is climbing rather than daily
+          spend. The cost chart is a true per-day figure; these two are not. */}
+      <TrendChart
+        title="Total tokens by collection day"
+        points={usage.tokenSeries}
+        label="Total tokens reported on each collection day"
+        valueLabel={`${formatCount(latestReading(usage.tokenSeries) ?? 0)} latest - ${formatCount(peakReading(usage.tokenSeries) ?? 0)} peak`}
+      />
 
       {usage.rows.length === 0 ? (
         <div className="panel-empty">

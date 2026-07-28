@@ -1,8 +1,10 @@
 import { SiGithub } from 'react-icons/si';
 import { formatCount, formatMinutes } from '../lib/format';
 import { formatRelativeSync } from '../lib/status';
+import { latestReading, peakReading } from '../lib/trend';
 import type { GitHubActionsUsageSummary } from '../types';
 import { StatusPill } from './StatusPill';
+import { TrendChart } from './TrendChart';
 
 export function GitHubActionsUsagePanel({ usage }: { usage: GitHubActionsUsageSummary }) {
   if (usage.rows.length === 0) {
@@ -34,6 +36,14 @@ export function GitHubActionsUsagePanel({ usage }: { usage: GitHubActionsUsageSu
           <strong>{formatRelativeSync(usage.lastSync)}</strong>
         </div>
       </div>
+
+      {/* Same caveat as the OpenAI trend: each point is that day's reported window total. */}
+      <TrendChart
+        title="Runtime minutes by collection day"
+        points={usage.runtimeSeries}
+        label="Workflow runtime minutes reported on each collection day"
+        valueLabel={`${formatMinutes(latestReading(usage.runtimeSeries))} latest - ${formatMinutes(peakReading(usage.runtimeSeries))} peak`}
+      />
 
       <table>
         <thead>

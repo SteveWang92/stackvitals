@@ -1,9 +1,11 @@
 import { DollarSign } from 'lucide-react';
+import { toDailyCostSeries } from '../lib/chart';
 import type { CostRow } from '../lib/costRows';
 import { formatCurrencyUsd } from '../lib/status';
+import { averageReading, latestReading } from '../lib/trend';
 import type { CostPoint } from '../types';
 import { EmptyState } from './EmptyState';
-import { Sparkline } from './Sparkline';
+import { TrendChart } from './TrendChart';
 
 function CostSummary({
   costRows,
@@ -49,6 +51,8 @@ export function CostPanel({
   lastMonthCostUsd: number | null;
   mtdCostSeries: CostPoint[];
 }) {
+  const dailyCost = toDailyCostSeries(mtdCostSeries);
+
   return (
     <section className="cost-panel" aria-label="Cost breakdown">
       <div className="section-heading">
@@ -62,19 +66,12 @@ export function CostPanel({
       ) : (
         <>
           <CostSummary costRows={costRows} monthToDateCost={monthToDateCost} lastMonthCostUsd={lastMonthCostUsd} />
-          {mtdCostSeries.length > 1 && (
-            <div className="cost-trend">
-              {/* Cumulative, not daily: the underlying snapshots are period totals that reset on the 1st. */}
-              <h3>Cumulative month to date</h3>
-              <Sparkline
-                points={mtdCostSeries.map((point) => point.cumulativeUsd)}
-                label="Cumulative month-to-date spend"
-                valueLabel={`${formatCurrencyUsd(mtdCostSeries[mtdCostSeries.length - 1].cumulativeUsd)} across ${mtdCostSeries.length} collection days`}
-                width={320}
-                height={56}
-              />
-            </div>
-          )}
+          <TrendChart
+            title="Daily spend this month"
+            points={dailyCost}
+            label="Spend per day, this billing period"
+            valueLabel={`${formatCurrencyUsd(latestReading(dailyCost))} on the latest collected day - ${formatCurrencyUsd(averageReading(dailyCost))} daily average`}
+          />
           <table>
             <thead>
               <tr>

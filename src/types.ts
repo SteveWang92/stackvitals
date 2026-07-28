@@ -78,6 +78,8 @@ export interface OpenAiUsageSummary {
   lastMonthSpendUsd: number | null;
   lastSync: string | null;
   rows: OpenAiUsageRow[];
+  /** Total tokens as reported on each collection day. See `TrendPoint`. */
+  tokenSeries: TrendPoint[];
 }
 
 export interface GitHubActionsUsageRow {
@@ -101,6 +103,18 @@ export interface GitHubActionsUsageSummary {
   recentFailures: number;
   lastSync: string | null;
   rows: GitHubActionsUsageRow[];
+  /** Runtime minutes as reported on each collection day. See `TrendPoint`. */
+  runtimeSeries: TrendPoint[];
+}
+
+/**
+ * One day of a trend chart. `value` is null for a day the collector recorded nothing, which the
+ * charts render as a gap rather than a zero.
+ */
+export interface TrendPoint {
+  /** UTC day, YYYY-MM-DD. */
+  day: string;
+  value: number | null;
 }
 
 export interface LatencyPoint {

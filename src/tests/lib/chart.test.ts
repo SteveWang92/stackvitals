@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildSparkline } from '../../lib/chart';
+import { buildSparkline, toDailyCostSeries } from '../../lib/chart';
 
 describe('buildSparkline', () => {
   it('returns null when there are fewer than two readings', () => {
@@ -42,5 +42,62 @@ describe('buildSparkline', () => {
 
     expect(geometry?.lastX).toBe(50);
     expect(geometry?.lastY).toBe(0);
+  });
+});
+
+describe('toDailyCostSeries', () => {
+  const now = new Date('2026-07-05T09:00:00.000Z');
+
+  it('reports the rise since the previous collection as that day spend', () => {
+    const series = toDailyCostSeries(
+      [
+        { day: '2026-07-01', cumulativeUsd: 2 },
+        { day: '2026-07-02', cumulativeUsd: 5 },
+        { day: '2026-07-03', cumulativeUsd: 6 },
+      ],
+      now,
+    );
+
+    expect(series.slice(0, 3)).toEqual([
+      { day: '2026-07-01', value: 2 },
+      { day: '2026-07-02', value: 3 },
+      { day: '2026-07-03', value: 1 },
+    ]);
+  });
+
+  it('spreads a gap across the days it covers instead of spiking on the day collection resumed', () => {
+    const series = toDailyCostSeries(
+      [
+        { day: '2026-07-01', cumulativeUsd: 2 },
+        { day: '2026-07-04', cumulativeUsd: 8 },
+      ],
+      now,
+    );
+
+    expect(series.map((point) => point.value)).toEqual([2, 2, 2, 2, null]);
+  });
+
+  it('spreads the first collection of the month back to the 1st', () => {
+    const series = toDailyCostSeries([{ day: '2026-07-03', cumulativeUsd: 9 }], now);
+
+    expect(series.map((point) => point.value)).toEqual([3, 3, 3, null, null]);
+  });
+
+  it('leaves days after the last collection null rather than reporting no spend', () => {
+    const series = toDailyCostSeries([{ day: '2026-07-02', cumulativeUsd: 4 }], now);
+
+    expect(series.slice(2).every((point) => point.value === null)).toBe(true);
+  });
+
+  it('clamps a downward revision to zero instead of charting negative spend', () => {
+    const series = toDailyCostSeries(
+      [
+        { day: '2026-07-01', cumulativeUsd: 7 },
+        { day: '2026-07-02', cumulativeUsd: 5 },
+      ],
+      now,
+    );
+
+    expect(series[1].value).toBe(0);
   });
 });
