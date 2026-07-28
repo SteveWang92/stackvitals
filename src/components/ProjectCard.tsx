@@ -1,5 +1,5 @@
 import { Clock3, ExternalLink } from 'lucide-react';
-import { formatLatencySummary } from '../lib/format';
+import { formatLatencyScale, formatLatencySummary } from '../lib/format';
 import { STALE_AFTER_HOURS, formatRelativeSync, isStaleSync } from '../lib/status';
 import type { ProjectStatus } from '../types';
 import { Sparkline } from './Sparkline';
@@ -70,6 +70,7 @@ export function ProjectCard({ project, selected, onSelect }: { project: ProjectS
             points={project.history.latency.map((point) => point.p50Ms)}
             label={`Median response time, last ${project.history.windowDays} days`}
             valueLabel={formatLatencySummary(project.history.latency)}
+            formatValue={formatLatencyScale}
           />
           <UptimeStrip days={project.history.uptime} label={`Uptime, last ${project.history.windowDays} days`} />
         </div>

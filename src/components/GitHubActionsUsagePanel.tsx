@@ -42,6 +42,7 @@ export function GitHubActionsUsagePanel({ usage }: { usage: GitHubActionsUsageSu
         title="Runtime minutes by collection day"
         points={usage.runtimeSeries}
         label="Workflow runtime minutes reported on each collection day"
+        formatValue={formatMinutes}
         valueLabel={trendSummary(usage.runtimeSeries, formatMinutes)}
       />
 

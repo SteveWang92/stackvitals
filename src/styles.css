@@ -422,6 +422,37 @@ a {
   overflow: visible;
 }
 
+.sparkline-plot {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+/* The SVG has to flex rather than keep width:100%, or the scale column pushes it past the edge. */
+.sparkline-plot svg {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
+}
+
+/* Highest reading at the top of the plot, lowest at the bottom — the line is drawn between them. */
+.sparkline-scale {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #8a94a6;
+  font-size: 0.66rem;
+  font-weight: 650;
+  line-height: 1;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.sparkline-scale:only-child,
+.sparkline-scale:has(span:only-child) {
+  justify-content: center;
+}
+
 .sparkline-value,
 .uptime-strip-summary {
   color: #657082;

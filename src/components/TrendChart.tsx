@@ -10,11 +10,13 @@ export function TrendChart({
   points,
   label,
   valueLabel,
+  formatValue,
 }: {
   title: string;
   points: TrendPoint[];
   label: string;
   valueLabel: string;
+  formatValue: (value: number) => string;
 }) {
   if (points.filter((point) => point.value !== null).length < 2) {
     return null;
@@ -23,7 +25,14 @@ export function TrendChart({
   return (
     <div className="panel-trend">
       <h3>{title}</h3>
-      <Sparkline points={points.map((point) => point.value)} label={label} valueLabel={valueLabel} width={320} height={56} />
+      <Sparkline
+        points={points.map((point) => point.value)}
+        label={label}
+        valueLabel={valueLabel}
+        formatValue={formatValue}
+        width={320}
+        height={56}
+      />
     </div>
   );
 }

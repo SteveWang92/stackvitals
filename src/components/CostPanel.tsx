@@ -70,6 +70,7 @@ export function CostPanel({
             title="Daily spend this month"
             points={dailyCost}
             label="Spend per day, this billing period"
+            formatValue={formatCurrencyUsd}
             valueLabel={`${formatCurrencyUsd(latestReading(dailyCost))} on the latest collected day - ${formatCurrencyUsd(averageReading(dailyCost))} daily average`}
           />
           <table>

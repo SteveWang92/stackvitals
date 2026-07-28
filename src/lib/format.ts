@@ -16,6 +16,11 @@ export function formatLatencySummary(points: LatencyPoint[]): string {
   return `${formatCount(latest)} ms now · ${formatCount(median)} ms median`;
 }
 
+/** Axis label for the latency sparkline. Rounded: sub-millisecond precision is noise here. */
+export function formatLatencyScale(value: number): string {
+  return `${formatCount(Math.round(value))} ms`;
+}
+
 export function displayCostLabel(label: string | undefined): string {
   const normalized = label?.trim();
 

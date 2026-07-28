@@ -27,6 +27,15 @@ below as its notes.
 ### Changed
 
 - Timestamps use a 24-hour clock.
+- Trend charts label the highest and lowest reading in the window down their left edge. Each chart
+  is scaled to its own range, so the shape alone never said whether a peak meant 200 ms or two
+  seconds.
+- Costs are account-level throughout, and the per-project cost path is gone. Nothing ever wrote it:
+  Cost Explorer groups by service, every other adapter reports no cost at all, and a shared hosting
+  bill cannot be split between apps without inventing an allocation. `CollectorCost` no longer has
+  a project field, and the Costs tab lists every cost row rather than filtering by project. The
+  `cost_snapshots.project_id` column stays for a future allocation scheme, and any row that already
+  carries one is still shown.
 - The Costs tab charts spend per day instead of a cumulative month-to-date line, which only ever
   climbed. A day the collector skipped spreads its spend across the days it covers rather than
   spiking on the day collection resumed, and days not yet collected stay empty rather than

@@ -48,6 +48,7 @@ export function OpenAiUsagePanel({ usage }: { usage: OpenAiUsageSummary }) {
         title="Total tokens by collection day"
         points={usage.tokenSeries}
         label="Total tokens reported on each collection day"
+        formatValue={formatCount}
         valueLabel={trendSummary(usage.tokenSeries, formatCount)}
       />
 
