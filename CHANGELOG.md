@@ -23,6 +23,15 @@ below as its notes.
   and `dev:local` round it out. Replaces the manual `npx supabase start` + `curl` + SQL steps in
   the self-hosting guide, and works with the Supabase CLI installed locally, globally, or not at
   all.
+- `npm run db:up:demo` (also `db:reset:demo` and `db:demo`) seeds the local database with a
+  fictional dashboard so local development starts from a full screen instead of an empty one.
+  Unlike `VITE_DEMO_MODE`, which hands the read layer a finished object for screenshots, this
+  writes raw snapshot rows and lets aggregation, dedup-to-latest and error scoping run for real.
+  The fixture deliberately covers every renderable state: healthy/warning/failed/never-synced
+  projects, stale and never-seen providers, up/degraded/down/no-data history, the full range of
+  collector run outcomes, scoped vs account-level errors, OpenAI and GitHub Actions usage, costs
+  with a month-to-date series, and healthy/expiring/pending domains. Re-seeding replaces only its
+  own rows.
 - "Stack Status Hub" subtitle alongside the product name in the dashboard header and sign-in
   screen, the browser tab title, and the landing page, with a localized equivalent on the
   Chinese landing page.

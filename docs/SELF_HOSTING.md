@@ -26,6 +26,27 @@ local URL and keys to a git-ignored `.env.local`. Companion commands:
   login user. Use it after adding a migration.
 - `npm run dev:local` — `db:up` followed by the Vite dev server.
 
+To develop against a full dashboard instead of an empty one, add fictional demo rows:
+
+```bash
+npm run db:up:demo
+```
+
+`db:reset:demo` does the same after a wipe, and `db:demo` re-seeds a stack that is already up.
+This writes raw snapshot rows (`scripts/demo-seed.mjs`), so the app renders them through the real
+read path — aggregation, dedup-to-latest and error scoping all run for real, which
+`VITE_DEMO_MODE` (`npm run dev:demo`, used for screenshots) skips by design. The fixture covers
+every state the UI can render: healthy/warning/failed/never-synced projects, stale and never-seen
+providers, up/degraded/down/no-data history days, success/partial/failed/skipped/unfinished
+collector runs, project-scoped and account-level errors, multi-key OpenAI and GitHub Actions
+usage, per-project and unallocated costs with a month-to-date series, and healthy, expiring and
+pending domains.
+
+Seeding is repeatable: it replaces its own rows (tagged `metadata.seed = 'demo'`, or a `demo-`
+external id) and leaves anything else alone. Projects from your own `supabase/seed.local.sql` are
+set `is_active = false` while the demo fixture is in place, so they don't sit on the dashboard as
+empty cards; `npm run db:reset` brings them back.
+
 Details worth knowing:
 
 - **The Supabase CLI is not vendored in this repo.** The script uses `node_modules/.bin/supabase`

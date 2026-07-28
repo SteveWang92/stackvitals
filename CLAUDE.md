@@ -18,6 +18,7 @@ npm run dev          # Vite dev server (frontend)
 npm run db:up        # scripts/local-supabase.mjs — Docker + local Supabase stack + local login user
 npm run db:down      # stop the local stack
 npm run db:reset     # wipe local DB, re-apply migrations/seeds, re-provision the login user
+npm run db:up:demo   # as db:up, plus fictional demo rows (scripts/demo-seed.mjs); also db:reset:demo, db:demo
 npm run dev:local    # db:up then the dev server
 npm run build        # tsc -b then vite build
 npm test             # vitest run (all tests, no watch)
@@ -54,6 +55,8 @@ Adding a provider generally means: extend `ProviderKey` in `src/types.ts`, add a
 ### Frontend read path
 
 `src/services/dashboardData.ts` is the heart of the read side. `fetchDashboardData(client)` issues parallel Supabase selects, then does substantial **client-side aggregation**: dedup-to-latest per key, month-to-date vs. last-month cost bounds, OpenAI usage roll-ups, GitHub Actions summaries, per-project provider status, and collector-error scoping (errors are suppressed once a newer successful run exists for that provider). The raw DB `snake_case` row shapes are defined here as interfaces; the app-facing `camelCase` types live in `src/types.ts`. `App.tsx` is a single large component that renders the returned `DashboardData` across tabs (Detail / Collectors / Usage / Costs).
+
+There are two demo datasets and they are not interchangeable: `src/data/demoDashboardData.ts` is a ready-made `DashboardData` that `VITE_DEMO_MODE` swaps in for the read layer (screenshots, stackvitals.app), while `scripts/demo-seed.mjs` writes raw snapshot rows into the local Supabase (`npm run db:up:demo`) so local development exercises `fetchDashboardData` for real. Keep the fiction consistent between them; put new data-shape coverage in the seed.
 
 ### Data model
 

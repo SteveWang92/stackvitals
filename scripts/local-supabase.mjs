@@ -5,9 +5,12 @@
  * stack instead of production. See docs/SELF_HOSTING.md section 0.
  *
  * Usage:
- *   npm run db:up      start everything and provision the login user
- *   npm run db:down    stop the local stack (Docker Desktop keeps running)
- *   npm run db:reset   wipe the local database, re-apply migrations + seeds, re-provision
+ *   npm run db:up          start everything and provision the login user
+ *   npm run db:down        stop the local stack (Docker Desktop keeps running)
+ *   npm run db:reset       wipe the local database, re-apply migrations + seeds, re-provision
+ *   npm run db:up:demo     as db:up, plus fictional demo rows to develop against
+ *   npm run db:reset:demo  as db:reset, plus those demo rows
+ *   npm run db:demo        (re)seed the demo rows into an already-running stack
  *
  * The Supabase CLI is not vendored into this repo. The script uses, in order:
  * `node_modules/.bin/supabase` (if you ran `npm i -D supabase`), a `supabase` already on
@@ -19,10 +22,12 @@ import { randomBytes } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { seedDemoData } from './demo-seed.mjs';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const isWindows = process.platform === 'win32';
 const command = process.argv[2] ?? 'up';
+const withDemoData = process.argv.slice(3).includes('--demo');
 
 const ENV_LOCAL_PATH = join(repoRoot, '.env.local');
 const DOCKER_WAIT_MS = 180_000;
@@ -377,11 +382,27 @@ async function provision(stack) {
   log('  Next: npm run dev');
 }
 
+async function seedDemo(stack) {
+  const counts = await seedDemoData(stack);
+  const summary = Object.entries(counts)
+    .map(([table, count]) => `${count} ${table}`)
+    .join(', ');
+
+  log(`✓ Seeded demo data: ${summary}`);
+}
+
 // --- Commands ----------------------------------------------------------------
 
 async function up(cli) {
   await ensureDocker();
-  await provision(ensureStack(cli));
+
+  const stack = ensureStack(cli);
+
+  if (withDemoData) {
+    await seedDemo(stack);
+  }
+
+  await provision(stack);
 }
 
 async function reset(cli) {
@@ -395,7 +416,17 @@ async function reset(cli) {
     fail('`supabase db reset` failed. Fix the error above, then re-run this command.');
   }
 
+  if (withDemoData) {
+    await seedDemo(stack);
+  }
+
   await provision(stack);
+}
+
+async function demo(cli) {
+  await ensureDocker();
+  await seedDemo(ensureStack(cli));
+  log('  Reload the dashboard to see it.');
 }
 
 function down(cli) {
@@ -425,6 +456,9 @@ switch (command) {
   case 'reset':
     await reset(cli);
     break;
+  case 'demo':
+    await demo(cli);
+    break;
   default:
-    fail(`Unknown command "${command}". Use one of: up, down, reset.`);
+    fail(`Unknown command "${command}". Use one of: up, down, reset, demo.`);
 }
