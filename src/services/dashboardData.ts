@@ -20,7 +20,6 @@ import type {
   SnapshotSummary,
   StatusLevel,
   TrendPoint,
-  UnallocatedCostSnapshot,
   UptimeDay,
 } from '../types';
 
@@ -115,7 +114,7 @@ interface DashboardRows {
 export interface DashboardData {
   projects: ProjectStatus[];
   domains: DomainSummary[];
-  unallocatedCosts: UnallocatedCostSnapshot[];
+  costs: CostSnapshot[];
   collectorRuns: CollectorRunSummary[];
   openAiUsage: OpenAiUsageSummary;
   githubActionsUsage: GitHubActionsUsageSummary;
@@ -1030,25 +1029,15 @@ function projectFromRows(project: ProjectRow, rows: DashboardRows): ProjectStatu
   const metrics = rows.metrics.filter((metric) => metric.project_id === project.id);
   const resources = rows.resources.filter((resource) => resource.project_id === project.id);
   const healthChecks = rows.healthChecks.filter((check) => check.project_id === project.id);
-  const costs = rows.costs.filter((cost) => cost.project_id === project.id);
   const latestHttp = latestBy(healthChecks, (check) => check.checked_at);
   const latestDeploy = latestBy(
     metrics.filter((metric) => providerKey(metric) === 'amplify' || metric.metric_key.endsWith('_deploy_status')),
     (metric) => metric.collected_at,
   );
   const lastSync = latestBy(
-    [
-      ...metrics.map((metric) => metric.collected_at),
-      ...healthChecks.map((check) => check.checked_at),
-      ...costs.map((cost) => cost.collected_at),
-    ],
+    [...metrics.map((metric) => metric.collected_at), ...healthChecks.map((check) => check.checked_at)],
     (value) => value,
   );
-  const projectCosts: CostSnapshot[] = costs.map((cost) => ({
-    provider: providerKey(cost) ?? 'aws',
-    serviceName: cost.service_name,
-    monthToDateUsd: cost.amount_usd,
-  }));
 
   return {
     slug: project.slug,
@@ -1058,7 +1047,6 @@ function projectFromRows(project: ProjectRow, rows: DashboardRows): ProjectStatu
     uptimeStatus: latestHttp?.status ?? 'unknown',
     lastSync: lastSync ?? null,
     providers: latestProviderStatuses(project.id, rows.metrics, rows.healthChecks, rows.resources),
-    costs: projectCosts,
     resources: resources
       .filter((resource) => providerKey(resource) !== 'cloudflare')
       .map<ProjectResource>((resource) => ({
@@ -1176,13 +1164,13 @@ export async function fetchDashboardData(client: SupabaseClient): Promise<Dashbo
   validateProjectRows(projects);
   validateStatusRows(rows);
 
-  const unallocatedCosts = latestCosts
-    .filter((cost) => cost.project_id === null)
-    .map<UnallocatedCostSnapshot>((cost) => ({
-      provider: providerKey(cost) ?? 'aws',
-      serviceName: cost.service_name,
-      monthToDateUsd: cost.amount_usd,
-    }));
+  // Every cost row, whatever its project_id. Nothing writes that column today, and a row that
+  // somehow carries one must still appear in the total rather than being filtered out of sight.
+  const costSnapshots = latestCosts.map<CostSnapshot>((cost) => ({
+    provider: providerKey(cost) ?? 'aws',
+    serviceName: cost.service_name,
+    monthToDateUsd: cost.amount_usd,
+  }));
 
   return {
     projects: projects.map((project) =>
@@ -1191,7 +1179,7 @@ export async function fetchDashboardData(client: SupabaseClient): Promise<Dashbo
       }),
     ),
     domains: buildDomainSummaries(resources, metrics),
-    unallocatedCosts: unallocatedCosts.sort((a, b) => (b.monthToDateUsd ?? 0) - (a.monthToDateUsd ?? 0)),
+    costs: costSnapshots.sort((a, b) => (b.monthToDateUsd ?? 0) - (a.monthToDateUsd ?? 0)),
     collectorRuns: collectorRunSummaries(collectorRuns),
     openAiUsage: openAiUsageSummary(metrics, costs),
     githubActionsUsage: githubActionsUsageSummary(metrics, projects),

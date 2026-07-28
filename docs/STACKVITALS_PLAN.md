@@ -98,7 +98,7 @@ The normalized tables support more providers later:
 - `providers`: provider registry, such as `aws`, `amplify`, `supabase`, `resend`, `openai`, `github`, `cloudflare`. New keys are added together with their collector, never ahead of it.
 - `resources`: deployments, domains, databases, auth stores, storage buckets, API accounts, and other provider resources.
 - `metric_snapshots`: status, counts, usage, latency, deploy state, and collection results over time.
-- `cost_snapshots`: daily or monthly cost by provider and service; rows stay account-level (`project_id` null) unless a collector can map a cost to one project.
+- `cost_snapshots`: daily or monthly cost by provider and service. Rows are always account-level: `project_id` exists for a future allocation scheme, but no adapter writes it, and the dashboard reads every row regardless of it.
 - `health_checks`: uptime, HTTP status, response time, and last successful collection.
 - `collector_runs`: audit trail for each scheduled or manual collection run, including errors.
 
@@ -171,7 +171,7 @@ The project documentation site (`site/`) deploys separately to GitHub Pages via
 
 - Overview: each app with deploy status, uptime, domain/DNS health, current month cost estimate, and last sync.
 - App detail: provider resources, recent snapshots, collector errors, and auth/data aggregate counts.
-- Cost view: month-to-date cost by provider, without assigning account-level costs to projects.
+- Cost view: month-to-date cost by provider and service line, plus spend per day. Costs are never assigned to a project.
 - OpenAI usage: account-level token, request, cached-token, and spend summary with API-key/model rows.
 - GitHub Actions usage: repository-level latest run status, workflow runs, failures, scheduled-run counts, and runtime duration totals.
 - Collector diagnostics/settings: connection status, last synced time, missing credentials, and collector summaries.
@@ -183,7 +183,7 @@ The project documentation site (`site/`) deploys separately to GitHub Pages via
 - Use Supabase for this tool's auth/database and static hosting for the frontend.
 - Avoid high-frequency observability or always-on infrastructure.
 - Use daily cost snapshots before adding deeper monitoring.
-- Keep provider costs account-level (`project_id` null) rather than guessing per-project splits.
+- Keep provider costs account-level rather than guessing per-project splits. Providers bill by service; splitting a shared Amplify or EC2 line between apps would be invention, so `CollectorCost` has no project field at all.
 - Do not migrate tracked apps unless collected metrics prove it is worth it.
 
 ## Security And Data Handling

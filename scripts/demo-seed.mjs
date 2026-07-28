@@ -13,8 +13,9 @@
  *   - collector errors: project-scoped, unscoped, and one suppressed by a newer successful run
  *   - usage: multi-key/multi-model OpenAI roll-ups incl. last month; GitHub Actions with failures
  *   - trends: enough collection days for the usage charts, including a day the collector missed
- *   - costs: per-project, unallocated, last-month total, and a month-to-date series with uneven
- *     daily amounts (a smooth curve would draw the daily-spend chart as a straight line)
+ *   - costs: account-level lines incl. per-model OpenAI billing, last-month total, and a
+ *     month-to-date series with uneven daily amounts (a smooth curve would draw the daily-spend
+ *     chart as a straight line)
  *   - domains: healthy, expiring-soon, and a pending zone with no expiration data
  *
  * Everything written here is tagged so re-seeding replaces it: `metadata.seed = 'demo'` on snapshot
@@ -197,18 +198,24 @@ const DOMAINS = [
 ];
 
 /** service_name -> month-to-date total. `project` null means an unallocated (account-level) cost. */
+/**
+ * Account-level cost lines — none of them belongs to a project. Providers bill by service, and
+ * nothing in the pipeline can split a shared Amplify or EC2 bill between apps, so there is one
+ * hosting line for the account rather than one per app. OpenAI bills a line per model and
+ * direction, which is the shape its cost API actually returns.
+ */
 const COSTS = [
-  { project: 'acme_site', provider: 'amplify', serviceName: 'AWS Amplify hosting', amountUsd: 1.42 },
-  { project: 'acme_site', provider: 'openai', serviceName: 'OpenAI API', amountUsd: 3.1 },
-  { project: 'acme_site', provider: 'resend', serviceName: 'Resend email', amountUsd: 0.12 },
-  { project: 'todo_app', provider: 'amplify', serviceName: 'AWS Amplify hosting', amountUsd: 0.96 },
-  { project: 'todo_app', provider: 'openai', serviceName: 'OpenAI API', amountUsd: 1.35 },
-  { project: 'recipe_box', provider: 'amplify', serviceName: 'AWS Amplify hosting', amountUsd: 0.61 },
-  { project: 'status_hub', provider: 'amplify', serviceName: 'AWS Amplify hosting', amountUsd: 0.84 },
-  { project: 'legacy_api', provider: 'aws', serviceName: 'Amazon EC2', amountUsd: 6.4 },
-  { project: null, provider: 'aws', serviceName: 'Route 53 hosted zones', amountUsd: 1.0 },
-  { project: null, provider: 'aws', serviceName: 'Tax', amountUsd: 0.38 },
-  { project: null, provider: 'openai', serviceName: 'OpenAI experiments key', amountUsd: 0.42 },
+  { provider: 'aws', serviceName: 'Amazon EC2', amountUsd: 6.4 },
+  { provider: 'amplify', serviceName: 'AWS Amplify hosting', amountUsd: 3.83 },
+  { provider: 'openai', serviceName: 'gpt-4o-mini-2026-02-11, input', amountUsd: 2.1 },
+  { provider: 'openai', serviceName: 'gpt-4o-mini-2026-02-11, output', amountUsd: 1.05 },
+  { provider: 'aws', serviceName: 'Route 53 hosted zones', amountUsd: 1.0 },
+  { provider: 'openai', serviceName: 'gpt-4o-2026-01-24, input', amountUsd: 0.86 },
+  { provider: 'openai', serviceName: 'gpt-4o-2026-01-24, output', amountUsd: 0.44 },
+  { provider: 'aws', serviceName: 'Tax', amountUsd: 0.38 },
+  { provider: 'openai', serviceName: 'o4-mini-2026-03-17, input', amountUsd: 0.28 },
+  { provider: 'openai', serviceName: 'o4-mini-2026-03-17, output', amountUsd: 0.14 },
+  { provider: 'resend', serviceName: 'Resend email', amountUsd: 0.12 },
 ];
 
 // --- Row builders ------------------------------------------------------------
@@ -660,7 +667,7 @@ function domainResourceRows(now) {
  * climbs and the latest row per key is the current MTD figure. Also emits last month's closing
  * totals, which is what the "vs last month" comparison reads.
  */
-function costRows(now, projectIds) {
+function costRows(now) {
   const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().slice(0, 10);
   const lastMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1)).toISOString().slice(0, 10);
   const dayOfMonth = now.getUTCDate();
@@ -681,7 +688,7 @@ function costRows(now, projectIds) {
 
     for (const cost of COSTS) {
       rows.push({
-        project_id: cost.project ? projectIds.get(cost.project) : null,
+        project_id: null,
         provider: cost.provider,
         service_name: cost.serviceName,
         period_start: monthStart,
@@ -698,7 +705,7 @@ function costRows(now, projectIds) {
 
   for (const cost of COSTS) {
     rows.push({
-      project_id: cost.project ? projectIds.get(cost.project) : null,
+      project_id: null,
       provider: cost.provider,
       service_name: cost.serviceName,
       period_start: lastMonthStart,
@@ -956,7 +963,7 @@ export async function seedDemoData({ apiUrl, serviceKey }, now = new Date()) {
     resources: await insertAll(request, 'resources', resources, providerIds),
     health_checks: await insertAll(request, 'health_checks', healthChecks, providerIds),
     metric_snapshots: await insertAll(request, 'metric_snapshots', metrics, providerIds),
-    cost_snapshots: await insertAll(request, 'cost_snapshots', costRows(now, projectIds), providerIds),
+    cost_snapshots: await insertAll(request, 'cost_snapshots', costRows(now), providerIds),
     collector_runs: await insertAll(request, 'collector_runs', collectorRunRows(now), providerIds),
   };
 

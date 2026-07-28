@@ -9,12 +9,12 @@ import { fetchDashboardData } from './services/dashboardData';
 import type {
   CollectorRunSummary,
   CostPoint,
+  CostSnapshot,
   DomainSummary,
   GitHubActionsUsageSummary,
   OpenAiUsageSummary,
   ProjectSlug,
   ProjectStatus,
-  UnallocatedCostSnapshot,
 } from './types';
 import { AppDetail } from './components/AppDetail';
 import { AttentionPanel } from './components/AttentionPanel';
@@ -44,7 +44,7 @@ const dashboardTabs: Array<{ id: DashboardTab; label: string }> = [
 function Dashboard() {
   const [projects, setProjects] = useState<ProjectStatus[]>([]);
   const [domains, setDomains] = useState<DomainSummary[]>([]);
-  const [unallocatedCosts, setUnallocatedCosts] = useState<UnallocatedCostSnapshot[]>([]);
+  const [costs, setCosts] = useState<CostSnapshot[]>([]);
   const [collectorRuns, setCollectorRuns] = useState<CollectorRunSummary[]>([]);
   const [openAiUsage, setOpenAiUsage] = useState<OpenAiUsageSummary>({
     totalTokens: 0,
@@ -79,7 +79,7 @@ function Dashboard() {
   const healthyProjects = projects.filter((project) => getOverallStatus([project.deployStatus, project.uptimeStatus]) === 'healthy').length;
   const attentionItems = buildAttentionItems(projects);
   const staleProviders = countStaleProviders(projects);
-  const costRows = buildCostRows(projects, unallocatedCosts);
+  const costRows = buildCostRows(costs);
   const monthToDateCost = costRows.reduce((total, row) => total + (row.amountUsd ?? 0), 0);
 
   const loadDashboardData = useCallback(async () => {
@@ -99,7 +99,7 @@ function Dashboard() {
 
       setProjects(liveProjects);
       setDomains(liveData.domains);
-      setUnallocatedCosts(liveData.unallocatedCosts);
+      setCosts(liveData.costs);
       setCollectorRuns(liveData.collectorRuns);
       setOpenAiUsage(liveData.openAiUsage);
       setGitHubActionsUsage(liveData.githubActionsUsage);

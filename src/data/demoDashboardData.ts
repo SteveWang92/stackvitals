@@ -133,11 +133,6 @@ const acmeSite: ProjectStatus = {
       freshness: 'fresh',
     },
   ],
-  costs: [
-    { provider: 'openai', serviceName: 'OpenAI API', monthToDateUsd: 3.1 },
-    { provider: 'amplify', serviceName: 'AWS Amplify hosting', monthToDateUsd: 1.42 },
-    { provider: 'resend', serviceName: 'Resend email', monthToDateUsd: 0 },
-  ],
   resources: [
     {
       id: 'demo-res-1',
@@ -197,10 +192,6 @@ const todoApp: ProjectStatus = {
       lastSync: hoursAgo(1),
       freshness: 'fresh',
     },
-  ],
-  costs: [
-    { provider: 'openai', serviceName: 'OpenAI API', monthToDateUsd: 1.35 },
-    { provider: 'amplify', serviceName: 'AWS Amplify hosting', monthToDateUsd: 0.96 },
   ],
   resources: [
     {
@@ -262,7 +253,6 @@ const recipeBox: ProjectStatus = {
       freshness: 'fresh',
     },
   ],
-  costs: [{ provider: 'amplify', serviceName: 'AWS Amplify hosting', monthToDateUsd: 0.61 }],
   resources: [
     {
       id: 'demo-res-5',
@@ -330,7 +320,6 @@ const statusHub: ProjectStatus = {
       freshness: 'fresh',
     },
   ],
-  costs: [{ provider: 'amplify', serviceName: 'AWS Amplify hosting', monthToDateUsd: 0.84 }],
   resources: [
     {
       id: 'demo-res-7',
@@ -411,22 +400,20 @@ export const demoDashboardData: DashboardData = {
       ],
     },
   ],
-  unallocatedCosts: [
-    {
-      provider: 'aws',
-      serviceName: 'Route 53 hosted zones',
-      monthToDateUsd: 1.0,
-    },
-    {
-      provider: 'openai',
-      serviceName: 'OpenAI experiments key',
-      monthToDateUsd: 0.42,
-    },
-    {
-      provider: 'aws',
-      serviceName: 'Tax',
-      monthToDateUsd: 0.38,
-    },
+  // Account-level, never per project. OpenAI bills a line per model and direction, which is what
+  // the real cost API returns; the total across them matches openAiUsage.spendUsd.
+  costs: [
+    { provider: 'amplify', serviceName: 'AWS Amplify hosting', monthToDateUsd: 3.83 },
+    { provider: 'openai', serviceName: 'gpt-4o-mini-2026-02-11, input', monthToDateUsd: 2.1 },
+    { provider: 'openai', serviceName: 'gpt-4o-mini-2026-02-11, output', monthToDateUsd: 1.05 },
+    { provider: 'aws', serviceName: 'Route 53 hosted zones', monthToDateUsd: 1.0 },
+    { provider: 'openai', serviceName: 'gpt-4o-2026-01-24, input', monthToDateUsd: 0.86 },
+    { provider: 'openai', serviceName: 'gpt-4o-2026-01-24, output', monthToDateUsd: 0.44 },
+    { provider: 'aws', serviceName: 'Tax', monthToDateUsd: 0.38 },
+    { provider: 'openai', serviceName: 'o4-mini-2026-03-17, input', monthToDateUsd: 0.28 },
+    { provider: 'openai', serviceName: 'o4-mini-2026-03-17, output', monthToDateUsd: 0.14 },
+    // Kept at zero on purpose: a cost line with nothing billed must not pad the table.
+    { provider: 'resend', serviceName: 'Resend email', monthToDateUsd: 0 },
   ],
   collectorRuns: [
     {

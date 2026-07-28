@@ -18,9 +18,15 @@ export interface ProviderStatus {
   freshness: Freshness;
 }
 
+/**
+ * A cost line for the whole account. Costs are not attributed to a project: providers bill by
+ * service, not by which of your apps used it, and nothing in the collector pipeline can split a
+ * shared bill honestly. `cost_snapshots.project_id` stays in the schema for the day one of them
+ * can, but no adapter writes it.
+ */
 export interface CostSnapshot {
   provider: ProviderKey;
-  serviceName?: string;
+  serviceName: string;
   monthToDateUsd: number | null;
 }
 
@@ -159,7 +165,6 @@ export interface ProjectStatus {
   uptimeStatus: StatusLevel;
   lastSync: string | null;
   providers: ProviderStatus[];
-  costs: CostSnapshot[];
   resources: ProjectResource[];
   recentSnapshots: SnapshotSummary[];
   collectorErrors: CollectorErrorSummary[];
@@ -188,10 +193,4 @@ export interface DomainSummary {
   wwwRecordPresent: boolean | null;
   lastSync: string | null;
   dnsRecords: DomainDnsRecord[];
-}
-
-export interface UnallocatedCostSnapshot {
-  provider: ProviderKey;
-  serviceName: string;
-  monthToDateUsd: number | null;
 }

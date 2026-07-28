@@ -118,7 +118,7 @@ describe('fetchDashboardData', () => {
 
     const data = await fetchDashboardData(client as never);
 
-    expect(data.unallocatedCosts).toEqual([
+    expect(data.costs).toEqual([
       expect.objectContaining({
         provider: 'aws',
         serviceName: 'AWS Amplify',

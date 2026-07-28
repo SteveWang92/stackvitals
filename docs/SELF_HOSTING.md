@@ -39,7 +39,7 @@ read path — aggregation, dedup-to-latest and error scoping all run for real, w
 every state the UI can render: healthy/warning/failed/never-synced projects, stale and never-seen
 providers, up/degraded/down/no-data history days, success/partial/failed/skipped/unfinished
 collector runs, project-scoped and account-level errors, multi-key OpenAI and GitHub Actions
-usage, per-project and unallocated costs with a month-to-date series, and healthy, expiring and
+usage, account-level costs with a daily-spend series, and healthy, expiring and
 pending domains.
 
 Seeding is repeatable: it replaces its own rows (tagged `metadata.seed = 'demo'`, or a `demo-`
