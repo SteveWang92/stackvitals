@@ -62,11 +62,14 @@ export function formatRelativeSync(value: string | null): string {
     return 'Never synced';
   }
 
+  // h23, not the locale default: every timestamp on the dashboard is a machine event, and a
+  // 24-hour clock reads the same in every locale the browser might be set to.
   return new Intl.DateTimeFormat('en-AU', {
     month: 'short',
     day: 'numeric',
-    hour: 'numeric',
+    hour: '2-digit',
     minute: '2-digit',
+    hourCycle: 'h23',
   }).format(new Date(value));
 }
 
