@@ -87,6 +87,13 @@ below as its notes.
   timestamp without a project filter, which the existing `project_id`-leading indexes cannot
   serve. Self-hosters should apply this migration; the dashboard works without it, just slower.
 
+### Security
+
+- Build and test dependencies carry no known vulnerabilities: `vitest` 4, `eslint` 10, `astro` 7
+  with Starlight, and `sharp` 0.35 clear every open advisory in both the dashboard and the docs
+  site. The Astro ones covered XSS and SSRF in rendered pages, which matters to anyone building
+  the docs site from source. None of these packages ship in the deployed dashboard bundle.
+
 ## [1.4.0] - 2026-07-19
 
 ### Added

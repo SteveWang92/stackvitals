@@ -8,14 +8,15 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authMessage, setAuthMessage] = useState('');
-  const [loading, setLoading] = useState(true);
+  // Only "loading" when there is actually a session to check: both values are module-level
+  // constants read from import.meta.env, so this never needs correcting in the effect below.
+  const [loading, setLoading] = useState(() => Boolean(supabase) && isSupabaseAuthConfigured);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const client = supabase;
 
     if (!client || !isSupabaseAuthConfigured) {
-      setLoading(false);
       return;
     }
 
