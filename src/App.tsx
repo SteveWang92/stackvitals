@@ -114,6 +114,10 @@ function Dashboard() {
   }, []);
 
   useEffect(() => {
+    // Load-on-mount: loadDashboardData sets state before its first await, and in demo mode
+    // never awaits at all because the data is a static import. Satisfying the rule means
+    // restructuring this component's data loading, which is worth doing on its own.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadDashboardData();
   }, [loadDashboardData]);
 
