@@ -34,7 +34,7 @@ npm run release:prep     # create release PR from dev -> main (non-interactive)
 npm run release:ship     # finalize, squash-merge, tag, GitHub release (non-interactive)
 ```
 
-Run a single test file: `npx vitest run src/tests/services/dashboardData.test.ts`. Filter by name: `npx vitest run -t "openai"`. Vitest globals (`describe`, `it`, `expect`) are enabled — tests don't import them.
+Run a single test file: `npx vitest run src/tests/services/dashboardData.test.ts`. Filter by name: `npx vitest run -t "openai"`. There is no Vitest config file and globals are off — every test imports `describe`, `it`, `expect`, and `vi` from `vitest` directly.
 
 Commits are Conventional Commits, enforced by commitlint + Husky (`commitlint.config.cjs`), and stay to a single `type: description` line — no body/description paragraph unless the user asks for more detail. Prettier uses single quotes and `printWidth: 140`.
 
@@ -74,6 +74,7 @@ Supabase Postgres, schema in `supabase/migrations/*.sql` (applied in numeric ord
 - **Amplify deploys from `main`.** The scheduled collector GitHub Action (`.github/workflows/collect.yml`) also runs only from `main` (guarded by `if: github.ref == 'refs/heads/main'`), on a daily cron. Its secrets are the canonical list of what each collector needs.
 - The docs/landing site in `site/` deploys to GitHub Pages at **stackvitals.dev** via `.github/workflows/deploy-site.yml`. A demo-mode build (`VITE_DEMO_MODE=true`, fictional data, no auth) is hosted at **stackvitals.app**.
 - **Checkout path constraint:** `npm run build` inside `site/` fails on a checkout whose absolute path contains an apostrophe — Expressive Code embeds the build path into a generated JS string and the apostrophe breaks the parse. Keep the local clone under an apostrophe-free path (it now lives under `D:\Projects\steve-projects\`). It never affected GitHub runners, and `ci.yml` builds `site/` on every PR regardless.
+- **`vite-node` is a direct devDependency, pinned to 3.x.** `collect:status` runs the collectors through it, and it used to be available only because Vitest 2 depended on it — Vitest 4 dropped it, which would have silently broken the daily collector. 3.x is the newest line that still accepts Vite 6; 5.x/6.x require Vite 7/8, so bumping Vite means bumping `vite-node` in the same change.
 - **Steve's own production hub deploys from the separate `SteveWang92/project-status-hub` repo** — a deploy-only exact mirror of this repo's `main`, updated solely by the manual `Mirror to project-status-hub` workflow (`.github/workflows/mirror-hub.yml`, run from this repo's Actions tab after a release). Never do feature work or commit in that repo/clone.
 - Keep it low-cost by default: no always-on services, paid monitoring, or extra hosting unless the plan or user explicitly calls for it.
 
