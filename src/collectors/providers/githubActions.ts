@@ -28,7 +28,12 @@ export interface GitHubActionsClient {
   listWorkflowRuns: (input: { owner: string; repo: string; since: string; limit: number }) => Promise<GitHubWorkflowRun[]>;
   // Latest runs of one workflow file, newest first. Resolves null when the workflow
   // does not exist (or the token cannot see it), so misconfiguration is reportable.
-  listWorkflowRunsForWorkflow: (input: { owner: string; repo: string; workflow: string; limit: number }) => Promise<GitHubWorkflowRun[] | null>;
+  listWorkflowRunsForWorkflow: (input: {
+    owner: string;
+    repo: string;
+    workflow: string;
+    limit: number;
+  }) => Promise<GitHubWorkflowRun[] | null>;
 }
 
 export interface GitHubActionsOptions {
