@@ -13,7 +13,9 @@ export function AttentionPanel({
   staleCount: number;
   onSelect: (slug: ProjectSlug) => void;
 }) {
-  if (items.length === 0) {
+  // A silent collector is the one failure mode nothing else on the page reports, so the panel
+  // still appears when the only thing wrong is that providers have gone quiet.
+  if (items.length === 0 && staleCount === 0) {
     return null;
   }
 
@@ -24,25 +26,27 @@ export function AttentionPanel({
         <h2>Needs Attention</h2>
       </div>
 
-      <div className="compact-list">
-        {items.map((item) => (
-          <button
-            className="compact-row attention-row"
-            type="button"
-            key={`${item.projectSlug}-${item.provider}-${item.label}`}
-            onClick={() => onSelect(item.projectSlug)}
-          >
-            <div>
-              <strong>
-                {item.projectName} - {item.label}
-              </strong>
-              <span>{item.detail}</span>
-            </div>
-            <StaleBadge freshness={item.freshness} lastSync={item.lastSync} />
-            <StatusPill status={item.status} />
-          </button>
-        ))}
-      </div>
+      {items.length > 0 && (
+        <div className="compact-list">
+          {items.map((item) => (
+            <button
+              className="compact-row attention-row"
+              type="button"
+              key={`${item.projectSlug}-${item.provider}-${item.label}`}
+              onClick={() => onSelect(item.projectSlug)}
+            >
+              <div>
+                <strong>
+                  {item.projectName} - {item.label}
+                </strong>
+                <span>{item.detail}</span>
+              </div>
+              <StaleBadge freshness={item.freshness} lastSync={item.lastSync} />
+              <StatusPill status={item.status} />
+            </button>
+          ))}
+        </div>
+      )}
 
       {staleCount > 0 && (
         <p className="attention-footnote">
