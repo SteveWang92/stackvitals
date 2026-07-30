@@ -160,6 +160,13 @@ provider inventory snapshots, and a manual `refresh now` path for ad hoc checks.
 a GitHub Actions cron plus a manual workflow trigger, and scheduled production collectors run only
 from `main`. The frontend stays static with no always-on server.
 
+Retention reuses the same run: after recording results, the collector deletes snapshot rows older
+than `SNAPSHOT_RETENTION_DAYS` (default 90, floor 31) from `metric_snapshots`, `cost_snapshots`,
+`health_checks`, and `collector_runs`. The append-only tables would otherwise grow without bound
+even though nothing reads past the 30-day history window, and this keeps the cleanup on the
+existing schedule instead of adding pg_cron or a second service. A prune failure is logged, not
+thrown — the run's data is already stored, and housekeeping should not fail a good run.
+
 Alerting reuses the scheduler rather than adding a delivery service: the collector process exits
 non-zero when a run contains a hard failure (an adapter error, a `failed` metric, or a `failed`
 health check), which fails the scheduled workflow run and triggers GitHub's own failed-workflow

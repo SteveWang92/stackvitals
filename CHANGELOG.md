@@ -15,6 +15,11 @@ below as its notes.
   `failed` metric, or a `failed` health check — so a scheduled GitHub Actions run is marked failed
   and GitHub's own failed-workflow email becomes the alerting path. Warning-level results still do
   not fail the run, and snapshots are recorded before the exit code is set.
+- Snapshot retention: each collector run now deletes `metric_snapshots`, `cost_snapshots`,
+  `health_checks`, and `collector_runs` rows older than `SNAPSHOT_RETENTION_DAYS` (default 90,
+  minimum 31), so the append-only tables stop growing without bound. Pruning reuses the collector's
+  own schedule and credentials — no database scheduler and no extra service — and a prune failure
+  is logged instead of failing the run.
 
 ### Removed
 

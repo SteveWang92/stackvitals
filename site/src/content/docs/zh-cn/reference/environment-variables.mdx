@@ -65,6 +65,12 @@ import { Aside } from '@astrojs/starlight/components';
 | `HTTP_HEALTH_CHECK_HEADER_NAME` | 可选 | 健康检查请求的自定义请求头名称 |
 | `HTTP_HEALTH_CHECK_HEADER_VALUE` | 可选 | 自定义请求头值（用于 Cloudflare WAF 绕过） |
 
+### 快照保留
+
+| 变量 | 必需 | 用途 |
+|---|---|---|
+| `SNAPSHOT_RETENTION_DAYS` | 可选 | 保留的快照历史天数（默认 `90`，最小 `31`） |
+
 ### 每应用占位符
 
 `projects.config.json` 中的任何项目资源字段都可以使用 `${ENV_VAR}` 占位符。为每个引用的变量创建一个密钥，并在工作流的 env 块中传递它们。常见的每应用变量：

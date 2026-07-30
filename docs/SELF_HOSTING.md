@@ -148,6 +148,8 @@ Quick order:
 - Optional `HTTP_HEALTH_CHECK_HEADER_NAME` / `HTTP_HEALTH_CHECK_HEADER_VALUE`: sent as a
   request header on the public-URL health check so a Cloudflare WAF rule can skip **Super Bot
   Fight Mode** for this collector only; does not work for free-plan Bot Fight Mode (see below)
+- Optional `SNAPSHOT_RETENTION_DAYS`: how many days of snapshot history to keep (default `90`,
+  minimum `31`)
 
 Every adapter is opt-in: it's only added to the run when its credentials are present, so a
 fresh clone with nothing but `PROJECTS_CONFIG_JSON` still runs the HTTP-health adapter alone.

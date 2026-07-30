@@ -1,5 +1,6 @@
 import type { SupabaseAggregateClient } from '../providers/supabaseAggregate';
 import type { SupabaseProjectHealthClient } from '../providers/supabaseProjectHealth';
+import type { SnapshotPruneClient } from '../stores/pruneSnapshots';
 import type {
   CostSnapshotInsert,
   CollectorRunsInsert,
@@ -84,6 +85,29 @@ export function createLiveSupabaseProjectHealthClient(authKey: string, apiKey?: 
         ok: response.ok,
         detail: response.ok ? `REST API returned ${response.status}` : `REST API returned ${response.status}: ${body.slice(0, 500)}`,
       };
+    },
+  };
+}
+
+export function createLiveSupabaseSnapshotPruneClient(url: string, authKey: string, apiKey?: string): SnapshotPruneClient {
+  return {
+    deleteRowsOlderThan: async (table, timestampColumn, cutoff) => {
+      // `return=representation` with `select=id` is what makes the deleted count available:
+      // PostgREST documents the count=exact / Content-Range pair for GET, not for DELETE, and
+      // one uuid per pruned row is a cheap enough response for a once-a-day job.
+      const deleted = await requestJson<Array<{ id: string }>>(
+        `${url}/rest/v1/${table}?select=id&${timestampColumn}=lt.${encodeURIComponent(cutoff)}`,
+        {
+          method: 'DELETE',
+          headers: {
+            ...headers(authKey, apiKey),
+            Prefer: 'return=representation',
+          },
+        },
+        `${table} prune failed`,
+      );
+
+      return deleted?.length ?? 0;
     },
   };
 }

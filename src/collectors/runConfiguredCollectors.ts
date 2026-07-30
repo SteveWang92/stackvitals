@@ -23,7 +23,9 @@ import {
   createLiveSupabaseAggregateClient,
   createLiveSupabaseCollectorRunClient,
   createLiveSupabaseProjectHealthClient,
+  createLiveSupabaseSnapshotPruneClient,
 } from './liveClients/supabase';
+import { formatPruneResults, parseRetentionDays, pruneSnapshots } from './stores/pruneSnapshots';
 import type { ProviderAdapter } from './types';
 import { createLiveCloudflareClient, createLiveCloudflarePagesClient } from './liveClients/cloudflare';
 import { createLiveGitHubActionsClient } from './liveClients/github';
@@ -83,6 +85,9 @@ loadLocalEnv();
 
 const configPath = getArgValue(process.argv, '--config') ?? (await defaultConfigPath());
 const config = await readConfig(configPath);
+// Parsed before any provider work so a bad retention value fails immediately instead of
+// after a full round of API calls.
+const retentionDays = parseRetentionDays(process.env.SNAPSHOT_RETENTION_DAYS);
 const adapters: ProviderAdapter[] = [];
 
 const httpTargets = config.projects
@@ -325,6 +330,24 @@ console.log(
 
 if (process.env.GITHUB_STEP_SUMMARY) {
   await appendFile(process.env.GITHUB_STEP_SUMMARY, buildGithubStepSummary(summary));
+}
+
+// Retention runs after the write, and only when this run could write at all — pruning from a
+// collector that just failed to record anything would trim history while adding none. A prune
+// failure is logged rather than thrown: the run's collected data is already safely stored, and
+// storage housekeeping is not worth turning a good run into a failed one.
+if (process.env.VITE_SUPABASE_URL && isJwtKey(hubSupabaseServiceRoleKey)) {
+  try {
+    const pruneClient = createLiveSupabaseSnapshotPruneClient(
+      process.env.VITE_SUPABASE_URL,
+      hubSupabaseServiceRoleKey,
+      process.env.VITE_SUPABASE_ANON_KEY,
+    );
+
+    console.log(formatPruneResults(await pruneSnapshots(pruneClient, { retentionDays }), retentionDays));
+  } catch (error) {
+    console.warn(`Snapshot retention skipped: ${error instanceof Error ? error.message : 'unknown error'}`);
+  }
 }
 
 // Alerting is the scheduled workflow's own failure notification: GitHub emails the owner
