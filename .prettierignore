@@ -13,4 +13,11 @@ package-lock.json
 
 # Docs are hand-wrapped; prettier's markdown emphasis/list normalization is not
 # idempotent on these files and has corrupted literal `_`/`*` text in them.
+#
+# .mdx is worse, not merely noisy: prettier reflows the children of a JSX element as
+# prose, so the numbered list inside Starlight's <Steps> collapses into one run-on
+# paragraph and the fenced code blocks in it are flattened inline. Both self-hosting
+# pages render as garbage afterwards. It also re-pads tables to equal column widths,
+# which turns a one-word edit into a whole-table diff.
 *.md
+*.mdx
