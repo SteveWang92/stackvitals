@@ -21,6 +21,11 @@ below as its notes.
   own schedule and credentials — no database scheduler and no extra service — and a prune failure
   is logged instead of failing the run.
 
+### Fixed
+
+- A provider whose stored sync timestamp could not be parsed crashed the dashboard render instead
+  of showing that one timestamp as never synced.
+
 ### Removed
 
 - The `resend_verification_email_*_count` metrics, which always reported zero. Resend has no

@@ -34,7 +34,7 @@ npm run release:prep     # create release PR from dev -> main (non-interactive)
 npm run release:ship     # finalize, squash-merge, tag, GitHub release (non-interactive)
 ```
 
-Run a single test file: `npx vitest run src/tests/services/dashboardData.test.ts`. Filter by name: `npx vitest run -t "openai"`. There is no Vitest config file and globals are off — every test imports `describe`, `it`, `expect`, and `vi` from `vitest` directly.
+Run a single test file: `npx vitest run src/tests/services/dashboardData.test.ts`. Filter by name: `npx vitest run -t "openai"`. There is no Vitest config file and globals are off — every test imports `describe`, `it`, `expect`, and `vi` from `vitest` directly. Component tests under `src/tests/components/` opt into a DOM with a `// @vitest-environment jsdom` pragma on the first line rather than a config file, use `@testing-library/react`, and assert with plain DOM checks (`container.innerHTML`, `getAttribute`, `textContent`) — jest-dom's matchers would need a setup file, which would mean adding the config this repo does without.
 
 Commits are Conventional Commits, enforced by commitlint + Husky (`commitlint.config.cjs`), and stay to a single `type: description` line — no body/description paragraph unless the user asks for more detail. Prettier uses single quotes and `printWidth: 140`.
 
