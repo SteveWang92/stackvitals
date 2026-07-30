@@ -1134,7 +1134,10 @@ export async function fetchDashboardData(client: SupabaseClient): Promise<Dashbo
         .from('health_checks')
         .select('project_id, status, response_time_ms, checked_at')
         .gte('checked_at', historySince(HISTORY_WINDOW_DAYS))
-        .order('checked_at', { ascending: true })
+        // Newest first so that hitting the row limit drops the oldest days off the left of the
+        // chart rather than the most recent ones off the right. The day grouping below does not
+        // care about order.
+        .order('checked_at', { ascending: false })
         .limit(2000),
     ),
     selectRows<CollectorRunRow>(
