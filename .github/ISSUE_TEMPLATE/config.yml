@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/SteveWang92/stackvitals/security/advisories/new
+    about: Report privately through a GitHub security advisory. Do not open a public issue — see SECURITY.md.
+  - name: Setup and self-hosting help
+    url: https://stackvitals.dev/getting-started/self-hosting/
+    about: Full walkthrough covering Supabase, credentials, deployment, and scheduling the collector.

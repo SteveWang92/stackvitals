@@ -4,10 +4,17 @@
 
 [![CI](https://github.com/SteveWang92/stackvitals/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/SteveWang92/stackvitals/actions/workflows/ci.yml)
 [![Deploy site](https://github.com/SteveWang92/stackvitals/actions/workflows/deploy-site.yml/badge.svg?branch=main)](https://github.com/SteveWang92/stackvitals/actions/workflows/deploy-site.yml)
+[![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0--only-blue.svg)](LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/SteveWang92/stackvitals)](https://github.com/SteveWang92/stackvitals/releases)
+
+**[Live demo](https://stackvitals.app)** · **[Documentation](https://stackvitals.dev)**
 
 Uptime, deploy status, cloud cost, and AI/CI usage for a handful of your own projects, in one
 lightweight, self-hosted, single-database dashboard — built for a solo developer running a few
 side projects who wants one page instead of five provider dashboards.
+
+The demo runs on fictional data with no sign-in, so you can click through every view before
+setting anything up.
 
 It reads pre-aggregated rows from your own Supabase project and never copies raw application
 data out of the apps it watches — only counts, statuses, and costs.
