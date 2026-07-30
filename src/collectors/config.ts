@@ -17,7 +17,6 @@ export interface ProjectCollectorConfig {
     // Marks the project that IS this dashboard, so its hub Supabase health is probed.
     hubSupabase?: boolean;
     resendDomain?: string;
-    resendVerificationCategory?: string;
     githubRepository?: string;
     githubActionsEnabled?: boolean;
     // Workflow file name (e.g. "deploy-site.yml") whose latest run is the project's deploy

@@ -25,8 +25,7 @@
         "supabaseUrl": "${MY_APP_SUPABASE_URL}",
         "supabaseServiceRoleKey": "${MY_APP_SUPABASE_SERVICE_ROLE_KEY}",
         "supabaseAnonKey": "${MY_APP_SUPABASE_ANON_KEY}",
-        "resendDomain": "mail.example.com",
-        "resendVerificationCategory": "verification_email"
+        "resendDomain": "mail.example.com"
       }
     },
     {

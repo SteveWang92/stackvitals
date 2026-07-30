@@ -1,4 +1,4 @@
-import type { ResendClient, ResendDeliveryCounts, ResendDomainStatus } from '../providers/resend';
+import type { ResendClient, ResendDomainStatus } from '../providers/resend';
 
 interface ResendDomainResponse {
   id?: string;
@@ -53,17 +53,6 @@ export function createLiveResendClient(apiKey: string): ResendClient {
         status: result.status ?? 'unknown',
         region: result.region,
       };
-    },
-    getVerificationEmailCounts: async () => {
-      // Resend event analytics varies by account setup. Keep the first live
-      // client conservative and aggregate-only until event access is confirmed.
-      return {
-        sent: 0,
-        delivered: 0,
-        bounced: 0,
-        complained: 0,
-        failed: 0,
-      } satisfies ResendDeliveryCounts;
     },
   };
 }

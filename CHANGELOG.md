@@ -16,6 +16,16 @@ below as its notes.
   and GitHub's own failed-workflow email becomes the alerting path. Warning-level results still do
   not fail the run, and snapshots are recorded before the exit code is set.
 
+### Removed
+
+- The `resend_verification_email_*_count` metrics, which always reported zero. Resend has no
+  aggregate delivery-statistics endpoint, and the two ways to derive one — paging the account's
+  raw message list, or running a webhook receiver — are both outside this project's data and
+  infrastructure boundaries. The Resend adapter now collects sending-domain verification status
+  only, and the `resendVerificationCategory` config field is gone. Migration
+  `008_drop_resend_delivery_metrics.sql` deletes the retired rows so they stop showing as the
+  latest snapshot; self-hosters should apply it.
+
 ## [1.5.0] - 2026-07-30
 
 ### Added

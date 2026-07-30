@@ -56,7 +56,14 @@ reads raw tables — only the RPC's aggregate output.
 
 ### Resend
 
-Checks sending-domain verification status. Delivery counts are planned but not yet collected.
+Checks sending-domain verification status.
+
+Aggregate delivery counts are **not** collected, and are not planned. Resend has no analytics or
+statistics endpoint: `GET /emails` returns raw per-message rows — recipient addresses and subjects —
+with no date or tag filter, so counting deliveries would mean paging the account's entire send
+history and reading exactly the data this tool promises never to touch. The only aggregate path
+Resend documents is streaming webhook events into a database you run yourself, which requires an
+always-on receiver. Both conflict with the project's non-goals.
 
 ### OpenAI usage
 

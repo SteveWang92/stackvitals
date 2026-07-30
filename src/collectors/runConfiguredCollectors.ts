@@ -9,7 +9,7 @@ import { createCloudflareDomainsAdapter } from './providers/cloudflare';
 import { createCloudflarePagesAdapter } from './providers/cloudflarePages';
 import { createGitHubActionsAdapter } from './providers/githubActions';
 import { createOpenAiUsageAdapter } from './providers/openaiUsage';
-import { createResendVerificationEmailAdapter } from './providers/resend';
+import { createResendDomainHealthAdapter } from './providers/resend';
 import { createSupabaseAggregateAdapter } from './providers/supabaseAggregate';
 import { createSupabaseProjectHealthAdapter } from './providers/supabaseProjectHealth';
 import { buildGithubStepSummary } from './githubStepSummary';
@@ -175,10 +175,9 @@ if (process.env.RESEND_API_KEY) {
     .map((project) => ({
       projectSlug: project.slug,
       domain: project.resources!.resendDomain!,
-      verificationCategory: project.resources!.resendVerificationCategory ?? 'verification_email',
     }));
 
-  adapters.push(createResendVerificationEmailAdapter(resendTargets, { client: createLiveResendClient(process.env.RESEND_API_KEY) }));
+  adapters.push(createResendDomainHealthAdapter(resendTargets, { client: createLiveResendClient(process.env.RESEND_API_KEY) }));
 }
 
 if (process.env.CLOUDFLARE_API_TOKEN) {
