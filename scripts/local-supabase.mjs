@@ -275,9 +275,18 @@ function writeEnvLocal(updates) {
   writeFileSync(ENV_LOCAL_PATH, `${lines.join('\n').replace(/\n+$/, '')}\n`, 'utf8');
 }
 
-function resolveLoginDetails() {
-  // `.env.local` wins over `.env`, matching how Vite's loadEnv resolves them.
-  const env = { ...parseEnvFile(join(repoRoot, '.env')), ...parseEnvFile(ENV_LOCAL_PATH), ...process.env };
+/** `.env.local` wins over `.env`, matching how Vite's loadEnv resolves them. */
+function readEnvFiles() {
+  return { ...parseEnvFile(join(repoRoot, '.env')), ...parseEnvFile(ENV_LOCAL_PATH), ...process.env };
+}
+
+/**
+ * Resolved separately from the password, and never bundled with it into one object. The email is
+ * printed to the terminal on success; the password never is. Keeping the two on separate paths is
+ * what lets a reader — and CodeQL's clear-text-logging analysis — see that at a glance.
+ */
+function resolveLoginEmail() {
+  const env = readEnvFiles();
   const email = env.LOCAL_DEV_EMAIL || (env.VITE_DASHBOARD_ALLOWED_EMAIL ?? '').split(',')[0].trim();
 
   if (!email) {
@@ -286,10 +295,14 @@ function resolveLoginDetails() {
     );
   }
 
-  const existingPassword = env.LOCAL_DEV_PASSWORD;
+  return email;
+}
+
+/** Never logged — it only reaches the auth API and the git-ignored `.env.local`. */
+function resolveLoginPassword() {
+  const existingPassword = readEnvFiles().LOCAL_DEV_PASSWORD;
 
   return {
-    email,
     password: existingPassword || randomBytes(15).toString('base64url'),
     generatedPassword: !existingPassword,
   };
@@ -339,38 +352,39 @@ async function addToAllowlist({ apiUrl, serviceKey }, email) {
 }
 
 async function provision(stack) {
-  const login = resolveLoginDetails();
-  const outcome = await createLoginUser(stack, login);
+  const email = resolveLoginEmail();
+  const { password, generatedPassword } = resolveLoginPassword();
+  const outcome = await createLoginUser(stack, { email, password });
 
-  log(outcome === 'created' ? `✓ Created local login user ${login.email}` : `✓ Local login user ${login.email} already exists`);
+  log(outcome === 'created' ? `✓ Created local login user ${email}` : `✓ Local login user ${email} already exists`);
 
-  await addToAllowlist(stack, login.email);
+  await addToAllowlist(stack, email);
   log('✓ Allow-listed that email in public.dashboard_users');
 
   const updates = {
     VITE_SUPABASE_URL: stack.apiUrl,
     VITE_SUPABASE_ANON_KEY: stack.anonKey,
     HUB_SUPABASE_JWT_SERVICE_ROLE_KEY: stack.serviceKey,
-    VITE_DASHBOARD_ALLOWED_EMAIL: login.email,
+    VITE_DASHBOARD_ALLOWED_EMAIL: email,
   };
 
   // Only persist a password this script generated; a password you set in `.env` stays there.
-  if (login.generatedPassword && outcome === 'created') {
-    updates.LOCAL_DEV_PASSWORD = login.password;
+  if (generatedPassword && outcome === 'created') {
+    updates.LOCAL_DEV_PASSWORD = password;
   }
 
   writeEnvLocal(updates);
   log('✓ Wrote local URL, keys and login email to .env.local (git-ignored)');
 
   log('');
-  log(`  Sign in as   ${login.email}`);
+  log(`  Sign in as   ${email}`);
   log(
-    login.generatedPassword
+    generatedPassword
       ? '  Password     LOCAL_DEV_PASSWORD in .env.local (set your own there or in .env to pin it)'
       : '  Password     LOCAL_DEV_PASSWORD from your env file',
   );
 
-  if (outcome === 'exists' && login.generatedPassword) {
+  if (outcome === 'exists' && generatedPassword) {
     log('               (user predates this password — `npm run db:reset` re-creates it)');
   }
 
