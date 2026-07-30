@@ -1,7 +1,9 @@
-# Generated output and dependencies.
+# Generated output and dependencies. site/.astro is Astro's content cache — git-ignored
+# already, but prettier does not read .gitignore and would otherwise check it.
 dist
 node_modules
 coverage
+site/.astro
 
 # Secrets/local config (never read these at all).
 .env
