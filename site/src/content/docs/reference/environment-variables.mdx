@@ -21,6 +21,15 @@ browser.
 Never put service-role keys, AWS keys, or other collector secrets in frontend hosting env vars.
 </Aside>
 
+## Local development
+
+Only read by `npm run db:up`. They never belong in a deployed environment.
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `LOCAL_DEV_EMAIL` | No | Login user for the local stack; defaults to the first `VITE_DASHBOARD_ALLOWED_EMAIL` entry |
+| `LOCAL_DEV_PASSWORD` | No | Pins that user's password; otherwise one is generated and written to `.env.local` |
+
 ## Collector secrets
 
 These are used by `npm run collect:status` and the GitHub Actions workflow.
