@@ -246,6 +246,11 @@ describe('fetchDashboardData', () => {
   });
 
   it('summarizes GitHub Actions usage metrics for the frontend', async () => {
+    // Pinned because runtimeSeries is built against the 30-day window ending today: without a
+    // fixed clock the fixture's collection day falls out of the window as real time moves on.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-30T12:00:00.000Z'));
+
     const client = createClient({
       projects: [
         {
