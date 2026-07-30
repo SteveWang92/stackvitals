@@ -22,24 +22,26 @@ Never point local `.env` at your production Supabase project. Local dev uses a s
 Supabase stack so testing never writes into prod.
 </Aside>
 
-<Steps>
-1. Install Docker Desktop and make sure it's running.
-2. Run `npx supabase start` — boots a local Postgres/Auth/REST stack with all migrations and seeds.
-3. Point local `.env` at the printed `API_URL`, `ANON_KEY`, and `SERVICE_ROLE_KEY`.
-4. Create a local login user and allowlist row (the local stack starts with no users):
-   ```bash
-   curl -X POST "http://127.0.0.1:54321/auth/v1/admin/users" \
-     -H "apikey: <local service_role key>" \
-     -H "Authorization: Bearer <local service_role key>" \
-     -H "Content-Type: application/json" \
-     -d '{"email":"you@example.com","password":"<a local-only password>","email_confirm":true}'
-   ```
-   ```sql
-   INSERT INTO public.dashboard_users (email, note)
-   VALUES ('you@example.com', 'local dev')
-   ON CONFLICT (email) DO NOTHING;
-   ```
-</Steps>
+Install Docker Desktop, put your email in `VITE_DASHBOARD_ALLOWED_EMAIL` in `.env`, then:
+
+```bash
+npm run db:up
+```
+
+That one command starts Docker Desktop if it isn't running, boots the local Supabase stack
+(applying every migration and seed), creates the login user and its allowlist row, and writes the
+local URL and keys to a git-ignored `.env.local`. Companion commands:
+
+- `npm run db:down` — stop the local stack; your data stays in its Docker volume.
+- `npm run db:reset` — wipe the database, re-apply migrations and seeds, re-provision the login
+  user. Use it after adding a migration.
+- `npm run dev:local` — `db:up` followed by the Vite dev server.
+- `npm run db:up:demo` — `db:up` plus fictional demo rows, so you develop against a full dashboard
+  instead of an empty one. Also `db:reset:demo` and `db:demo`.
+
+The login password is generated on first provision and stored as `LOCAL_DEV_PASSWORD` in
+`.env.local`. Set `LOCAL_DEV_PASSWORD` (and optionally `LOCAL_DEV_EMAIL`) in `.env` to pin your
+own.
 
 ## 1. Create your Supabase project
 

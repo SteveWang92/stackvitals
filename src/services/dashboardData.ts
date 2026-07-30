@@ -1,14 +1,17 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { getOverallStatus } from '../lib/status';
+import { freshnessOf, getOverallStatus } from '../lib/status';
 import type {
   CollectorErrorSummary,
   CollectorRunSummary,
+  CostPoint,
   CostSnapshot,
   DomainSummary,
   GitHubActionsUsageRow,
   GitHubActionsUsageSummary,
+  LatencyPoint,
   OpenAiUsageRow,
   OpenAiUsageSummary,
+  ProjectHistory,
   ProjectResource,
   ProjectSlug,
   ProjectStatus,
@@ -16,7 +19,8 @@ import type {
   ProviderStatus,
   SnapshotSummary,
   StatusLevel,
-  UnallocatedCostSnapshot,
+  TrendPoint,
+  UptimeDay,
 } from '../types';
 
 interface ProviderRow {
@@ -72,6 +76,18 @@ interface HealthCheckRow {
   checked_at: string;
 }
 
+/**
+ * Trimmed projection of health_checks for the 30-day window. Kept in its own array and never
+ * merged into DashboardRows.healthChecks, so every existing dedup-to-latest path is untouched
+ * by construction.
+ */
+interface HealthCheckHistoryRow {
+  project_id: string;
+  status: StatusLevel;
+  response_time_ms: number | null;
+  checked_at: string;
+}
+
 interface CollectorRunRow {
   started_at: string;
   finished_at: string | null;
@@ -91,17 +107,19 @@ interface DashboardRows {
   metrics: MetricSnapshotRow[];
   costs: CostSnapshotRow[];
   healthChecks: HealthCheckRow[];
+  healthCheckHistory: HealthCheckHistoryRow[];
   collectorRuns: CollectorRunRow[];
 }
 
 export interface DashboardData {
   projects: ProjectStatus[];
   domains: DomainSummary[];
-  unallocatedCosts: UnallocatedCostSnapshot[];
+  costs: CostSnapshot[];
   collectorRuns: CollectorRunSummary[];
   openAiUsage: OpenAiUsageSummary;
   githubActionsUsage: GitHubActionsUsageSummary;
   lastMonthCostUsd: number | null;
+  mtdCostSeries: CostPoint[];
 }
 
 const providerLabels: Record<ProviderKey, string> = {
@@ -137,6 +155,195 @@ function lastMonthBounds(now = new Date()): { startDate: string; endDate: string
 
 function isPeriodRow(row: CostSnapshotRow, period: { startDate: string; endDate: string }): boolean {
   return row.period_start === period.startDate && row.period_end <= period.endDate && row.period_end > period.startDate;
+}
+
+/** How many days of latency/uptime history the dashboard reads and renders. */
+export const HISTORY_WINDOW_DAYS = 30;
+
+/**
+ * Day keys are UTC throughout, matching currentMonthBounds/lastMonthBounds. Display code must
+ * label cells with the explicit date rather than a local-time weekday, or the two disagree.
+ */
+export function utcDayKey(iso: string): string {
+  return new Date(iso).toISOString().slice(0, 10);
+}
+
+/** The window's day keys, oldest first, always exactly `days` long including today. */
+export function utcDayRange(days: number, now = new Date()): string[] {
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+
+  return Array.from({ length: days }, (_, index) => new Date(today - (days - 1 - index) * 86_400_000).toISOString().slice(0, 10));
+}
+
+/** Inclusive lower bound for the history query: midnight UTC on the window's first day. */
+export function historySince(days: number, now = new Date()): string {
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+
+  return new Date(today - (days - 1) * 86_400_000).toISOString();
+}
+
+function median(values: number[]): number {
+  const sorted = values.slice().sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+
+  return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
+}
+
+function groupChecksByDay(checks: HealthCheckHistoryRow[]): Map<string, HealthCheckHistoryRow[]> {
+  const byDay = new Map<string, HealthCheckHistoryRow[]>();
+
+  for (const check of checks) {
+    const day = utcDayKey(check.checked_at);
+    const existing = byDay.get(day);
+
+    if (existing) {
+      existing.push(check);
+    } else {
+      byDay.set(day, [check]);
+    }
+  }
+
+  return byDay;
+}
+
+/**
+ * One cell per day in the window. Days the collector never wrote become 'no-data', never
+ * 'down' — a missed run is silence, not an outage, and conflating them invents incidents.
+ */
+function buildUptimeDays(checks: HealthCheckHistoryRow[], days: string[]): UptimeDay[] {
+  const byDay = groupChecksByDay(checks);
+
+  return days.map((day) => {
+    const dayChecks = byDay.get(day) ?? [];
+    const failed = dayChecks.filter((check) => check.status === 'failed').length;
+    const degraded = dayChecks.filter((check) => check.status === 'warning').length;
+
+    if (dayChecks.length === 0) {
+      return { day, state: 'no-data', checks: 0, failed: 0 };
+    }
+
+    if (failed === dayChecks.length) {
+      return { day, state: 'down', checks: dayChecks.length, failed };
+    }
+
+    if (failed > 0 || degraded > 0) {
+      return { day, state: 'degraded', checks: dayChecks.length, failed };
+    }
+
+    return { day, state: 'up', checks: dayChecks.length, failed };
+  });
+}
+
+/**
+ * Median rather than mean: with a retry outlier on a low-sample day, the mean misrepresents
+ * the typical response. Days without a check carry null so the sparkline renders a gap.
+ */
+function buildLatencyPoints(checks: HealthCheckHistoryRow[], days: string[]): LatencyPoint[] {
+  const byDay = groupChecksByDay(checks);
+
+  return days.map((day) => {
+    const times = (byDay.get(day) ?? [])
+      .map((check) => check.response_time_ms)
+      .filter((value): value is number => typeof value === 'number');
+
+    return { day, p50Ms: times.length === 0 ? null : Math.round(median(times)) };
+  });
+}
+
+export function buildProjectHistory(
+  projectId: string,
+  checks: HealthCheckHistoryRow[],
+  windowDays = HISTORY_WINDOW_DAYS,
+  now = new Date(),
+): ProjectHistory {
+  const days = utcDayRange(windowDays, now);
+  const projectChecks = checks.filter((check) => check.project_id === projectId);
+
+  return {
+    windowDays,
+    latency: buildLatencyPoints(projectChecks, days),
+    uptime: buildUptimeDays(projectChecks, days),
+  };
+}
+
+/**
+ * cost_snapshots.amount_usd is cumulative for its period and resets on the 1st, so this is
+ * scoped to the current month only. A naive 30-day series would render the rollover as a
+ * cliff. Points are cumulative MTD totals as of each collection day, not daily spend.
+ */
+export function buildMtdCostSeries(costs: CostSnapshotRow[], now = new Date()): CostPoint[] {
+  const period = currentMonthBounds(now);
+  const latestPerDay = new Map<string, Map<string, CostSnapshotRow>>();
+
+  for (const row of costs.filter((cost) => isPeriodRow(cost, period))) {
+    const day = utcDayKey(row.collected_at);
+    const key = [row.project_id ?? 'unallocated', providerKey(row) ?? 'unknown', row.service_name].join(':');
+    const dayRows = latestPerDay.get(day) ?? new Map<string, CostSnapshotRow>();
+    const existing = dayRows.get(key);
+
+    if (!existing || new Date(row.collected_at).getTime() > new Date(existing.collected_at).getTime()) {
+      dayRows.set(key, row);
+    }
+
+    latestPerDay.set(day, dayRows);
+  }
+
+  return Array.from(latestPerDay.entries())
+    .map(([day, dayRows]) => ({
+      day,
+      cumulativeUsd: Array.from(dayRows.values()).reduce((total, row) => total + (row.amount_usd ?? 0), 0),
+    }))
+    .sort((a, b) => a.day.localeCompare(b.day));
+}
+
+/**
+ * Sums a metric across its per-day snapshots, one point per day from the first reading to today.
+ *
+ * Unlike the cost series these metrics are rolling-window totals rather than period totals, so the
+ * point for a day is the value the collector reported that day, not the change since the day
+ * before — a difference the chart headings have to state. Where a day holds several snapshots for
+ * the same subject (a re-run), the newest wins before summing, and a day with no run stays null so
+ * the chart shows a gap instead of a drop to zero.
+ */
+function buildTrendSeries(
+  rows: MetricSnapshotRow[],
+  subjectKey: (row: MetricSnapshotRow) => string,
+  scale = 1,
+  now = new Date(),
+): TrendPoint[] {
+  const latestPerDay = new Map<string, Map<string, MetricSnapshotRow>>();
+
+  for (const row of rows) {
+    const day = utcDayKey(row.collected_at);
+    const daySubjects = latestPerDay.get(day) ?? new Map<string, MetricSnapshotRow>();
+    const existing = daySubjects.get(subjectKey(row));
+
+    if (!existing || new Date(row.collected_at).getTime() > new Date(existing.collected_at).getTime()) {
+      daySubjects.set(subjectKey(row), row);
+    }
+
+    latestPerDay.set(day, daySubjects);
+  }
+
+  if (latestPerDay.size === 0) {
+    return [];
+  }
+
+  const firstDay = Array.from(latestPerDay.keys()).sort()[0];
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const spanDays = Math.round((today - Date.parse(`${firstDay}T00:00:00Z`)) / 86_400_000) + 1;
+  // Same window as the uptime history, so a collector that stopped months ago cannot stretch the
+  // chart into a strip of empty days.
+  const windowDays = Math.min(HISTORY_WINDOW_DAYS, Math.max(1, spanDays));
+
+  return utcDayRange(windowDays, now).map((day) => {
+    const daySubjects = latestPerDay.get(day);
+
+    return {
+      day,
+      value: daySubjects ? Array.from(daySubjects.values()).reduce((total, row) => total + (row.metric_value ?? 0), 0) * scale : null,
+    };
+  });
 }
 
 function validateRequiredText(value: unknown, fieldName: string): string {
@@ -351,6 +558,19 @@ function openAiUsageSummary(metrics: MetricSnapshotRow[], costs: CostSnapshotRow
   }
 
   const rows = Array.from(usageByKey.values()).sort((a, b) => b.inputTokens + b.outputTokens - (a.inputTokens + a.outputTokens));
+  const tokenSeries = buildTrendSeries(
+    metrics.filter(
+      (row) =>
+        providerKey(row) === 'openai' &&
+        row.project_id === null &&
+        (row.metric_key === 'openai_input_tokens' || row.metric_key === 'openai_output_tokens') &&
+        metadataPeriod(row.metadata) !== 'last_month',
+    ),
+    (row) =>
+      [row.metric_key, metadataText(row.metadata, ['apiKeyLabel', 'apiKeyId']) ?? '', metadataText(row.metadata, ['model']) ?? ''].join(
+        ':',
+      ),
+  );
   const latestSpendMetric = latestBy(
     metrics.filter((metric) => providerKey(metric) === 'openai' && metric.metric_key === 'openai_spend_usd'),
     (metric) => metric.collected_at,
@@ -386,6 +606,7 @@ function openAiUsageSummary(metrics: MetricSnapshotRow[], costs: CostSnapshotRow
     lastMonthTokens: lastMonthUsageMetric?.metric_value ?? null,
     lastMonthSpendUsd: lastMonthSpendFromCosts ?? lastMonthSpendMetric?.metric_value ?? null,
     lastSync: lastSync ?? null,
+    tokenSeries,
     rows: rows.map((row) => ({
       apiKeyLabel: row.apiKeyLabel,
       model: row.model,
@@ -481,6 +702,11 @@ function githubActionsUsageSummary(metrics: MetricSnapshotRow[], projects: Proje
     recentFailures: rows.reduce((total, row) => total + (row.recentFailures ?? 0), 0),
     lastSync: lastSync ?? null,
     rows,
+    runtimeSeries: buildTrendSeries(
+      metrics.filter((row) => providerKey(row) === 'github' && row.metric_key === 'github_actions_recent_duration_seconds'),
+      (row) => `${row.project_id}:${metadataText(row.metadata, ['repository']) ?? ''}`,
+      1 / 60,
+    ),
   };
 }
 
@@ -570,12 +796,17 @@ function latestProviderStatuses(
         (resource) => resource.last_seen_at,
       );
 
+      const lastSync = latestHealth?.checked_at ?? latestMetric?.collected_at ?? latestResource?.last_seen_at ?? null;
+
       return {
         provider,
         label: providerLabel(provider),
-        status: latestHealth?.status ?? latestMetric?.status ?? (latestResource ? 'healthy' : 'unknown'),
+        // A resource-inventory row records that something exists, not that it is working, so it
+        // cannot stand in for a health signal. Without a check or a metric the status is unknown.
+        status: latestHealth?.status ?? latestMetric?.status ?? 'unknown',
         detail: providerDetail(provider, latestMetric, latestHealth, latestResource),
-        lastSync: latestHealth?.checked_at ?? latestMetric?.collected_at ?? latestResource?.last_seen_at ?? null,
+        lastSync,
+        freshness: freshnessOf(lastSync),
       };
     });
 }
@@ -798,27 +1029,15 @@ function projectFromRows(project: ProjectRow, rows: DashboardRows): ProjectStatu
   const metrics = rows.metrics.filter((metric) => metric.project_id === project.id);
   const resources = rows.resources.filter((resource) => resource.project_id === project.id);
   const healthChecks = rows.healthChecks.filter((check) => check.project_id === project.id);
-  const costs = rows.costs.filter((cost) => cost.project_id === project.id);
   const latestHttp = latestBy(healthChecks, (check) => check.checked_at);
   const latestDeploy = latestBy(
-    metrics.filter(
-      (metric) => providerKey(metric) === 'amplify' || metric.metric_key.endsWith('_deploy_status'),
-    ),
+    metrics.filter((metric) => providerKey(metric) === 'amplify' || metric.metric_key.endsWith('_deploy_status')),
     (metric) => metric.collected_at,
   );
   const lastSync = latestBy(
-    [
-      ...metrics.map((metric) => metric.collected_at),
-      ...healthChecks.map((check) => check.checked_at),
-      ...costs.map((cost) => cost.collected_at),
-    ],
+    [...metrics.map((metric) => metric.collected_at), ...healthChecks.map((check) => check.checked_at)],
     (value) => value,
   );
-  const projectCosts: CostSnapshot[] = costs.map((cost) => ({
-    provider: providerKey(cost) ?? 'aws',
-    serviceName: cost.service_name,
-    monthToDateUsd: cost.amount_usd,
-  }));
 
   return {
     slug: project.slug,
@@ -828,7 +1047,6 @@ function projectFromRows(project: ProjectRow, rows: DashboardRows): ProjectStatu
     uptimeStatus: latestHttp?.status ?? 'unknown',
     lastSync: lastSync ?? null,
     providers: latestProviderStatuses(project.id, rows.metrics, rows.healthChecks, rows.resources),
-    costs: projectCosts,
     resources: resources
       .filter((resource) => providerKey(resource) !== 'cloudflare')
       .map<ProjectResource>((resource) => ({
@@ -849,6 +1067,7 @@ function projectFromRows(project: ProjectRow, rows: DashboardRows): ProjectStatu
         collectedAt: metric.collected_at,
       })),
     collectorErrors: collectorErrors(project.slug, rows.collectorRuns),
+    history: buildProjectHistory(project.id, rows.healthCheckHistory),
   };
 }
 
@@ -868,7 +1087,7 @@ export async function fetchDashboardData(client: SupabaseClient): Promise<Dashbo
   // daily collector cadence; with many more projects/domains (or a much faster cadence)
   // older-but-still-current keys could fall outside the window and disappear from the
   // dashboard — raise the limits if the fleet grows.
-  const [projects, resources, metrics, costs, healthChecks, collectorRuns] = await Promise.all([
+  const [projects, resources, metrics, costs, healthChecks, healthCheckHistory, collectorRuns] = await Promise.all([
     selectRows<ProjectRow>(
       client
         .from('projects')
@@ -895,7 +1114,10 @@ export async function fetchDashboardData(client: SupabaseClient): Promise<Dashbo
         .from('cost_snapshots')
         .select('project_id, service_name, period_start, period_end, amount_usd, metadata, collected_at, providers(key, name)')
         .order('collected_at', { ascending: false })
-        .limit(100),
+        // Wide enough for a month of daily collection, which the daily-spend chart needs: at 100
+        // rows a fleet with a dozen cost lines only kept about a week and the rest of the month
+        // flattened into a single averaged step.
+        .limit(400),
     ),
     selectRows<HealthCheckRow>(
       client
@@ -903,6 +1125,20 @@ export async function fetchDashboardData(client: SupabaseClient): Promise<Dashbo
         .select('project_id, url, status, http_status, response_time_ms, error_message, checked_at')
         .order('checked_at', { ascending: false })
         .limit(100),
+    ),
+    // Separate from the query above on purpose. That one stays unbounded-in-time so
+    // uptimeStatus still reflects the newest check even when it predates the window; this one
+    // is a narrow 4-column projection bounded to the window, and feeds only the trend charts.
+    selectRows<HealthCheckHistoryRow>(
+      client
+        .from('health_checks')
+        .select('project_id, status, response_time_ms, checked_at')
+        .gte('checked_at', historySince(HISTORY_WINDOW_DAYS))
+        // Newest first so that hitting the row limit drops the oldest days off the left of the
+        // chart rather than the most recent ones off the right. The day grouping below does not
+        // care about order.
+        .order('checked_at', { ascending: false })
+        .limit(2000),
     ),
     selectRows<CollectorRunRow>(
       client
@@ -924,19 +1160,20 @@ export async function fetchDashboardData(client: SupabaseClient): Promise<Dashbo
     metrics,
     costs: latestCosts,
     healthChecks,
+    healthCheckHistory,
     collectorRuns,
   };
 
   validateProjectRows(projects);
   validateStatusRows(rows);
 
-  const unallocatedCosts = latestCosts
-    .filter((cost) => cost.project_id === null)
-    .map<UnallocatedCostSnapshot>((cost) => ({
-      provider: providerKey(cost) ?? 'aws',
-      serviceName: cost.service_name,
-      monthToDateUsd: cost.amount_usd,
-    }));
+  // Every cost row, whatever its project_id. Nothing writes that column today, and a row that
+  // somehow carries one must still appear in the total rather than being filtered out of sight.
+  const costSnapshots = latestCosts.map<CostSnapshot>((cost) => ({
+    provider: providerKey(cost) ?? 'aws',
+    serviceName: cost.service_name,
+    monthToDateUsd: cost.amount_usd,
+  }));
 
   return {
     projects: projects.map((project) =>
@@ -945,10 +1182,11 @@ export async function fetchDashboardData(client: SupabaseClient): Promise<Dashbo
       }),
     ),
     domains: buildDomainSummaries(resources, metrics),
-    unallocatedCosts: unallocatedCosts.sort((a, b) => (b.monthToDateUsd ?? 0) - (a.monthToDateUsd ?? 0)),
+    costs: costSnapshots.sort((a, b) => (b.monthToDateUsd ?? 0) - (a.monthToDateUsd ?? 0)),
     collectorRuns: collectorRunSummaries(collectorRuns),
     openAiUsage: openAiUsageSummary(metrics, costs),
     githubActionsUsage: githubActionsUsageSummary(metrics, projects),
     lastMonthCostUsd,
+    mtdCostSeries: buildMtdCostSeries(costs),
   };
 }

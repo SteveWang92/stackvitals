@@ -15,6 +15,11 @@ StackVitals — an open-source (AGPL-3.0), self-hosted, single-owner operations 
 
 ```bash
 npm run dev          # Vite dev server (frontend)
+npm run db:up        # scripts/local-supabase.mjs — Docker + local Supabase stack + local login user
+npm run db:down      # stop the local stack
+npm run db:reset     # wipe local DB, re-apply migrations/seeds, re-provision the login user
+npm run db:up:demo   # as db:up, plus fictional demo rows (scripts/demo-seed.mjs); also db:reset:demo, db:demo
+npm run dev:local    # db:up then the dev server
 npm run build        # tsc -b then vite build
 npm test             # vitest run (all tests, no watch)
 npm run lint         # eslint .
@@ -29,7 +34,7 @@ npm run release:prep     # create release PR from dev -> main (non-interactive)
 npm run release:ship     # finalize, squash-merge, tag, GitHub release (non-interactive)
 ```
 
-Run a single test file: `npx vitest run src/tests/services/dashboardData.test.ts`. Filter by name: `npx vitest run -t "openai"`. Vitest globals (`describe`, `it`, `expect`) are enabled — tests don't import them.
+Run a single test file: `npx vitest run src/tests/services/dashboardData.test.ts`. Filter by name: `npx vitest run -t "openai"`. There is no Vitest config file and globals are off — every test imports `describe`, `it`, `expect`, and `vi` from `vitest` directly.
 
 Commits are Conventional Commits, enforced by commitlint + Husky (`commitlint.config.cjs`), and stay to a single `type: description` line — no body/description paragraph unless the user asks for more detail. Prettier uses single quotes and `printWidth: 140`.
 
@@ -51,6 +56,8 @@ Adding a provider generally means: extend `ProviderKey` in `src/types.ts`, add a
 
 `src/services/dashboardData.ts` is the heart of the read side. `fetchDashboardData(client)` issues parallel Supabase selects, then does substantial **client-side aggregation**: dedup-to-latest per key, month-to-date vs. last-month cost bounds, OpenAI usage roll-ups, GitHub Actions summaries, per-project provider status, and collector-error scoping (errors are suppressed once a newer successful run exists for that provider). The raw DB `snake_case` row shapes are defined here as interfaces; the app-facing `camelCase` types live in `src/types.ts`. `App.tsx` is a single large component that renders the returned `DashboardData` across tabs (Detail / Collectors / Usage / Costs).
 
+There are two demo datasets and they are not interchangeable: `src/data/demoDashboardData.ts` is a ready-made `DashboardData` that `VITE_DEMO_MODE` swaps in for the read layer (screenshots, stackvitals.app), while `scripts/demo-seed.mjs` writes raw snapshot rows into the local Supabase (`npm run db:up:demo`) so local development exercises `fetchDashboardData` for real. Keep the fiction consistent between them; put new data-shape coverage in the seed.
+
 ### Data model
 
 Supabase Postgres, schema in `supabase/migrations/*.sql` (applied in numeric order). Core tables: `projects`, `providers` (lookup), `resources`, `metric_snapshots`, `cost_snapshots`, `health_checks`, `collector_runs`. Snapshots are **append-only** — the read layer picks the latest per logical key rather than updating in place. `projects.slug` is a free-form string that must match the slugs in the collector config; `providers.key` maps to `ProviderKey`.
@@ -66,6 +73,8 @@ Supabase Postgres, schema in `supabase/migrations/*.sql` (applied in numeric ord
 
 - **Amplify deploys from `main`.** The scheduled collector GitHub Action (`.github/workflows/collect.yml`) also runs only from `main` (guarded by `if: github.ref == 'refs/heads/main'`), on a daily cron. Its secrets are the canonical list of what each collector needs.
 - The docs/landing site in `site/` deploys to GitHub Pages at **stackvitals.dev** via `.github/workflows/deploy-site.yml`. A demo-mode build (`VITE_DEMO_MODE=true`, fictional data, no auth) is hosted at **stackvitals.app**.
+- **Checkout path constraint:** `npm run build` inside `site/` fails on a checkout whose absolute path contains an apostrophe — Expressive Code embeds the build path into a generated JS string and the apostrophe breaks the parse. Keep the local clone under an apostrophe-free path (it now lives under `D:\Projects\steve-projects\`). It never affected GitHub runners, and `ci.yml` builds `site/` on every PR regardless.
+- **`vite-node` is a direct devDependency, pinned to 3.x.** `collect:status` runs the collectors through it, and it used to be available only because Vitest 2 depended on it — Vitest 4 dropped it, which would have silently broken the daily collector. 3.x is the newest line that still accepts Vite 6; 5.x/6.x require Vite 7/8, so bumping Vite means bumping `vite-node` in the same change.
 - **Steve's own production hub deploys from the separate `SteveWang92/project-status-hub` repo** — a deploy-only exact mirror of this repo's `main`, updated solely by the manual `Mirror to project-status-hub` workflow (`.github/workflows/mirror-hub.yml`, run from this repo's Actions tab after a release). Never do feature work or commit in that repo/clone.
 - Keep it low-cost by default: no always-on services, paid monitoring, or extra hosting unless the plan or user explicitly calls for it.
 

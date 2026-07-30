@@ -44,4 +44,4 @@ StackVitals 使用 Supabase Postgres，迁移文件按编号顺序从 `supabase/
 2. Dashboard users 表 + RLS 策略
 3. 额外的索引和优化
 
-在开发过程中运行 `npx supabase db reset` 可以从头重新应用所有迁移和种子数据。
+在开发过程中运行 `npm run db:reset` 可以从头重新应用所有迁移和种子数据。

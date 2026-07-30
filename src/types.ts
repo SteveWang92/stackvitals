@@ -6,17 +6,27 @@ export type StatusLevel = 'healthy' | 'warning' | 'failed' | 'unknown';
 
 export type ProviderKey = 'aws' | 'amplify' | 'supabase' | 'resend' | 'cloudflare' | 'openai' | 'github' | 'http';
 
+/** Whether a provider's data is recent, overdue, or has never arrived. */
+export type Freshness = 'fresh' | 'stale' | 'never';
+
 export interface ProviderStatus {
   provider: ProviderKey;
   label: string;
   status: StatusLevel;
   detail: string;
   lastSync: string | null;
+  freshness: Freshness;
 }
 
+/**
+ * A cost line for the whole account. Costs are not attributed to a project: providers bill by
+ * service, not by which of your apps used it, and nothing in the collector pipeline can split a
+ * shared bill honestly. `cost_snapshots.project_id` stays in the schema for the day one of them
+ * can, but no adapter writes it.
+ */
 export interface CostSnapshot {
   provider: ProviderKey;
-  serviceName?: string;
+  serviceName: string;
   monthToDateUsd: number | null;
 }
 
@@ -74,6 +84,8 @@ export interface OpenAiUsageSummary {
   lastMonthSpendUsd: number | null;
   lastSync: string | null;
   rows: OpenAiUsageRow[];
+  /** Total tokens as reported on each collection day. See `TrendPoint`. */
+  tokenSeries: TrendPoint[];
 }
 
 export interface GitHubActionsUsageRow {
@@ -97,6 +109,52 @@ export interface GitHubActionsUsageSummary {
   recentFailures: number;
   lastSync: string | null;
   rows: GitHubActionsUsageRow[];
+  /** Runtime minutes as reported on each collection day. See `TrendPoint`. */
+  runtimeSeries: TrendPoint[];
+}
+
+/**
+ * One day of a trend chart. `value` is null for a day the collector recorded nothing, which the
+ * charts render as a gap rather than a zero.
+ */
+export interface TrendPoint {
+  /** UTC day, YYYY-MM-DD. */
+  day: string;
+  value: number | null;
+}
+
+export interface LatencyPoint {
+  /** UTC day, YYYY-MM-DD. */
+  day: string;
+  /** Median response time for that day, or null when no check ran. */
+  p50Ms: number | null;
+}
+
+/** 'no-data' is a distinct state from 'down': a missed collector run is not an outage. */
+export type UptimeDayState = 'up' | 'degraded' | 'down' | 'no-data';
+
+export interface UptimeDay {
+  /** UTC day, YYYY-MM-DD. */
+  day: string;
+  state: UptimeDayState;
+  /** 0 means the collector wrote nothing that day, which yields 'no-data'. */
+  checks: number;
+  failed: number;
+}
+
+export interface ProjectHistory {
+  windowDays: number;
+  /** One entry per day in the window, oldest first, gaps included. */
+  latency: LatencyPoint[];
+  /** One entry per day in the window, oldest first, gaps included. */
+  uptime: UptimeDay[];
+}
+
+export interface CostPoint {
+  /** UTC day, YYYY-MM-DD. */
+  day: string;
+  /** Cumulative month-to-date spend as of that collection day, not daily spend. */
+  cumulativeUsd: number;
 }
 
 export interface ProjectStatus {
@@ -107,10 +165,10 @@ export interface ProjectStatus {
   uptimeStatus: StatusLevel;
   lastSync: string | null;
   providers: ProviderStatus[];
-  costs: CostSnapshot[];
   resources: ProjectResource[];
   recentSnapshots: SnapshotSummary[];
   collectorErrors: CollectorErrorSummary[];
+  history: ProjectHistory;
 }
 
 export interface DomainDnsRecord {
@@ -135,10 +193,4 @@ export interface DomainSummary {
   wwwRecordPresent: boolean | null;
   lastSync: string | null;
   dnsRecords: DomainDnsRecord[];
-}
-
-export interface UnallocatedCostSnapshot {
-  provider: ProviderKey;
-  serviceName: string;
-  monthToDateUsd: number | null;
 }

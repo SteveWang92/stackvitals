@@ -9,6 +9,50 @@ below as its notes.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-07-30
+
+### Added
+
+- "Needs Attention" panel listing each failing or warning check with its project, provider, and
+  error detail; each row opens that project's detail view. Providers that have simply gone quiet
+  are counted separately from failures.
+- 30-day history on project cards and in App Detail: a median response-time sparkline and a daily
+  uptime strip. A day the collector never ran shows as no-data, not an outage.
+- Daily spend chart on the Costs tab, and usage trend charts for OpenAI tokens and GitHub Actions
+  runtime minutes on the Usage tab.
+- Staleness badge on provider rows showing how old a collector's data is, while the status pill
+  keeps reporting the last known state.
+- "Stack Status Hub" subtitle in the dashboard header and sign-in screen, the browser tab title,
+  and the landing pages (English and Chinese).
+- `npm run db:up` — one command for a local Supabase stack, dashboard login user, and a
+  git-ignored `.env.local`. Also `db:down`, `db:reset`, and `dev:local`.
+- `npm run db:up:demo` seeds the local database with fictional data covering every dashboard
+  state. Also `db:reset:demo` and `db:demo`.
+- Migration `007_history_indexes.sql` adds timestamp indexes to `health_checks`,
+  `metric_snapshots`, and `cost_snapshots`. Self-hosters should apply it; the dashboard works
+  without it, just slower.
+- CI builds the docs site on every pull request.
+
+### Changed
+
+- Timestamps use a 24-hour clock.
+- Costs are account-level throughout: `CollectorCost` drops its project field and the Costs tab no
+  longer filters by project. No adapter ever wrote a per-project cost. The
+  `cost_snapshots.project_id` column stays for a future allocation scheme.
+- Data is considered stale after 36 hours instead of 24, so ordinary drift in the daily collector
+  schedule no longer trips it.
+
+### Fixed
+
+- A provider known only from a resource-inventory row reported as "Healthy". It now reports
+  "Unknown" until a health check or metric arrives.
+
+### Security
+
+- Upgraded `vitest` 4, `eslint` 10, `astro` 7, `@astrojs/starlight`, and `sharp` 0.35 to clear all
+  open advisories in the dashboard and the docs site. None of these ship in the deployed bundle.
+
+
 ## [1.4.0] - 2026-07-19
 
 ### Added
@@ -100,7 +144,8 @@ source projects.
   to the GitHub Actions job summary.
 - Self-hosting guide and contributing guide (including how to add a new adapter).
 
-[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/SteveWang92/stackvitals/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/SteveWang92/stackvitals/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/SteveWang92/stackvitals/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/SteveWang92/stackvitals/compare/v1.1.0...v1.2.0

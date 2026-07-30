@@ -1,7 +1,7 @@
 {
   "name": "stackvitals",
-  "version": "1.4.0",
-  "description": "Self-hosted operations dashboard for your web projects — uptime, deploy health, cloud cost, and AI/CI usage in one place.",
+  "version": "1.5.0",
+  "description": "Stack Status Hub — a self-hosted operations dashboard for your web projects: uptime, deploy health, cloud cost, and AI/CI usage in one place.",
   "keywords": [
     "dashboard",
     "observability",
@@ -24,6 +24,13 @@
   "scripts": {
     "dev": "vite",
     "dev:demo": "cross-env VITE_DEMO_MODE=true vite",
+    "dev:local": "npm run db:up && vite",
+    "db:up": "node scripts/local-supabase.mjs up",
+    "db:up:demo": "node scripts/local-supabase.mjs up --demo",
+    "db:down": "node scripts/local-supabase.mjs down",
+    "db:reset": "node scripts/local-supabase.mjs reset",
+    "db:reset:demo": "node scripts/local-supabase.mjs reset --demo",
+    "db:demo": "node scripts/local-supabase.mjs demo",
     "build": "tsc -b && vite build",
     "collect:http": "node scripts/manual-http-health.mjs",
     "collect:status": "vite-node src/collectors/runConfiguredCollectors.ts",
@@ -48,15 +55,15 @@
   "devDependencies": {
     "@commitlint/cli": "^19.6.1",
     "@commitlint/config-conventional": "^19.6.0",
-    "@eslint/js": "^9.17.0",
+    "@eslint/js": "^10.0.1",
     "@testing-library/react": "^16.1.0",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
     "@vitejs/plugin-react": "^4.3.4",
     "cross-env": "^10.1.0",
-    "eslint": "^9.17.0",
-    "eslint-plugin-react-hooks": "^5.1.0",
-    "eslint-plugin-react-refresh": "^0.4.16",
+    "eslint": "^10.8.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^15.14.0",
     "husky": "^9.1.7",
     "prettier": "^3.4.2",
@@ -64,6 +71,7 @@
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.2",
     "vite": "^6.0.7",
-    "vitest": "^2.1.8"
+    "vite-node": "^3.2.4",
+    "vitest": "^4.1.10"
   }
 }

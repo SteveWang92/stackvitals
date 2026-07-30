@@ -171,6 +171,23 @@ a {
   line-height: 1.55;
 }
 
+.topbar .brand-subtitle,
+.auth-panel .brand-subtitle {
+  color: #2e5b84;
+  font-size: 0.82rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.topbar .brand-subtitle {
+  margin: 8px 0 0;
+}
+
+.auth-panel .brand-subtitle {
+  margin-top: -8px;
+}
+
 .refresh-button {
   display: inline-flex;
   min-height: 42px;
@@ -202,6 +219,12 @@ a {
   line-height: 1.35;
   margin: 14px 0;
   padding: 10px 12px;
+}
+
+/* Inside a panel the banner is a direct child of an unpadded section, so it needs the panel's own
+   20px gutter; inside a card the card's padding already provides it. */
+.detail-panel > .state-banner {
+  margin: 0 20px 16px;
 }
 
 .state-banner-warning {
@@ -331,24 +354,259 @@ a {
   padding: 7px 9px;
 }
 
+/* Only the status palette is tokenised: the SVG charts need these same four colours, and
+   duplicating the hex values across CSS and markup is how they drift apart. */
+:root {
+  --status-healthy-bg: #e7f7ef;
+  --status-healthy-fg: #176c42;
+  --status-warning-bg: #fff4dd;
+  --status-warning-fg: #8a5a08;
+  --status-failed-bg: #fde8e8;
+  --status-failed-fg: #9b1c1c;
+  --status-unknown-bg: #eef1f5;
+  --status-unknown-fg: #526072;
+}
+
 .status-healthy {
-  background: #e7f7ef;
-  color: #176c42;
+  background: var(--status-healthy-bg);
+  color: var(--status-healthy-fg);
 }
 
 .status-warning {
-  background: #fff4dd;
-  color: #8a5a08;
+  background: var(--status-warning-bg);
+  color: var(--status-warning-fg);
 }
 
 .status-failed {
-  background: #fde8e8;
-  color: #9b1c1c;
+  background: var(--status-failed-bg);
+  color: var(--status-failed-fg);
 }
 
 .status-unknown {
-  background: #eef1f5;
-  color: #526072;
+  background: var(--status-unknown-bg);
+  color: var(--status-unknown-fg);
+}
+
+.sparkline {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #3f6ad6;
+}
+
+.project-history {
+  margin: 0 0 16px;
+}
+
+.project-history h3 {
+  margin: 0 0 8px;
+  color: #657082;
+  font-size: 0.75rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.project-history .sparkline {
+  margin-bottom: 10px;
+}
+
+.project-history .sparkline svg {
+  height: 34px;
+}
+
+.sparkline svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.sparkline-plot {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+/* The SVG has to flex rather than keep width:100%, or the scale column pushes it past the edge. */
+.sparkline-plot svg {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
+}
+
+/* Highest reading at the top of the plot, lowest at the bottom — the line is drawn between them. */
+.sparkline-scale {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #8a94a6;
+  font-size: 0.66rem;
+  font-weight: 650;
+  line-height: 1;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.sparkline-scale:only-child,
+.sparkline-scale:has(span:only-child) {
+  justify-content: center;
+}
+
+.sparkline-value,
+.uptime-strip-summary {
+  color: #657082;
+  font-size: 0.72rem;
+  font-weight: 650;
+  margin: 0;
+}
+
+.sparkline-empty {
+  margin: 0;
+  color: #8a94a6;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.uptime-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0 0 14px;
+}
+
+.uptime-strip-svg {
+  display: block;
+  width: 100%;
+  height: 14px;
+}
+
+.uptime-day-up {
+  fill: var(--status-healthy-fg);
+}
+
+.uptime-day-degraded {
+  fill: var(--status-warning-fg);
+}
+
+.uptime-day-down {
+  fill: var(--status-failed-fg);
+}
+
+/* Hollow rather than filled: a day with no reading must not look like a recorded outcome. */
+.uptime-day-no-data {
+  fill: none;
+  stroke: #b9c1cd;
+  stroke-width: 0.4;
+  stroke-dasharray: 1 1;
+}
+
+/* Stacked, not side by side: the sparkline and the uptime strip share an x axis, and reading one
+   against the other only works when they line up vertically, the way the project card shows them. */
+.history-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Same reason as .panel-trend: full width would otherwise scale the height with the viewBox. */
+.history-panel .sparkline svg {
+  height: 72px;
+}
+
+.history-panel h4 {
+  margin: 0 0 8px;
+  color: #657082;
+  font-size: 0.72rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.detail-section-wide {
+  grid-column: 1 / -1;
+}
+
+/* Sits beneath the summary row rather than inside a tile: the four-column grid gives each tile
+   about 245px, which turns a "Project - Provider - detail" line into three wrapped rows and
+   stretches every sibling tile with it. */
+.attention-panel {
+  border: 1px solid #e2e6ed;
+  border-radius: 8px;
+  background: #fff;
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+}
+
+/* Side padding lives on the children so the heading keeps the same 18px/20px box every other
+   panel heading uses; padding on the panel itself would double up on top of it. */
+.attention-panel .compact-list,
+.attention-panel .attention-footnote {
+  padding: 0 20px;
+}
+
+.attention-row {
+  width: 100%;
+  border: none;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.attention-row:hover,
+.attention-row:focus-visible {
+  background: #f5f8ff;
+}
+
+.attention-footnote {
+  margin: 12px 0 0;
+  color: #657082;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Panels have no padding of their own — their sections carry it — so the chart has to bring the
+   same 20px gutter or the line runs into the panel border. */
+.panel-trend {
+  padding: 0 20px 18px;
+}
+
+/* Fixed height: the SVG is full width, and letting it keep the viewBox aspect ratio would make a
+   full-width panel chart over 120px tall. */
+.panel-trend .sparkline svg {
+  height: 72px;
+}
+
+.panel-trend h3 {
+  margin: 0 0 8px;
+  color: #657082;
+  font-size: 0.75rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.stale-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  border: 1px solid #e0d3ab;
+  border-radius: 999px;
+  background: #fdf6e3;
+  padding: 5px 8px;
+  color: #7a6318;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.table-sync-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .project-card-bottom {

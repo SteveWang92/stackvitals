@@ -162,7 +162,8 @@ export function createSupabaseCollectorRunRecorder(client: SupabaseCollectorRunC
   async function costRows(costs: CollectorCost[]): Promise<CostSnapshotInsert[]> {
     return Promise.all(
       costs.map(async (cost) => ({
-        project_id: await nullableProjectId(cost.projectSlug),
+        // Always null: costs are account-level. The column stays for a future allocation scheme.
+        project_id: null,
         provider_id: await providerId(cost.provider),
         service_name: cost.serviceName,
         period_start: cost.periodStart,

@@ -1,5 +1,7 @@
 # StackVitals
 
+**Stack Status Hub** for solo developers.
+
 [![CI](https://github.com/SteveWang92/stackvitals/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/SteveWang92/stackvitals/actions/workflows/ci.yml)
 [![Deploy site](https://github.com/SteveWang92/stackvitals/actions/workflows/deploy-site.yml/badge.svg?branch=main)](https://github.com/SteveWang92/stackvitals/actions/workflows/deploy-site.yml)
 

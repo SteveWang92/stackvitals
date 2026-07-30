@@ -20,6 +20,15 @@ import { Aside } from '@astrojs/starlight/components';
 永远不要将 service-role key、AWS 密钥或其他采集器密钥放在前端托管的环境变量中。
 </Aside>
 
+## 本地开发
+
+仅由 `npm run db:up` 读取，不应出现在任何已部署的环境中。
+
+| 变量 | 必需 | 用途 |
+|---|---|---|
+| `LOCAL_DEV_EMAIL` | 否 | 本地环境的登录用户；默认取 `VITE_DASHBOARD_ALLOWED_EMAIL` 的第一项 |
+| `LOCAL_DEV_PASSWORD` | 否 | 固定该用户的密码；未设置时自动生成并写入 `.env.local` |
+
 ## 采集器密钥
 
 这些由 `npm run collect:status` 和 GitHub Actions 工作流使用。

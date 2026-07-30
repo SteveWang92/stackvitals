@@ -1,5 +1,6 @@
+import { HISTORY_WINDOW_DAYS, utcDayRange } from '../services/dashboardData';
 import type { DashboardData } from '../services/dashboardData';
-import type { ProjectStatus } from '../types';
+import type { CostPoint, ProjectHistory, ProjectStatus, TrendPoint } from '../types';
 
 function hoursAgo(hours: number): string {
   return new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
@@ -7,6 +8,86 @@ function hoursAgo(hours: number): string {
 
 function daysFromNow(days: number): string {
   return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+/**
+ * Deterministic jitter. The demo build feeds stackvitals.app and the committed screenshots, so
+ * this must never use Math.random() — the same day must always render the same chart.
+ */
+function jitter(index: number, seed: number): number {
+  const value = Math.sin(index * 12.9898 + seed * 78.233) * 43758.5453;
+
+  return value - Math.floor(value);
+}
+
+/**
+ * Fictional 30-day history. `degradedDay` and `gapDay` are indexes into the window (0 = oldest)
+ * so the demo can show all four uptime states — without them the strip is 30 identical green
+ * cells and the feature reads as decoration.
+ */
+function demoHistory(baseMs: number, options: { degradedDay?: number; gapDay?: number } = {}): ProjectHistory {
+  const days = utcDayRange(HISTORY_WINDOW_DAYS);
+
+  return {
+    windowDays: HISTORY_WINDOW_DAYS,
+    latency: days.map((day, index) => {
+      if (index === options.gapDay) {
+        return { day, p50Ms: null };
+      }
+
+      const spread = 0.82 + jitter(index, baseMs) * 0.36;
+
+      return { day, p50Ms: Math.round(baseMs * (index === options.degradedDay ? spread * 3.4 : spread)) };
+    }),
+    uptime: days.map((day, index) => {
+      if (index === options.gapDay) {
+        return { day, state: 'no-data' as const, checks: 0, failed: 0 };
+      }
+
+      if (index === options.degradedDay) {
+        return { day, state: 'degraded' as const, checks: 2, failed: 1 };
+      }
+
+      return { day, state: 'up' as const, checks: 1, failed: 0 };
+    }),
+  };
+}
+
+/**
+ * Cumulative month-to-date spend, one point per collection day, ending exactly at the MTD total.
+ * Built by accumulating uneven daily amounts rather than a smooth curve: the Costs tab charts the
+ * day-over-day rise, and a smooth curve would flatten into a straight line there.
+ */
+function demoMtdCostSeries(total: number): CostPoint[] {
+  const now = new Date();
+  const dayOfMonth = now.getUTCDate();
+  const weights = Array.from({ length: dayOfMonth }, (_, index) => 0.55 + jitter(index, total) * 0.95);
+  const weightTotal = weights.reduce((sum, weight) => sum + weight, 0);
+  let running = 0;
+
+  return weights.map((weight, index) => {
+    running += (total * weight) / weightTotal;
+
+    return {
+      day: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), index + 1)).toISOString().slice(0, 10),
+      cumulativeUsd: Number(running.toFixed(2)),
+    };
+  });
+}
+
+/**
+ * A usage trend that climbs to `latest` on the newest day, so the chart and the summary tile above
+ * it agree. `gapDay` is an index into the window (0 = oldest) and models a day the collector never
+ * ran, which the chart must render as a break rather than a drop to zero.
+ */
+function demoTrendSeries(days: number, latest: number, seed: number, gapDay?: number): TrendPoint[] {
+  const shape = Array.from({ length: days }, (_, index) => 0.58 + (index / days) * 0.42 + jitter(index, seed) * 0.14);
+  const scale = latest / shape[days - 1];
+
+  return utcDayRange(days).map((day, index) => ({
+    day,
+    value: index === gapDay ? null : Number((shape[index] * scale).toFixed(2)),
+  }));
 }
 
 const acmeSite: ProjectStatus = {
@@ -23,13 +104,17 @@ const acmeSite: ProjectStatus = {
       status: 'healthy',
       detail: 'Branch main deployed 3 hours ago (build #214).',
       lastSync: hoursAgo(3),
+      freshness: 'fresh',
     },
     {
       provider: 'supabase',
       label: 'Supabase',
       status: 'healthy',
       detail: 'Database reachable, 12 active connections.',
-      lastSync: hoursAgo(3),
+      // Deliberately overdue: shows a last-known-healthy provider that stopped reporting, which
+      // is the case the freshness badge exists for. Status stays healthy; only the badge warns.
+      lastSync: hoursAgo(52),
+      freshness: 'stale',
     },
     {
       provider: 'resend',
@@ -37,6 +122,7 @@ const acmeSite: ProjectStatus = {
       status: 'warning',
       detail: 'Monthly email quota at 82% (2,460 of 3,000 sends).',
       lastSync: hoursAgo(3),
+      freshness: 'fresh',
     },
     {
       provider: 'http',
@@ -44,12 +130,8 @@ const acmeSite: ProjectStatus = {
       status: 'healthy',
       detail: 'Public URL returned 200 in 184 ms.',
       lastSync: hoursAgo(1),
+      freshness: 'fresh',
     },
-  ],
-  costs: [
-    { provider: 'openai', serviceName: 'OpenAI API', monthToDateUsd: 3.1 },
-    { provider: 'amplify', serviceName: 'AWS Amplify hosting', monthToDateUsd: 1.42 },
-    { provider: 'resend', serviceName: 'Resend email', monthToDateUsd: 0 },
   ],
   resources: [
     {
@@ -75,6 +157,7 @@ const acmeSite: ProjectStatus = {
     { label: 'Email quota', provider: 'resend', status: 'warning', value: '82% of monthly quota', collectedAt: hoursAgo(3) },
   ],
   collectorErrors: [],
+  history: demoHistory(184),
 };
 
 const todoApp: ProjectStatus = {
@@ -91,6 +174,7 @@ const todoApp: ProjectStatus = {
       status: 'healthy',
       detail: 'Branch main deployed yesterday (build #98).',
       lastSync: hoursAgo(3),
+      freshness: 'fresh',
     },
     {
       provider: 'supabase',
@@ -98,6 +182,7 @@ const todoApp: ProjectStatus = {
       status: 'healthy',
       detail: '1,284 aggregate records, RPC checks passing.',
       lastSync: hoursAgo(3),
+      freshness: 'fresh',
     },
     {
       provider: 'http',
@@ -105,11 +190,8 @@ const todoApp: ProjectStatus = {
       status: 'healthy',
       detail: 'Public URL returned 200 in 231 ms.',
       lastSync: hoursAgo(1),
+      freshness: 'fresh',
     },
-  ],
-  costs: [
-    { provider: 'openai', serviceName: 'OpenAI API', monthToDateUsd: 1.35 },
-    { provider: 'amplify', serviceName: 'AWS Amplify hosting', monthToDateUsd: 0.96 },
   ],
   resources: [
     {
@@ -135,6 +217,7 @@ const todoApp: ProjectStatus = {
     { label: 'HTTP latency', provider: 'http', status: 'healthy', value: '231 ms', collectedAt: hoursAgo(1) },
   ],
   collectorErrors: [],
+  history: demoHistory(231, { degradedDay: 12 }),
 };
 
 const recipeBox: ProjectStatus = {
@@ -151,6 +234,7 @@ const recipeBox: ProjectStatus = {
       status: 'healthy',
       detail: 'Branch main deployed 2 days ago (build #61).',
       lastSync: hoursAgo(3),
+      freshness: 'fresh',
     },
     {
       provider: 'supabase',
@@ -158,6 +242,7 @@ const recipeBox: ProjectStatus = {
       status: 'healthy',
       detail: 'Database reachable, storage at 14% of quota.',
       lastSync: hoursAgo(3),
+      freshness: 'fresh',
     },
     {
       provider: 'http',
@@ -165,9 +250,9 @@ const recipeBox: ProjectStatus = {
       status: 'warning',
       detail: 'Public URL returned 200 in 1,940 ms (slow response).',
       lastSync: hoursAgo(1),
+      freshness: 'fresh',
     },
   ],
-  costs: [{ provider: 'amplify', serviceName: 'AWS Amplify hosting', monthToDateUsd: 0.61 }],
   resources: [
     {
       id: 'demo-res-5',
@@ -191,6 +276,7 @@ const recipeBox: ProjectStatus = {
     { label: 'HTTP latency', provider: 'http', status: 'warning', value: '1,940 ms', collectedAt: hoursAgo(1) },
   ],
   collectorErrors: [{ provider: 'http', message: 'Response time exceeded the 1,500 ms warning threshold.', occurredAt: hoursAgo(1) }],
+  history: demoHistory(640, { degradedDay: 29 }),
 };
 
 const statusHub: ProjectStatus = {
@@ -207,6 +293,7 @@ const statusHub: ProjectStatus = {
       status: 'healthy',
       detail: 'Branch main deployed 5 hours ago (build #142).',
       lastSync: hoursAgo(3),
+      freshness: 'fresh',
     },
     {
       provider: 'supabase',
@@ -214,6 +301,7 @@ const statusHub: ProjectStatus = {
       status: 'healthy',
       detail: 'Hub database reachable, snapshots writing normally.',
       lastSync: hoursAgo(3),
+      freshness: 'fresh',
     },
     {
       provider: 'github',
@@ -221,6 +309,7 @@ const statusHub: ProjectStatus = {
       status: 'healthy',
       detail: 'Scheduled collector workflow passing on main.',
       lastSync: hoursAgo(3),
+      freshness: 'fresh',
     },
     {
       provider: 'http',
@@ -228,9 +317,9 @@ const statusHub: ProjectStatus = {
       status: 'healthy',
       detail: 'Public URL returned 200 in 152 ms.',
       lastSync: hoursAgo(1),
+      freshness: 'fresh',
     },
   ],
-  costs: [{ provider: 'amplify', serviceName: 'AWS Amplify hosting', monthToDateUsd: 0.84 }],
   resources: [
     {
       id: 'demo-res-7',
@@ -255,6 +344,7 @@ const statusHub: ProjectStatus = {
     { label: 'HTTP latency', provider: 'http', status: 'healthy', value: '152 ms', collectedAt: hoursAgo(1) },
   ],
   collectorErrors: [],
+  history: demoHistory(152, { gapDay: 18 }),
 };
 
 export const demoDashboardData: DashboardData = {
@@ -310,22 +400,20 @@ export const demoDashboardData: DashboardData = {
       ],
     },
   ],
-  unallocatedCosts: [
-    {
-      provider: 'aws',
-      serviceName: 'Route 53 hosted zones',
-      monthToDateUsd: 1.0,
-    },
-    {
-      provider: 'openai',
-      serviceName: 'OpenAI experiments key',
-      monthToDateUsd: 0.42,
-    },
-    {
-      provider: 'aws',
-      serviceName: 'Tax',
-      monthToDateUsd: 0.38,
-    },
+  // Account-level, never per project. OpenAI bills a line per model and direction, which is what
+  // the real cost API returns; the total across them matches openAiUsage.spendUsd.
+  costs: [
+    { provider: 'amplify', serviceName: 'AWS Amplify hosting', monthToDateUsd: 3.83 },
+    { provider: 'openai', serviceName: 'gpt-4o-mini-2026-02-11, input', monthToDateUsd: 2.1 },
+    { provider: 'openai', serviceName: 'gpt-4o-mini-2026-02-11, output', monthToDateUsd: 1.05 },
+    { provider: 'aws', serviceName: 'Route 53 hosted zones', monthToDateUsd: 1.0 },
+    { provider: 'openai', serviceName: 'gpt-4o-2026-01-24, input', monthToDateUsd: 0.86 },
+    { provider: 'openai', serviceName: 'gpt-4o-2026-01-24, output', monthToDateUsd: 0.44 },
+    { provider: 'aws', serviceName: 'Tax', monthToDateUsd: 0.38 },
+    { provider: 'openai', serviceName: 'o4-mini-2026-03-17, input', monthToDateUsd: 0.28 },
+    { provider: 'openai', serviceName: 'o4-mini-2026-03-17, output', monthToDateUsd: 0.14 },
+    // Kept at zero on purpose: a cost line with nothing billed must not pad the table.
+    { provider: 'resend', serviceName: 'Resend email', monthToDateUsd: 0 },
   ],
   collectorRuns: [
     {
@@ -421,6 +509,7 @@ export const demoDashboardData: DashboardData = {
     lastMonthTokens: 3_921_050,
     lastMonthSpendUsd: 14.32,
     lastSync: hoursAgo(3),
+    tokenSeries: demoTrendSeries(14, 1_284_720, 41, 6),
     rows: [
       {
         apiKeyLabel: 'acme-site-prod',
@@ -454,6 +543,7 @@ export const demoDashboardData: DashboardData = {
     recentRuns: 58,
     recentFailures: 2,
     lastSync: hoursAgo(3),
+    runtimeSeries: demoTrendSeries(14, 96.4, 17),
     rows: [
       {
         projectSlug: 'acme_site',
@@ -514,4 +604,5 @@ export const demoDashboardData: DashboardData = {
     ],
   },
   lastMonthCostUsd: 33.06,
+  mtdCostSeries: demoMtdCostSeries(10.08),
 };

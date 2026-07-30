@@ -25,6 +25,20 @@ Scope is status, cost, and basic aggregate usage for a single owner's projects. 
 stay on their existing hosting; low cost is preferred over high-frequency monitoring. Version
 `1.0.0` was the first baseline release.
 
+## Naming
+
+The name is always presented with the subtitle **Stack Status Hub** (中文：独立开发者的状态中心) —
+in the app header and sign-in screen, the `index.html` title, the README, the `package.json`
+description, and both landing pages. The subtitle explains the product at a glance and
+distinguishes it from `stackvital.com`, an unrelated nutrition site that uses the singular form
+of the name.
+
+Renaming was considered and rejected: the two occupy entirely different sectors, this is a
+single-owner tool rather than a product competing for the same audience, and a rename would
+mean buying new domains and reworking the Amplify app plus the GitHub Pages site. The subtitle
+is deliberately **not** "Project Status Hub", which would collide with the separate
+`project-status-hub` repository.
+
 ## Current State
 
 - Static React/Vite dashboard with Supabase Auth and RLS-protected reads.
@@ -84,13 +98,29 @@ The normalized tables support more providers later:
 - `providers`: provider registry, such as `aws`, `amplify`, `supabase`, `resend`, `openai`, `github`, `cloudflare`. New keys are added together with their collector, never ahead of it.
 - `resources`: deployments, domains, databases, auth stores, storage buckets, API accounts, and other provider resources.
 - `metric_snapshots`: status, counts, usage, latency, deploy state, and collection results over time.
-- `cost_snapshots`: daily or monthly cost by provider and service; rows stay account-level (`project_id` null) unless a collector can map a cost to one project.
+- `cost_snapshots`: daily or monthly cost by provider and service. Rows are always account-level: `project_id` exists for a future allocation scheme, but no adapter writes it, and the dashboard reads every row regardless of it.
 - `health_checks`: uptime, HTTP status, response time, and last successful collection.
 - `collector_runs`: audit trail for each scheduled or manual collection run, including errors.
 
 Snapshots are append-only — the read layer picks the latest per logical key rather than updating
 in place. Only aggregate operational data is stored; user records, transactions, and other raw
 app data never enter this tool.
+
+The one exception to "latest per key" is the trend history. `fetchDashboardData` issues a
+separate, narrowly-projected `health_checks` query bounded to the last 30 days
+(`HISTORY_WINDOW_DAYS`), which feeds per-project latency and uptime charts. It is deliberately
+kept in its own array and never merged into the latest-per-key rows, so the status read path is
+unaffected by it. Day bucketing is UTC, and a day the collector never wrote becomes an explicit
+`no-data` state rather than an outage — a missed run is silence, not downtime. Month-to-date
+cost history is scoped to the current billing period, because `cost_snapshots.amount_usd` is
+cumulative for its period and resets on the 1st; the Costs tab charts the rise between
+collections as spend per day, spreading a skipped day's rise across the days it covers rather
+than spiking on the day collection resumed.
+
+The OpenAI and GitHub Actions usage charts are not the same kind of series. Those metrics are
+rolling-window totals, not period totals, so each point is the figure the collector reported
+that day rather than that day's own consumption — the charts show whether usage is climbing,
+and their headings say "by collection day" to keep that distinction visible.
 
 ## Provider Adapters
 
@@ -141,7 +171,7 @@ The project documentation site (`site/`) deploys separately to GitHub Pages via
 
 - Overview: each app with deploy status, uptime, domain/DNS health, current month cost estimate, and last sync.
 - App detail: provider resources, recent snapshots, collector errors, and auth/data aggregate counts.
-- Cost view: month-to-date cost by provider, without assigning account-level costs to projects.
+- Cost view: month-to-date cost by provider and service line, plus spend per day. Costs are never assigned to a project.
 - OpenAI usage: account-level token, request, cached-token, and spend summary with API-key/model rows.
 - GitHub Actions usage: repository-level latest run status, workflow runs, failures, scheduled-run counts, and runtime duration totals.
 - Collector diagnostics/settings: connection status, last synced time, missing credentials, and collector summaries.
@@ -153,7 +183,7 @@ The project documentation site (`site/`) deploys separately to GitHub Pages via
 - Use Supabase for this tool's auth/database and static hosting for the frontend.
 - Avoid high-frequency observability or always-on infrastructure.
 - Use daily cost snapshots before adding deeper monitoring.
-- Keep provider costs account-level (`project_id` null) rather than guessing per-project splits.
+- Keep provider costs account-level rather than guessing per-project splits. Providers bill by service; splitting a shared Amplify or EC2 line between apps would be invention, so `CollectorCost` has no project field at all.
 - Do not migrate tracked apps unless collected metrics prove it is worth it.
 
 ## Security And Data Handling

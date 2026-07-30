@@ -25,8 +25,11 @@ export interface CollectorMetric {
   collectedAt: string;
 }
 
+/**
+ * Costs are account-level. There is deliberately no project field: providers bill by service, and
+ * no adapter can say which of your apps a shared line belongs to without inventing an allocation.
+ */
 export interface CollectorCost {
-  projectSlug?: ProjectSlug;
   provider: ProviderKey;
   serviceName: string;
   periodStart: string;
