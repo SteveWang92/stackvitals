@@ -18,24 +18,23 @@ import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
 不要将本地 `.env` 指向你的生产 Supabase 项目。本地开发使用独立的本地 Supabase 环境，以确保测试不会写入生产数据。
 </Aside>
 
-<Steps>
-1. 安装 Docker Desktop 并确保它正在运行。
-2. 运行 `npx supabase start`——启动一个包含所有迁移和种子数据的本地 Postgres/Auth/REST 环境。
-3. 将本地 `.env` 指向打印出来的 `API_URL`、`ANON_KEY` 和 `SERVICE_ROLE_KEY`。
-4. 创建一个本地登录用户和允许列表行（本地环境启动时没有用户）：
-   ```bash
-   curl -X POST "http://127.0.0.1:54321/auth/v1/admin/users" \
-     -H "apikey: <本地 service_role key>" \
-     -H "Authorization: Bearer <本地 service_role key>" \
-     -H "Content-Type: application/json" \
-     -d '{"email":"you@example.com","password":"<仅限本地使用的密码>","email_confirm":true}'
-   ```
-   ```sql
-   INSERT INTO public.dashboard_users (email, note)
-   VALUES ('you@example.com', 'local dev')
-   ON CONFLICT (email) DO NOTHING;
-   ```
-</Steps>
+安装 Docker Desktop，在 `.env` 中把你的邮箱填入 `VITE_DASHBOARD_ALLOWED_EMAIL`，然后运行：
+
+```bash
+npm run db:up
+```
+
+这一条命令会在 Docker Desktop 未运行时启动它，拉起本地 Supabase 环境（应用所有迁移和种子数据），
+创建登录用户及其允许列表行，并把本地 URL 和密钥写入被 git 忽略的 `.env.local`。配套命令：
+
+- `npm run db:down`——停止本地环境；数据保留在 Docker 卷中。
+- `npm run db:reset`——清空数据库，重新应用迁移和种子数据，重新创建登录用户。新增迁移后使用。
+- `npm run dev:local`——先 `db:up`，再启动 Vite 开发服务器。
+- `npm run db:up:demo`——在 `db:up` 基础上写入虚构的演示数据，这样本地开发面对的是一个完整的仪表盘
+  而不是空白页面。另有 `db:reset:demo` 和 `db:demo`。
+
+登录密码在首次创建用户时生成，保存为 `.env.local` 中的 `LOCAL_DEV_PASSWORD`。想固定使用自己的密码，
+可在 `.env` 中设置 `LOCAL_DEV_PASSWORD`（以及可选的 `LOCAL_DEV_EMAIL`）。
 
 ## 1. 创建 Supabase 项目
 

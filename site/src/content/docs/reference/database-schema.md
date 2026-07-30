@@ -52,4 +52,4 @@ Migrations are applied in numeric order from `supabase/migrations/`:
 2. Dashboard users table + RLS policies
 3. Additional indexes and refinements
 
-Run `npx supabase db reset` to reapply all migrations and seeds from scratch during development.
+Run `npm run db:reset` to reapply all migrations and seeds from scratch during development.
