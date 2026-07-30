@@ -160,6 +160,14 @@ provider inventory snapshots, and a manual `refresh now` path for ad hoc checks.
 a GitHub Actions cron plus a manual workflow trigger, and scheduled production collectors run only
 from `main`. The frontend stays static with no always-on server.
 
+Alerting reuses the scheduler rather than adding a delivery service: the collector process exits
+non-zero when a run contains a hard failure (an adapter error, a `failed` metric, or a `failed`
+health check), which fails the scheduled workflow run and triggers GitHub's own failed-workflow
+email. Warning-level results deliberately do not fail the run — a known warning that emails daily
+is an alert the owner learns to ignore — so warnings stay confined to the dashboard's attention
+panel and the workflow step summary. Snapshots are recorded before the exit code is set, so a
+failing run still stores everything it collected.
+
 Development flow: feature work happens on short-lived `feat/*` branches that merge into `dev` for
 a combined manual check; the owner merges `dev` into `main` to trigger the production deploy.
 

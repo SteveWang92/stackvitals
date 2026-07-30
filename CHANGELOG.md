@@ -9,6 +9,13 @@ below as its notes.
 
 ## [Unreleased]
 
+### Added
+
+- `collect:status` exits non-zero when a run contains a hard failure — an adapter error, a
+  `failed` metric, or a `failed` health check — so a scheduled GitHub Actions run is marked failed
+  and GitHub's own failed-workflow email becomes the alerting path. Warning-level results still do
+  not fail the run, and snapshots are recorded before the exit code is set.
+
 ## [1.5.0] - 2026-07-30
 
 ### Added

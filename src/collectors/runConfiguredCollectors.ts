@@ -13,6 +13,7 @@ import { createResendVerificationEmailAdapter } from './providers/resend';
 import { createSupabaseAggregateAdapter } from './providers/supabaseAggregate';
 import { createSupabaseProjectHealthAdapter } from './providers/supabaseProjectHealth';
 import { buildGithubStepSummary } from './githubStepSummary';
+import { collectRunFailures, formatRunFailures } from './runFailures';
 import { runCollectors } from './runCollectors';
 import { createSupabaseCollectorRunRecorder } from './stores/supabaseCollectorRunRecorder';
 import { getArgValue, resolveEnvPlaceholders, type CollectorConfig } from './config';
@@ -325,4 +326,15 @@ console.log(
 
 if (process.env.GITHUB_STEP_SUMMARY) {
   await appendFile(process.env.GITHUB_STEP_SUMMARY, buildGithubStepSummary(summary));
+}
+
+// Alerting is the scheduled workflow's own failure notification: GitHub emails the owner
+// when a cron run fails, so a non-zero exit is the whole delivery mechanism — no webhook,
+// no always-on service. Snapshots are already recorded by this point, so failing here
+// costs no data.
+const failures = collectRunFailures(summary);
+
+if (failures.length > 0) {
+  console.error(formatRunFailures(failures));
+  process.exitCode = 1;
 }

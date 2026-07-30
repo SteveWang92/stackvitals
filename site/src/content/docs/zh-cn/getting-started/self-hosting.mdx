@@ -102,6 +102,12 @@ npm run build
 如果你的仓库是公开的，工作流运行日志是公开可见的。采集器会打印项目 slug、URL、健康状态和错误信息——这相当于发布了一个每日运维状态摘要。如果这对你很重要，请将采集器放在私有仓库中。
 </Aside>
 
+### 出问题时收到通知
+
+当运行中出现硬性失败（适配器错误、`failed` 指标或 `failed` 健康检查）时，`collect:status` 会以非零状态码退出。这会将定时运行标记为失败，GitHub 随即向你发送邮件（**Settings → Notifications → Actions**，启用 "Send notifications for failed workflows only"）。不需要 webhook 接收端，也不需要常驻的监控服务。
+
+警告级别的结果刻意不会让运行失败：否则一个还有三周才过期的域名会在你修好之前每天给你发邮件。警告只出现在仪表盘的 "Needs Attention" 面板和工作流的步骤摘要中。快照在设置退出码之前就已写入，因此失败的运行仍会记录它采集到的数据。
+
 ## 7. 验证
 
 ```bash

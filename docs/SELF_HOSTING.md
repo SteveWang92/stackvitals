@@ -293,6 +293,22 @@ error messages — running it from a public repo publishes a daily operational s
 your apps. Keep the collector workflow in a private repo, or in a separate private repo from
 your public code, if that matters to you.
 
+### Getting notified when something breaks
+
+`npm run collect:status` exits non-zero when the run contains a hard failure — an adapter error,
+a `failed` metric, or a `failed` health check. On GitHub Actions that marks the scheduled run as
+failed, and GitHub emails you about it: **Settings → Notifications → Actions**, with "Send
+notifications for failed workflows only" enabled. That is the whole alerting path — no webhook
+receiver and no always-on monitoring service.
+
+Warning-level results deliberately do **not** fail the run. A domain three weeks from expiry or a
+slow-but-answering health check would otherwise email you every single day until you fixed it,
+which is how a real alert ends up ignored. Warnings surface in the dashboard's "Needs Attention"
+panel and in the workflow's step summary instead.
+
+Snapshots are written before the exit code is set, so a failed run still records everything it
+collected — the dashboard shows the failure rather than a gap.
+
 ## 7. Verify
 
 Run:

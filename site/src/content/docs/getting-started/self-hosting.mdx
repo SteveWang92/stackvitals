@@ -123,6 +123,18 @@ URLs, health status, and error messages — this publishes a daily operational s
 collector in a private repo if that matters.
 </Aside>
 
+### Getting notified when something breaks
+
+`collect:status` exits non-zero when the run contains a hard failure — an adapter error, a `failed`
+metric, or a `failed` health check. That marks the scheduled run as failed, and GitHub emails you
+about it (**Settings → Notifications → Actions**, "Send notifications for failed workflows only").
+No webhook receiver and no always-on monitoring service.
+
+Warning-level results deliberately do not fail the run: a domain three weeks from expiry would
+otherwise email you daily until you fixed it. Warnings surface in the dashboard's "Needs Attention"
+panel and the workflow step summary instead. Snapshots are written before the exit code is set, so a
+failed run still records what it collected.
+
 ## 7. Verify
 
 ```bash
