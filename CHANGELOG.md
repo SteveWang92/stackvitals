@@ -9,90 +9,46 @@ below as its notes.
 
 ## [Unreleased]
 
-### Fixed
+### Added
 
-- A provider known only from a resource-inventory row reported as "Healthy" even though no
-  health check or metric had ever confirmed it. Existence is not health; such a provider now
-  reports "Unknown" until a check or metric arrives.
-- Trend lines were drawn with an uneven stroke: the chart is stretched to the width of its
-  container, which stretched the line with it and left the steep segments visibly thicker than
-  the flat ones. Strokes and the end-of-line marker now keep the same width at any size.
-- The "Needs Attention" heading sat lower in its panel than every other panel heading, and the
-  warning banner and cost chart in App Detail ran edge to edge instead of keeping the panel's
-  margin.
-- App Detail showed the response-time chart and the uptime strip side by side, so the two could
-  not be read against each other. They are now stacked and aligned on a shared axis, as on the
-  project cards.
+- "Needs Attention" panel listing each failing or warning check with its project, provider, and
+  error detail; each row opens that project's detail view. Providers that have simply gone quiet
+  are counted separately from failures.
+- 30-day history on project cards and in App Detail: a median response-time sparkline and a daily
+  uptime strip. A day the collector never ran shows as no-data, not an outage.
+- Daily spend chart on the Costs tab, and usage trend charts for OpenAI tokens and GitHub Actions
+  runtime minutes on the Usage tab.
+- Staleness badge on provider rows showing how old a collector's data is, while the status pill
+  keeps reporting the last known state.
+- "Stack Status Hub" subtitle in the dashboard header and sign-in screen, the browser tab title,
+  and the landing pages (English and Chinese).
+- `npm run db:up` — one command for a local Supabase stack, dashboard login user, and a
+  git-ignored `.env.local`. Also `db:down`, `db:reset`, and `dev:local`.
+- `npm run db:up:demo` seeds the local database with fictional data covering every dashboard
+  state. Also `db:reset:demo` and `db:demo`.
+- Migration `007_history_indexes.sql` adds timestamp indexes to `health_checks`,
+  `metric_snapshots`, and `cost_snapshots`. Self-hosters should apply it; the dashboard works
+  without it, just slower.
+- CI builds the docs site on every pull request.
 
 ### Changed
 
 - Timestamps use a 24-hour clock.
-- Trend charts label the highest and lowest reading in the window down their left edge. Each chart
-  is scaled to its own range, so the shape alone never said whether a peak meant 200 ms or two
-  seconds.
-- Costs are account-level throughout, and the per-project cost path is gone. Nothing ever wrote it:
-  Cost Explorer groups by service, every other adapter reports no cost at all, and a shared hosting
-  bill cannot be split between apps without inventing an allocation. `CollectorCost` no longer has
-  a project field, and the Costs tab lists every cost row rather than filtering by project. The
-  `cost_snapshots.project_id` column stays for a future allocation scheme, and any row that already
-  carries one is still shown.
-- The Costs tab charts spend per day instead of a cumulative month-to-date line, which only ever
-  climbed. A day the collector skipped spreads its spend across the days it covers rather than
-  spiking on the day collection resumed, and days not yet collected stay empty rather than
-  reading as zero spend.
-- The dashboard reads a wider window of cost snapshots (400 rows rather than 100). With a dozen
-  cost lines on a daily collector the old window held about a week, which left most of the new
-  daily-spend chart flattened into a single averaged step.
-
-### Added
-
-- Usage trend charts on the Usage tab: total OpenAI tokens and GitHub Actions runtime minutes
-  over time, matching the cost chart. Both providers report rolling-window totals rather than
-  per-day figures, so each point is what the collector reported that day — enough to see usage
-  climbing, and labelled so it is not mistaken for daily consumption.
-- `npm run db:up` sets up local development in one command: starts Docker Desktop if it isn't
-  running, boots the local Supabase stack, creates the dashboard login user and its allow-list
-  row, and writes the local URL and keys to a git-ignored `.env.local`. `db:down`, `db:reset`,
-  and `dev:local` round it out. Replaces the manual `npx supabase start` + `curl` + SQL steps in
-  the self-hosting guide, and works with the Supabase CLI installed locally, globally, or not at
-  all.
-- `npm run db:up:demo` (also `db:reset:demo` and `db:demo`) seeds the local database with a
-  fictional dashboard so local development starts from a full screen instead of an empty one.
-  Unlike `VITE_DEMO_MODE`, which hands the read layer a finished object for screenshots, this
-  writes raw snapshot rows and lets aggregation, dedup-to-latest and error scoping run for real.
-  The fixture deliberately covers every renderable state: healthy/warning/failed/never-synced
-  projects, stale and never-seen providers, up/degraded/down/no-data history, the full range of
-  collector run outcomes, scoped vs account-level errors, OpenAI and GitHub Actions usage, costs
-  with a month-to-date series, and healthy/expiring/pending domains. Re-seeding replaces only its
-  own rows.
-- "Stack Status Hub" subtitle alongside the product name in the dashboard header and sign-in
-  screen, the browser tab title, and the landing page, with a localized equivalent on the
-  Chinese landing page.
-- "Needs Attention" panel below the summary row naming each failing or warning check, with the
-  project, provider, and the actual failure detail. The summary tile counted these but never said
-  what was wrong; each row now jumps straight to that project's detail view. Providers that have
-  simply gone quiet are reported separately, so a silent collector is not confused with a failure.
-- 30-day history on each project card and in App Detail: a median-response-time sparkline and a
-  daily uptime strip, so a project reads as "healthy, and trending this way" rather than just
-  "healthy right now". A day the collector never ran is shown as an explicit no-data cell rather
-  than an outage. Rendered as inline SVG — no charting dependency was added.
-- Cumulative month-to-date spend line on the Costs tab, scoped to the current billing period.
-- Staleness badge on provider rows in App Detail and Provider Settings. A collector that
-  silently stops no longer leaves a confident green status with no indication of its age; the
-  badge shows how old the data is while the status pill keeps reporting the last known state.
-  The stale threshold is now 36 hours rather than 24, so ordinary drift in the daily collector
+- Costs are account-level throughout: `CollectorCost` drops its project field and the Costs tab no
+  longer filters by project. No adapter ever wrote a per-project cost. The
+  `cost_snapshots.project_id` column stays for a future allocation scheme.
+- Data is considered stale after 36 hours instead of 24, so ordinary drift in the daily collector
   schedule no longer trips it.
-- Migration `007_history_indexes.sql` adds timestamp indexes to `health_checks`,
-  `metric_snapshots`, and `cost_snapshots`. The dashboard's fleet-wide reads sort by
-  timestamp without a project filter, which the existing `project_id`-leading indexes cannot
-  serve. Self-hosters should apply this migration; the dashboard works without it, just slower.
+
+### Fixed
+
+- A provider known only from a resource-inventory row reported as "Healthy". It now reports
+  "Unknown" until a health check or metric arrives.
 
 ### Security
 
-- Build and test dependencies carry no known vulnerabilities: `vitest` 4, `eslint` 10, `astro` 7
-  with Starlight, and `sharp` 0.35 clear every open advisory in both the dashboard and the docs
-  site. The Astro ones covered XSS and SSRF in rendered pages, which matters to anyone building
-  the docs site from source. None of these packages ship in the deployed dashboard bundle.
+- Upgraded `vitest` 4, `eslint` 10, `astro` 7, `@astrojs/starlight`, and `sharp` 0.35 to clear all
+  open advisories in the dashboard and the docs site. None of these ship in the deployed bundle.
 
 ## [1.4.0] - 2026-07-19
 
