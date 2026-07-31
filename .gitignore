@@ -27,6 +27,7 @@
 !/.env.example
 !/.gitattributes
 !/.gitignore
+!/.nvmrc
 !/.prettierignore
 !/.prettierrc.json
 !/CHANGELOG.md

@@ -9,6 +9,11 @@ below as its notes.
 
 ## [Unreleased]
 
+### Changed
+
+- The supported Node.js version is now 24.18.1, pinned in a new `.nvmrc` and in every GitHub
+  Actions workflow. Self-hosters building from source need Node 24; Node 22 is no longer tested.
+
 ### Added
 
 - `collect:status` exits non-zero when a run contains a hard failure — an adapter error, a
