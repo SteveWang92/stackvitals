@@ -28,7 +28,7 @@ The script:
 2. Reads `[Unreleased]` from `CHANGELOG.md` (aborts if empty).
 3. Auto-detects the version from conventional commits (or uses `--version`).
 4. Pushes dev to origin.
-5. Creates a PR titled "Release vX.Y.Z" with the unreleased changelog as body.
+5. Creates a PR titled `chore(release): vX.Y.Z` with the unreleased changelog as body.
 6. Prints the PR URL and the exact `ship` command to run next.
 
 If the user doesn't specify `--version`, the script suggests one based on commit types
@@ -58,7 +58,8 @@ The script:
 5. Moves `[Unreleased]` in `CHANGELOG.md` to a dated `[X.Y.Z]` section and updates
    compare links.
 6. Commits `chore(release): vX.Y.Z` and pushes dev.
-7. Squash-merges the PR (commit title: `chore(release): vX.Y.Z`, empty body).
+7. Squash-merges the PR with `--body ""` and **no** `--subject`, so GitHub uses the PR
+   title and appends the PR number: `chore(release): vX.Y.Z (#N)`.
 8. Checks out main, pulls, creates an annotated `vX.Y.Z` tag, pushes it.
 9. Creates a GitHub release with the changelog section as notes.
 10. Resets dev to main and force-pushes.
@@ -75,8 +76,10 @@ Use `--dry-run` on either phase to preview without side effects.
 
 ## Important notes
 
-- The PR title is "Release vX.Y.Z" (human-readable); the squash commit uses
-  `chore(release): vX.Y.Z` (conventional commit).
+- **The PR title is the squash subject.** It is `chore(release): vX.Y.Z` — a Conventional
+  Commit line — precisely so `ship` can merge without passing `--subject`. Passing a custom
+  subject makes `gh` skip the ` (#N)` suffix, which is how v1.4.0 and v1.5.0 landed on
+  `main` with no PR reference. Don't reintroduce `--subject`, and don't rename the PR.
 - `ship` pushes the tag and force-pushes dev — these are the only pushes in the workflow
   and are explicitly authorized by the release script.
 - After ship completes, dev and main are identical and the tag is on main's HEAD.

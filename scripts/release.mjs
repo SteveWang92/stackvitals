@@ -229,7 +229,10 @@ const prep = async () => {
     );
   }
 
-  const title = `Release v${version}`;
+  // The PR title becomes the squash subject verbatim, so it must be a Conventional
+  // Commit line. GitHub appends " (#N)" to it — passing --subject at merge time would
+  // not, which is why ship never overrides it.
+  const title = `chore(release): v${version}`;
   const body = `## Changelog\n\n${unreleased}`;
   const prUrl = gh([
     'pr',
@@ -327,9 +330,10 @@ const ship = async () => {
   git(['push', 'origin', INTEGRATION_BRANCH]);
   console.log('Pushed dev.');
 
-  // 3. Squash merge the PR
+  // 3. Squash merge the PR — no --subject, so GitHub uses the PR title and appends
+  //    " (#N)". Only the auto-generated body is stripped.
   console.log(`Squash-merging PR #${pr.number}...`);
-  gh(['pr', 'merge', String(pr.number), '--repo', REPO, '--squash', '--subject', `chore(release): ${releaseTag}`, '--body', '']);
+  gh(['pr', 'merge', String(pr.number), '--repo', REPO, '--squash', '--body', '']);
   console.log('PR merged.');
 
   // 4. Sync main from remote
