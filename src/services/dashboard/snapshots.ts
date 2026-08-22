@@ -1,3 +1,4 @@
+import { STALE_AFTER_HOURS, isStaleSync } from '../../lib/status';
 import { metadataText, providerKey, type MetricSnapshotRow } from './rows';
 
 /**
@@ -22,23 +23,45 @@ function snapshotMetricKey(row: MetricSnapshotRow): string {
  * Keeps the newest collection for each provider subject, including every metric emitted by
  * that collection. Adapters commonly give a subject's status and aggregate counts the same
  * timestamp, so reducing to one row would discard either health or useful detail.
+ *
+ * Subjects the collector has stopped reporting are dropped rather than carried forever.
+ * Snapshots are append-only and pruned only at the retention horizon, so a resource removed
+ * from the config while its last reading was a warning or a failure would otherwise pin its
+ * project to that status for months. A subject counts as retired once it is a full staleness
+ * window behind the newest reading this provider produced.
  */
 export function latestMetricRowsBySubject(rows: MetricSnapshotRow[]): MetricSnapshotRow[] {
-  const latest = new Map<string, { timestamp: number; rows: MetricSnapshotRow[] }>();
+  const latest = new Map<string, { timestamp: number; collectedAt: string; rows: MetricSnapshotRow[] }>();
+  let newestTimestamp = Number.NEGATIVE_INFINITY;
 
   for (const row of rows) {
     const key = metricSubjectKey(row);
     const timestamp = new Date(row.collected_at).getTime();
+
+    if (Number.isNaN(timestamp)) {
+      continue;
+    }
+
+    newestTimestamp = Math.max(newestTimestamp, timestamp);
+
     const existing = latest.get(key);
 
     if (!existing || timestamp > existing.timestamp) {
-      latest.set(key, { timestamp, rows: [row] });
+      latest.set(key, { timestamp, collectedAt: row.collected_at, rows: [row] });
     } else if (timestamp === existing.timestamp) {
       existing.rows.push(row);
     }
   }
 
-  return Array.from(latest.values()).flatMap((entry) => entry.rows);
+  if (newestTimestamp === Number.NEGATIVE_INFINITY) {
+    return [];
+  }
+
+  const newest = new Date(newestTimestamp);
+
+  return Array.from(latest.values())
+    .filter((entry) => !isStaleSync(entry.collectedAt, newest, STALE_AFTER_HOURS))
+    .flatMap((entry) => entry.rows);
 }
 
 // GitHub Actions metrics have their own tab and would otherwise crowd out every other

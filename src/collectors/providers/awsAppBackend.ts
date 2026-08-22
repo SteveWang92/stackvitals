@@ -206,13 +206,14 @@ export async function collectAwsAppBackendStatus(
       const collectedAt = new Date().toISOString();
       // Each subject is collected independently so one missing table does not hide the
       // user-pool reading for the same project.
-      const subjects: Array<{ label: string; run: () => Promise<void> }> = [];
+      const subjects: Array<{ label: string; identity: Record<string, string>; run: () => Promise<void> }> = [];
 
       if (target.cognitoUserPoolId) {
         const userPoolId = target.cognitoUserPoolId;
 
         subjects.push({
           label: `Cognito user pool ${userPoolId}`,
+          identity: { userPoolId },
           run: () => collectUserPool(target, userPoolId, options, collectedAt, resources, metrics),
         });
       }
@@ -220,6 +221,7 @@ export async function collectAwsAppBackendStatus(
       for (const tableName of target.dynamoDbTables) {
         subjects.push({
           label: `DynamoDB table ${tableName}`,
+          identity: { tableName },
           run: () => collectTable(target, tableName, options, collectedAt, resources, metrics),
         });
       }
@@ -238,6 +240,9 @@ export async function collectAwsAppBackendStatus(
               metricValue: 0,
               status: 'failed',
               metadata: {
+                // The subject's own identifier, so the read path files this failure under the
+                // resource it belongs to instead of lumping every failing subject together.
+                ...subject.identity,
                 subject: subject.label,
                 region: target.region,
                 aggregateOnly: true,

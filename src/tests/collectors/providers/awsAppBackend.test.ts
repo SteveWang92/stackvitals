@@ -97,6 +97,17 @@ describe('collectAwsAppBackendStatus', () => {
     expect(result.metrics.find((metric) => metric.metricKey === 'aws_app_backend_subject_available')?.status).toBe('failed');
   });
 
+  it('files a failed subject under the resource it belongs to', async () => {
+    const client = createClient({ describeTable: vi.fn().mockRejectedValue(new Error('ResourceNotFoundException')) });
+
+    const result = await collectAwsAppBackendStatus([target], { client });
+    const failure = result.metrics.find((metric) => metric.metricKey === 'aws_app_backend_subject_available');
+
+    // The read path groups snapshots by the resource identifier in their metadata, so a failure
+    // without one would collapse every failing subject in a project into a single row.
+    expect(failure?.metadata).toMatchObject({ tableName: 'todo-app-prod-data' });
+  });
+
   it('skips the user pool when a project only configures tables', async () => {
     const client = createClient();
 

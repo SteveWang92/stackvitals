@@ -20,6 +20,8 @@ below as its notes.
   Actions run is marked failed and GitHub's own failed-workflow email becomes the alerting path.
 - Snapshot retention: each collector run now deletes snapshot, cost, health-check and collector-run
   rows older than `SNAPSHOT_RETENTION_DAYS` (default 90, minimum 31).
+- Cost Explorer collection can be turned off with `"aws": { "costExplorerEnabled": false }` in the
+  collector config, for AWS credentials that intentionally omit `ce:GetCostAndUsage`.
 
 ### Changed
 
@@ -34,8 +36,9 @@ below as its notes.
 
 ### Fixed
 
-- AWS app-backend collection now keeps same-named regional tables distinct, surfaces every Cognito and DynamoDB metric, preserves the worst resource status, and can disable Cost Explorer with `aws.costExplorerEnabled` for least-privilege credentials.
 - A provider whose stored sync timestamp could not be parsed no longer crashes the dashboard render.
+- A provider now reports the worst status among the resources it is still collecting, instead of
+  whichever reading happened to be written last or a resource that has since been removed.
 
 ### Security
 
