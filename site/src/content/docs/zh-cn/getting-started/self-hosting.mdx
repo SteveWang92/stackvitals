@@ -66,6 +66,10 @@ npm run db:up
 5. 在本地验证通过后，将相同的配置/密钥添加到你的定时工作流中。
 </Steps>
 
+提供 AWS 凭据时，AWS Cost Explorer 默认启用。如果这些凭据刻意只授予 Amplify、Cognito 或
+DynamoDB 读取权限，请在采集器配置中设置 `"aws": { "costExplorerEnabled": false }`，这样就不需要
+Cost Explorer 权限。
+
 完整的必需和可选密钥列表请参阅[环境变量](/zh-cn/reference/environment-variables/)。
 
 ## 3. 设置前端密钥

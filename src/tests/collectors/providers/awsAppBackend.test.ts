@@ -43,7 +43,7 @@ describe('collectAwsAppBackendStatus', () => {
     expect(result.resources).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ resourceType: 'cognito_user_pool', externalId: 'ap-southeast-2_Pool', displayName: 'todo-app-prod' }),
-        expect.objectContaining({ resourceType: 'dynamodb_table', externalId: 'todo-app-prod-data' }),
+        expect.objectContaining({ resourceType: 'dynamodb_table', externalId: 'ap-southeast-2:todo-app-prod-data' }),
       ]),
     );
     expect(client.describeUserPool).toHaveBeenCalledWith({ region: 'ap-southeast-2', userPoolId: 'ap-southeast-2_Pool' });
@@ -104,6 +104,21 @@ describe('collectAwsAppBackendStatus', () => {
 
     expect(client.describeUserPool).not.toHaveBeenCalled();
     expect(result.metrics.every((metric) => !metric.metricKey.startsWith('aws_cognito_'))).toBe(true);
+  });
+
+  it('keeps same-named tables in different regions as distinct resources', async () => {
+    const result = await collectAwsAppBackendStatus(
+      [
+        { ...target, cognitoUserPoolId: undefined },
+        { ...target, projectSlug: 'todo_app_us', region: 'us-east-1', cognitoUserPoolId: undefined },
+      ],
+      { client: createClient() },
+    );
+
+    expect(result.resources.map((resource) => resource.externalId).sort()).toEqual([
+      'ap-southeast-2:todo-app-prod-data',
+      'us-east-1:todo-app-prod-data',
+    ]);
   });
 
   it('skips cleanly when nothing is configured', async () => {

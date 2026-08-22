@@ -3,7 +3,7 @@ title: 适配器
 description: 所有支持的采集器适配器的完整参考——采集内容、所需凭证和最小权限。
 ---
 
-每个适配器都是可选的：只有在提供了凭证时才会被加入采集运行。一个仅有项目配置的全新 clone 只会运行 HTTP 健康检查适配器。
+适配器由凭据控制启用，因此一个仅有项目配置的全新 clone 只会运行 HTTP 健康检查适配器。AWS 凭据默认启用 Cost Explorer；如果凭据不包含成本读取权限，请使用下文的配置开关将其关闭。
 
 ## 适配器参考
 
@@ -12,6 +12,7 @@ description: 所有支持的采集器适配器的完整参考——采集内容�
 | HTTP 健康检查 | 公共 URL 的可用性和响应时间 | 无（只需项目的公共 URL） | — |
 | Amplify | 部署状态、分支、最新构建 | AWS access key/secret、region | 只读 Amplify 访问 |
 | AWS Cost Explorer | 按 AWS 服务划分的账户级当月/上月成本 | AWS access key/secret、region | 只读 Cost Explorer 访问 |
+| AWS 应用后端 | Cognito 用户池可用性/用户估算值，以及 DynamoDB 表状态/条目数/大小 | AWS access key/secret、资源 ID、可选 region | 对已配置资源的 `cognito-idp:DescribeUserPool` 和 `dynamodb:DescribeTable` |
 | Supabase 项目健康 | 仪表盘自身项目或被监控应用的可达性 | Supabase 项目 URL + service-role key | 项目范围的 service-role key |
 | 被监控应用 Supabase 聚合 | 通过自定义 RPC 获取的仅计数聚合统计 | 应用的 Supabase URL、anon key、service-role key、RPC 名称 | Service-role key（仅计数 RPC——从不读取原始数据） |
 | Resend | 发送域名验证状态 | Resend API key | 只读 API key |
@@ -34,6 +35,15 @@ description: 所有支持的采集器适配器的完整参考——采集内容�
 ### AWS Cost Explorer
 
 采集按 AWS 服务划分的账户级当月和上月成本。成本保持在账户级别（`project_id` 为 null）——仪表盘不会猜测项目级别的拆分。
+
+提供 AWS 凭据时默认启用。如果这些凭据刻意不包含 Cost Explorer 权限，请设置
+`"aws": { "costExplorerEnabled": false }`。
+
+### AWS 应用后端
+
+为使用 Cognito 和 DynamoDB 作为身份认证及数据层的应用读取聚合元数据。配置
+`resources.cognitoUserPoolId`、`resources.dynamoDbTables`，并可选配置
+`resources.awsBackendRegion`。该适配器只调用 `DescribeUserPool` 和 `DescribeTable`，从不列出用户或读取表内项目。
 
 ### Supabase 项目健康
 

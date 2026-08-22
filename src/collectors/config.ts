@@ -49,6 +49,11 @@ export interface DomainGroupConfig {
 export interface CollectorConfig {
   projects: ProjectCollectorConfig[];
   domains?: DomainGroupConfig[];
+  aws?: {
+    // Kept enabled by default for compatibility with existing collector configs. Set false
+    // when AWS credentials are intentionally scoped only to Amplify or app-backend reads.
+    costExplorerEnabled?: boolean;
+  };
   openAi?: {
     apiKeyLabels?: Record<string, string>;
     usageLookbackDays?: number;
@@ -57,6 +62,10 @@ export interface CollectorConfig {
     usageLookbackDays?: number;
     runLimit?: number;
   };
+}
+
+export function isAwsCostExplorerEnabled(config: CollectorConfig): boolean {
+  return config.aws?.costExplorerEnabled !== false;
 }
 
 const placeholderPattern = /\$\$|\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g;

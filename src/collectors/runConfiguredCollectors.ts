@@ -17,7 +17,7 @@ import { buildGithubStepSummary } from './githubStepSummary';
 import { collectRunFailures, formatRunFailures } from './runFailures';
 import { runCollectors } from './runCollectors';
 import { createSupabaseCollectorRunRecorder } from './stores/supabaseCollectorRunRecorder';
-import { getArgValue, resolveEnvPlaceholders, type CollectorConfig } from './config';
+import { getArgValue, isAwsCostExplorerEnabled, resolveEnvPlaceholders, type CollectorConfig } from './config';
 import { createLiveAmplifyClient, createLiveAwsAppBackendClient, createLiveCostExplorerClient } from './liveClients/aws';
 import { createLiveResendClient } from './liveClients/resend';
 import {
@@ -117,7 +117,10 @@ if (hasAwsCredentials()) {
     }));
 
   adapters.push(createAmplifyAdapter(amplifyTargets, { client: createLiveAmplifyClient(region) }));
-  adapters.push(createAwsCostExplorerAdapter({ client: createLiveCostExplorerClient(region) }));
+
+  if (isAwsCostExplorerEnabled(config)) {
+    adapters.push(createAwsCostExplorerAdapter({ client: createLiveCostExplorerClient(region) }));
+  }
 
   // Apps whose auth/data backend is Cognito + DynamoDB rather than a managed platform. A
   // project opts in by naming either resource; the shared AWS credentials need read-only

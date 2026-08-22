@@ -74,6 +74,9 @@
       "domains": ["shared.example"]
     }
   ],
+  "aws": {
+    "costExplorerEnabled": true
+  },
   "githubActions": {
     "usageLookbackDays": 30,
     "runLimit": 50

@@ -1,4 +1,4 @@
-import { freshnessOf } from '../../lib/status';
+import { freshnessOf, getOverallStatus } from '../../lib/status';
 import type { ProjectResource, ProjectStatus, ProviderKey, ProviderStatus, SnapshotSummary } from '../../types';
 import { collectorErrors } from './collectorRuns';
 import { buildProjectHistory } from './history';
@@ -12,7 +12,7 @@ import {
   type ProjectRow,
   type ResourceRow,
 } from './rows';
-import { latestSnapshotRows, metricValue, snapshotLabel } from './snapshots';
+import { latestMetricRowsBySubject, latestSnapshotRows, metricValue, snapshotLabel } from './snapshots';
 
 function resourceDetail(resource: ResourceRow): string {
   const metadata = resource.metadata ?? {};
@@ -84,10 +84,10 @@ export function latestProviderStatuses(
   return Array.from(providers)
     .sort()
     .map((provider) => {
-      const latestMetric = latestBy(
+      const latestMetrics = latestMetricRowsBySubject(
         metrics.filter((metric) => metric.project_id === projectId && providerKey(metric) === provider),
-        (metric) => metric.collected_at,
       );
+      const latestMetric = latestBy(latestMetrics, (metric) => metric.collected_at);
       const latestHealth =
         provider === 'http'
           ? latestBy(
@@ -99,16 +99,24 @@ export function latestProviderStatuses(
         resources.filter((resource) => resource.project_id === projectId && providerKey(resource) === provider),
         (resource) => resource.last_seen_at,
       );
-
-      const lastSync = latestHealth?.checked_at ?? latestMetric?.collected_at ?? latestResource?.last_seen_at ?? null;
+      const metricStatus = getOverallStatus(latestMetrics.map((metric) => metric.status));
+      const status = latestHealth?.status ?? metricStatus;
+      const detailMetric = latestMetrics.find((metric) => metric.status === status) ?? latestMetric;
+      const lastSync =
+        latestBy(
+          [latestHealth?.checked_at, latestMetric?.collected_at, latestResource?.last_seen_at].filter((value): value is string =>
+            Boolean(value),
+          ),
+          (value) => value,
+        ) ?? null;
 
       return {
         provider,
         label: providerLabel(provider),
         // A resource-inventory row records that something exists, not that it is working, so it
         // cannot stand in for a health signal. Without a check or a metric the status is unknown.
-        status: latestHealth?.status ?? latestMetric?.status ?? 'unknown',
-        detail: providerDetail(provider, latestMetric, latestHealth, latestResource),
+        status,
+        detail: providerDetail(provider, detailMetric, latestHealth, latestResource),
         lastSync,
         freshness: freshnessOf(lastSync),
       };

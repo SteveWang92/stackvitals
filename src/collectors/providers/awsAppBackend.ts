@@ -131,7 +131,10 @@ async function collectTable(
     projectSlug: target.projectSlug,
     provider: 'aws',
     resourceType: 'dynamodb_table',
-    externalId: table.tableName,
+    // DynamoDB table names are unique only within an account and region, while resources
+    // are upserted against a provider-wide external-id key. Qualify the name so two watched
+    // regions can legitimately contain the same table name without colliding.
+    externalId: `${target.region}:${table.tableName}`,
     displayName: table.tableName,
     metadata: {
       region: target.region,

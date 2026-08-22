@@ -3,8 +3,9 @@ title: Adapters
 description: Full reference for every supported collector adapter — what it collects, required credentials, and minimum permissions.
 ---
 
-Every adapter is opt-in: it's only added to a collector run when its credentials are present. A
-fresh clone with nothing but a project config still runs the HTTP-health adapter alone.
+Adapters are credential-gated, so a fresh clone with nothing but a project config still runs the
+HTTP-health adapter alone. AWS credentials enable Cost Explorer by default; disable it with the
+config switch below when those credentials do not include cost access.
 
 ## Adapter reference
 
@@ -13,6 +14,7 @@ fresh clone with nothing but a project config still runs the HTTP-health adapter
 | HTTP health | Public URL up/down, response time | None (just the project's public URL) | — |
 | Amplify | Deploy status, branch, latest build | AWS access key/secret, region | Read-only Amplify access |
 | AWS Cost Explorer | Account-level month-to-date / last-month cost per AWS service | AWS access key/secret, region | Read-only Cost Explorer access |
+| AWS app backend | Cognito pool availability/user estimate and DynamoDB table status/count/size | AWS access key/secret, resource IDs, optional region | `cognito-idp:DescribeUserPool` and `dynamodb:DescribeTable` on configured resources |
 | Supabase project health | Reachability of the hub's own project or a watched app's | Supabase project URL + service-role key | Project-scoped service-role key |
 | Watched-app Supabase aggregate | Count-only aggregate stats from a custom RPC | App's Supabase URL, anon key, service-role key, RPC name | Service-role key (count-only RPC — never raw reads) |
 | Resend | Sending-domain verification status | Resend API key | Read-only API key |
@@ -42,6 +44,17 @@ Amplify. Config fields: `resources.amplifyAppId`, `resources.amplifyBranchName`,
 
 Collects account-level month-to-date and last-month costs broken down by AWS service. Costs stay
 account-level (`project_id` null) — the dashboard does not guess per-project splits.
+
+It is enabled by default when AWS credentials are present. Set
+`"aws": { "costExplorerEnabled": false }` when those credentials intentionally omit Cost Explorer
+access.
+
+### AWS app backend
+
+Reads aggregate metadata for apps whose auth and data use Cognito and DynamoDB. Configure
+`resources.cognitoUserPoolId`, `resources.dynamoDbTables`, and optionally
+`resources.awsBackendRegion`. The adapter uses only `DescribeUserPool` and `DescribeTable`; it
+never lists users or reads table items.
 
 ### Supabase project health
 

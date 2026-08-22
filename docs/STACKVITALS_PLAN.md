@@ -45,7 +45,7 @@ is deliberately **not** "Project Status Hub", which would collide with the separ
 - Static React/Vite dashboard with Supabase Auth and RLS-protected reads.
 - Supabase schema for projects, providers, resources, metric snapshots, cost snapshots, health checks, and collector runs.
 - GitHub Actions/manual collector path for low-cost scheduled collection.
-- Provider adapters for HTTP health, Amplify status, AWS Cost Explorer, watched-app Supabase aggregate status, hub Supabase self-health, Resend verification-email health, OpenAI aggregate usage/cost, GitHub Actions usage/CI status, and Cloudflare domain inventory.
+- Provider adapters for HTTP health, Amplify status, AWS Cost Explorer, watched-app AWS backend status, watched-app Supabase aggregate status, hub Supabase self-health, Resend domain health, OpenAI aggregate usage/cost, GitHub Actions usage/CI status, and Cloudflare domain inventory.
 - Dashboard views for overview cards, tabbed app detail, tabbed collector diagnostics/settings, cost snapshots, OpenAI usage, GitHub Actions usage, loading, empty, stale, and failure states.
 - Mocked provider tests and focused status/data tests.
 - `${ENV_VAR}` placeholder interpolation in the collector config, so adapter credentials are declared in config and supplied by the environment — nothing app-specific lives in code.
@@ -151,6 +151,11 @@ local environment variables or deployment secrets. Adapter credentials are decla
 `${ENV_VAR}` placeholders and resolved at collector startup — a missing variable fails the run
 with a clear error; an empty value disables that adapter.
 
+AWS Cost Explorer stays enabled when AWS credentials are present for compatibility with existing
+configs, but a deployment whose credentials intentionally omit `ce:GetCostAndUsage` sets
+`aws.costExplorerEnabled` to `false`. Cognito and DynamoDB can then run with only their respective
+`Describe*` permissions instead of failing an unrelated cost collection.
+
 Example tracked resources per project: Amplify app id, public URL/domain, Cloudflare domain list,
 Supabase project ref + aggregate RPC name, Cognito user pool id + DynamoDB table names, Resend
 domain, GitHub repository, Amplify backend environment.
@@ -216,5 +221,5 @@ The project documentation site (`site/`) deploys separately to GitHub Pages via
 - Store only aggregate metrics and operational state.
 - Do not copy raw app user data or private records of any kind.
 - For app-owned databases, use count-only RPCs, aggregate views, or provider metadata. Do not dump app tables into this project.
-- For Resend, store aggregate operational metrics only, such as send counts, delivery status counts, bounce/error counts, domain verification status, and last successful send check. Do not store recipient addresses, email content, verification URLs, or tokens.
+- For Resend, store only sending-domain verification status and API health. Do not store send counts, delivery events, recipient addresses, email content, verification URLs, or tokens.
 - If credential rotation or multi-user access becomes necessary, evaluate Supabase Vault or another secret manager.

@@ -79,6 +79,11 @@ store.
 5. After it works locally, add the same config/secrets to your scheduled workflow.
 </Steps>
 
+AWS Cost Explorer is enabled by default when AWS credentials are present. If those credentials
+are intentionally limited to Amplify, Cognito, or DynamoDB reads, set
+`"aws": { "costExplorerEnabled": false }` in the collector config so no Cost Explorer permission
+is required.
+
 See [Environment Variables](/reference/environment-variables/) for the full list of required and
 optional secrets.
 

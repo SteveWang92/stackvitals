@@ -34,6 +34,7 @@ below as its notes.
 
 ### Fixed
 
+- AWS app-backend collection now keeps same-named regional tables distinct, surfaces every Cognito and DynamoDB metric, preserves the worst resource status, and can disable Cost Explorer with `aws.costExplorerEnabled` for least-privilege credentials.
 - A provider whose stored sync timestamp could not be parsed no longer crashes the dashboard render.
 
 ## [1.5.0] - 2026-07-30
