@@ -9,6 +9,8 @@ below as its notes.
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-08-23
+
 ### Added
 
 - Collector support for apps whose auth and data live on AWS primitives: set `cognitoUserPoolId`,
@@ -43,6 +45,7 @@ below as its notes.
 ### Security
 
 - Updated the transitive `nanoid` and `js-yaml` build dependencies to patched releases.
+
 
 ## [1.5.0] - 2026-07-30
 
@@ -179,7 +182,8 @@ source projects.
   to the GitHub Actions job summary.
 - Self-hosting guide and contributing guide (including how to add a new adapter).
 
-[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/SteveWang92/stackvitals/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/SteveWang92/stackvitals/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/SteveWang92/stackvitals/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/SteveWang92/stackvitals/compare/v1.2.0...v1.3.0
