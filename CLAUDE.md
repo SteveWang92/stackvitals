@@ -85,6 +85,6 @@ General commit, branch, reuse, and working rules live in the user-global `~/.cla
 - Add mocked tests for provider adapters before relying on live provider APIs.
 - Tests live under `src/tests/` mirroring the source tree — do **not** colocate `*.test.ts` beside implementation files.
 - Release uses `scripts/release.mjs` — a two-phase, non-interactive script. `npm run release:prep` creates the release PR; after review, `npm run release:ship` finalizes the version, squash-merges, tags, and publishes the GitHub release. Follow the active `release` skill for the full workflow.
-- Notable user-facing changes land in the `Unreleased` section of `CHANGELOG.md` in the same change that makes them. Record the net user-facing result, not a commit log; omit pure build, CI, formatting, test, typo, and version-bump churn unless the user perceives an effect.
-- Use Keep a Changelog categories in this order: Added, Changed, Deprecated, Removed, Fixed, Security. Omit empty categories; leave the bottom compare links for `release:ship` to maintain.
+- `CHANGELOG.md` follows the changelog rules in Steve's global `CLAUDE.md`, which is where they are explained: user-facing results only, one entry to one line, Keep a Changelog categories in order.
+- Two differences here. StackVitals is public and self-hosted, so an entry may carry a second sentence when it tells a self-hoster what they must **do** — apply a migration, add an IAM permission, change a config field — but never to explain the reasoning. And the bottom compare links are left for `release:ship` to maintain.
 - This folder is a standalone project; do not touch `D:\Projects\Integration-Dashboard`.
