@@ -12,12 +12,7 @@
 import { spawnSync } from 'node:child_process';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import {
-  parseVersion,
-  compareVersions,
-  incrementVersion,
-  suggestLevel,
-} from './release-version.mjs';
+import { parseVersion, compareVersions, incrementVersion, suggestLevel } from './release-version.mjs';
 
 const projectRoot = process.cwd();
 const gitSafeDirectory = projectRoot.replaceAll('\\', '/');
@@ -47,24 +42,17 @@ const run = (command, runArgs, options = {}) => {
   });
   if (result.error) throw result.error;
   if (result.status !== 0) {
-    throw new Error(
-      options.inherit
-        ? `${command} failed with exit code ${result.status}.`
-        : result.stderr?.trim() || `${command} failed.`,
-    );
+    throw new Error(options.inherit ? `${command} failed with exit code ${result.status}.` : result.stderr?.trim() || `${command} failed.`);
   }
   return result.stdout?.trim() ?? '';
 };
 
-const git = (gitArgs) =>
-  run('git', ['-c', `safe.directory=${gitSafeDirectory}`, ...gitArgs]);
+const git = (gitArgs) => run('git', ['-c', `safe.directory=${gitSafeDirectory}`, ...gitArgs]);
 
 const gh = (ghArgs) => run('gh', ghArgs);
 
 const latestTag = () => {
-  const tags = git(['tag', '--list', 'v[0-9]*', '--sort=-version:refname'])
-    .split(/\r?\n/)
-    .filter(Boolean);
+  const tags = git(['tag', '--list', 'v[0-9]*', '--sort=-version:refname']).split(/\r?\n/).filter(Boolean);
   const tag = tags.find((t) => parseVersion(t.slice(1)));
   return tag ? { tag, version: tag.slice(1) } : null;
 };
@@ -87,8 +75,7 @@ const today = () => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 
-const writeJson = (file, value) =>
-  writeFile(file, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+const writeJson = (file, value) => writeFile(file, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
 
 // ---------------------------------------------------------------------------
 // Changelog helpers
@@ -104,10 +91,7 @@ const parseUnreleased = (content) => {
   if (start < 0) throw new Error('No [Unreleased] section in CHANGELOG.md.');
   const afterHeading = content.indexOf('\n', start) + 1;
   const nextSection = content.indexOf('\n## [', afterHeading);
-  const body =
-    nextSection >= 0
-      ? content.slice(afterHeading, nextSection)
-      : content.slice(afterHeading);
+  const body = nextSection >= 0 ? content.slice(afterHeading, nextSection) : content.slice(afterHeading);
   return body.trim();
 };
 
@@ -122,10 +106,7 @@ const finalizeChangelog = async (version, prevTag) => {
   const afterHeading = headingPos + heading.length;
   const nextSection = content.indexOf('\n## [', afterHeading);
 
-  const unreleasedBody =
-    nextSection >= 0
-      ? content.slice(afterHeading, nextSection)
-      : content.slice(afterHeading);
+  const unreleasedBody = nextSection >= 0 ? content.slice(afterHeading, nextSection) : content.slice(afterHeading);
 
   const before = content.slice(0, headingPos);
   const after = nextSection >= 0 ? content.slice(nextSection) : '';
@@ -141,8 +122,7 @@ const finalizeChangelog = async (version, prevTag) => {
     const linksStart = content.lastIndexOf('\n[');
     const insertPos = linksStart >= 0 ? linksStart + 1 : content.length;
     const links = `[Unreleased]: https://github.com/${REPO}/compare/${tag}...HEAD\n[${version}]: https://github.com/${REPO}/releases/tag/${tag}\n`;
-    content =
-      content.slice(0, insertPos) + links + content.slice(insertPos);
+    content = content.slice(0, insertPos) + links + content.slice(insertPos);
   }
 
   await writeFile(CHANGELOG_PATH, content, 'utf8');
@@ -176,9 +156,7 @@ const bumpPackageVersion = async (version) => {
 const prep = async () => {
   const branch = git(['branch', '--show-current']);
   if (branch !== INTEGRATION_BRANCH) {
-    throw new Error(
-      `Must be on ${INTEGRATION_BRANCH}, currently on ${branch || 'detached HEAD'}.`,
-    );
+    throw new Error(`Must be on ${INTEGRATION_BRANCH}, currently on ${branch || 'detached HEAD'}.`);
   }
   if (git(['status', '--porcelain'])) {
     throw new Error('Working tree is not clean. Commit or stash changes first.');
@@ -190,21 +168,14 @@ const prep = async () => {
   const changelog = await readChangelog();
   const unreleased = parseUnreleased(changelog);
   if (!unreleased) {
-    throw new Error(
-      '[Unreleased] section in CHANGELOG.md is empty. Add changelog entries before releasing.',
-    );
+    throw new Error('[Unreleased] section in CHANGELOG.md is empty. Add changelog entries before releasing.');
   }
 
   const latest = latestTag();
   const commits = commitsSince(latest?.tag);
   const level = suggestLevel(commits);
-  const currentPkgVersion = JSON.parse(
-    await readFile(join(projectRoot, 'package.json'), 'utf8'),
-  ).version;
-  const suggested = incrementVersion(
-    latest?.version ?? currentPkgVersion,
-    level,
-  );
+  const currentPkgVersion = JSON.parse(await readFile(join(projectRoot, 'package.json'), 'utf8')).version;
+  const suggested = incrementVersion(latest?.version ?? currentPkgVersion, level);
   const version = versionFlag ?? suggested;
 
   if (!parseVersion(version)) {
@@ -236,29 +207,46 @@ const prep = async () => {
 
   const existingPR = JSON.parse(
     gh([
-      'pr', 'list', '--repo', REPO,
-      '--head', INTEGRATION_BRANCH,
-      '--base', DEPLOY_BRANCH,
-      '--state', 'open',
-      '--json', 'number,title',
-      '--limit', '1',
+      'pr',
+      'list',
+      '--repo',
+      REPO,
+      '--head',
+      INTEGRATION_BRANCH,
+      '--base',
+      DEPLOY_BRANCH,
+      '--state',
+      'open',
+      '--json',
+      'number,title',
+      '--limit',
+      '1',
     ]),
   );
   if (existingPR.length > 0) {
     throw new Error(
-      `Open PR already exists: #${existingPR[0].number} "${existingPR[0].title}". ` +
-        'Close it or run "ship" to complete the release.',
+      `Open PR already exists: #${existingPR[0].number} "${existingPR[0].title}". ` + 'Close it or run "ship" to complete the release.',
     );
   }
 
-  const title = `Release v${version}`;
+  // The PR title becomes the squash subject verbatim, so it must be a Conventional
+  // Commit line. GitHub appends " (#N)" to it — passing --subject at merge time would
+  // not, which is why ship never overrides it.
+  const title = `chore(release): v${version}`;
   const body = `## Changelog\n\n${unreleased}`;
   const prUrl = gh([
-    'pr', 'create', '--repo', REPO,
-    '--base', DEPLOY_BRANCH,
-    '--head', INTEGRATION_BRANCH,
-    '--title', title,
-    '--body', body,
+    'pr',
+    'create',
+    '--repo',
+    REPO,
+    '--base',
+    DEPLOY_BRANCH,
+    '--head',
+    INTEGRATION_BRANCH,
+    '--title',
+    title,
+    '--body',
+    body,
   ]);
 
   console.log(`PR created: ${prUrl}`);
@@ -271,9 +259,7 @@ const prep = async () => {
 const ship = async () => {
   const branch = git(['branch', '--show-current']);
   if (branch !== INTEGRATION_BRANCH) {
-    throw new Error(
-      `Must be on ${INTEGRATION_BRANCH}, currently on ${branch || 'detached HEAD'}.`,
-    );
+    throw new Error(`Must be on ${INTEGRATION_BRANCH}, currently on ${branch || 'detached HEAD'}.`);
   }
   if (git(['status', '--porcelain'])) {
     throw new Error('Working tree is not clean. Commit or stash changes first.');
@@ -283,12 +269,20 @@ const ship = async () => {
   git(['merge', '--ff-only', `origin/${INTEGRATION_BRANCH}`]);
 
   const prListJson = gh([
-    'pr', 'list', '--repo', REPO,
-    '--head', INTEGRATION_BRANCH,
-    '--base', DEPLOY_BRANCH,
-    '--state', 'open',
-    '--json', 'number,title',
-    '--limit', '1',
+    'pr',
+    'list',
+    '--repo',
+    REPO,
+    '--head',
+    INTEGRATION_BRANCH,
+    '--base',
+    DEPLOY_BRANCH,
+    '--state',
+    'open',
+    '--json',
+    'number,title',
+    '--limit',
+    '1',
   ]);
   const prs = JSON.parse(prListJson);
   if (prs.length === 0) {
@@ -336,15 +330,10 @@ const ship = async () => {
   git(['push', 'origin', INTEGRATION_BRANCH]);
   console.log('Pushed dev.');
 
-  // 3. Squash merge the PR
+  // 3. Squash merge the PR — no --subject, so GitHub uses the PR title and appends
+  //    " (#N)". Only the auto-generated body is stripped.
   console.log(`Squash-merging PR #${pr.number}...`);
-  gh([
-    'pr', 'merge', String(pr.number),
-    '--repo', REPO,
-    '--squash',
-    '--subject', `chore(release): ${releaseTag}`,
-    '--body', '',
-  ]);
+  gh(['pr', 'merge', String(pr.number), '--repo', REPO, '--squash', '--body', '']);
   console.log('PR merged.');
 
   // 4. Sync main from remote
@@ -365,20 +354,12 @@ const ship = async () => {
   if (vStart >= 0) {
     const afterLine = changelog.indexOf('\n', vStart) + 1;
     const nextHeading = changelog.indexOf('\n## [', afterLine);
-    releaseNotes =
-      nextHeading >= 0
-        ? changelog.slice(afterLine, nextHeading).trim()
-        : changelog.slice(afterLine).trim();
+    releaseNotes = nextHeading >= 0 ? changelog.slice(afterLine, nextHeading).trim() : changelog.slice(afterLine).trim();
     const linksStart = releaseNotes.indexOf('\n[Unreleased]:');
     if (linksStart >= 0) releaseNotes = releaseNotes.slice(0, linksStart).trim();
   }
 
-  gh([
-    'release', 'create', releaseTag,
-    '--repo', REPO,
-    '--title', releaseTag,
-    '--notes', releaseNotes || `${APP_NAME} ${version}`,
-  ]);
+  gh(['release', 'create', releaseTag, '--repo', REPO, '--title', releaseTag, '--notes', releaseNotes || `${APP_NAME} ${version}`]);
   console.log(`GitHub release ${releaseTag} created.`);
 
   // 7. Reset dev to main and force push
@@ -400,9 +381,7 @@ if (subcommand === 'prep') {
 } else if (subcommand === 'ship') {
   await ship();
 } else {
-  console.error(
-    'Usage: node scripts/release.mjs <prep|ship> [--version X.Y.Z] [--dry-run]',
-  );
+  console.error('Usage: node scripts/release.mjs <prep|ship> [--version X.Y.Z] [--dry-run]');
   console.error('');
   console.error('  prep   Create a release PR from dev -> main');
   console.error('  ship   Finalize, merge, tag, and publish the release');

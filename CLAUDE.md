@@ -1,6 +1,6 @@
-# CLAUDE.md
+# StackVitals
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Repository-specific guidance for coding agents.
 
 ## What this is
 
@@ -34,7 +34,7 @@ npm run release:prep     # create release PR from dev -> main (non-interactive)
 npm run release:ship     # finalize, squash-merge, tag, GitHub release (non-interactive)
 ```
 
-Run a single test file: `npx vitest run src/tests/services/dashboardData.test.ts`. Filter by name: `npx vitest run -t "openai"`. There is no Vitest config file and globals are off — every test imports `describe`, `it`, `expect`, and `vi` from `vitest` directly.
+Run a single test file: `npx vitest run src/tests/services/dashboardData.test.ts`. Filter by name: `npx vitest run -t "openai"`. There is no Vitest config file and globals are off — every test imports `describe`, `it`, `expect`, and `vi` from `vitest` directly. Component tests under `src/tests/components/` opt into a DOM with a `// @vitest-environment jsdom` pragma on the first line rather than a config file, use `@testing-library/react`, and assert with plain DOM checks (`container.innerHTML`, `getAttribute`, `textContent`) — jest-dom's matchers would need a setup file, which would mean adding the config this repo does without.
 
 Commits are Conventional Commits, enforced by commitlint + Husky (`commitlint.config.cjs`), and stay to a single `type: description` line — no body/description paragraph unless the user asks for more detail. Prettier uses single quotes and `printWidth: 140`.
 
@@ -74,16 +74,17 @@ Supabase Postgres, schema in `supabase/migrations/*.sql` (applied in numeric ord
 - **Amplify deploys from `main`.** The scheduled collector GitHub Action (`.github/workflows/collect.yml`) also runs only from `main` (guarded by `if: github.ref == 'refs/heads/main'`), on a daily cron. Its secrets are the canonical list of what each collector needs.
 - The docs/landing site in `site/` deploys to GitHub Pages at **stackvitals.dev** via `.github/workflows/deploy-site.yml`. A demo-mode build (`VITE_DEMO_MODE=true`, fictional data, no auth) is hosted at **stackvitals.app**.
 - **Checkout path constraint:** `npm run build` inside `site/` fails on a checkout whose absolute path contains an apostrophe — Expressive Code embeds the build path into a generated JS string and the apostrophe breaks the parse. Keep the local clone under an apostrophe-free path (it now lives under `D:\Projects\steve-projects\`). It never affected GitHub runners, and `ci.yml` builds `site/` on every PR regardless.
-- **`vite-node` is a direct devDependency, pinned to 3.x.** `collect:status` runs the collectors through it, and it used to be available only because Vitest 2 depended on it — Vitest 4 dropped it, which would have silently broken the daily collector. 3.x is the newest line that still accepts Vite 6; 5.x/6.x require Vite 7/8, so bumping Vite means bumping `vite-node` in the same change.
+- **`vite-node` is a direct devDependency, pinned to 6.x.** `collect:status` runs the collectors through it, and it used to be available only because Vitest 2 depended on it — Vitest 4 dropped it, which would have silently broken the daily collector. 6.x requires Vite 8, so keep it in lockstep with Vite.
 - **Steve's own production hub deploys from the separate `SteveWang92/project-status-hub` repo** — a deploy-only exact mirror of this repo's `main`, updated solely by the manual `Mirror to project-status-hub` workflow (`.github/workflows/mirror-hub.yml`, run from this repo's Actions tab after a release). Never do feature work or commit in that repo/clone.
 - Keep it low-cost by default: no always-on services, paid monitoring, or extra hosting unless the plan or user explicitly calls for it.
 
-## Working conventions (from the previous AGENTS.md)
+## Working conventions
 
 General commit, branch, reuse, and working rules live in the user-global `~/.claude/CLAUDE.md`. Project-specific:
 
 - Add mocked tests for provider adapters before relying on live provider APIs.
 - Tests live under `src/tests/` mirroring the source tree — do **not** colocate `*.test.ts` beside implementation files.
-- Release uses `scripts/release.mjs` — a two-phase, non-interactive script. `npm run release:prep` creates the release PR; after review, `npm run release:ship` finalizes the version, squash-merges, tags, and publishes the GitHub release. See `.claude/skills/release/SKILL.md` for the full workflow.
-- Notable user-facing changes land in the `Unreleased` section of `CHANGELOG.md` in the same change that makes them. Use the **`changelog` skill** (`.claude/skills/changelog/`) for how to write entries (net change, noise filtering, Keep a Changelog categories).
+- Release uses `scripts/release.mjs` — a two-phase, non-interactive script. `npm run release:prep` creates the release PR; after review, `npm run release:ship` finalizes the version, squash-merges, tags, and publishes the GitHub release. Follow the active `release` skill for the full workflow.
+- `CHANGELOG.md` follows the changelog rules in Steve's global `CLAUDE.md`, which is where they are explained: user-facing results only, one entry to one line, Keep a Changelog categories in order.
+- Two differences here. StackVitals is public and self-hosted, so an entry may carry a second sentence when it tells a self-hoster what they must **do** — apply a migration, add an IAM permission, change a config field — but never to explain the reasoning; such an entry wraps to the file's line width, since the one-line rule is about carrying one result, not about a character count. And the bottom compare links are left for `release:ship` to maintain.
 - This folder is a standalone project; do not touch `D:\Projects\Integration-Dashboard`.

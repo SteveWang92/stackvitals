@@ -16,21 +16,15 @@
 !/src/
 !/supabase/
 
-# Claude Code project skills are committed so contributor guidance ships with the
-# repo; every other .claude/ file (settings.local.json, launch.json, worktrees/)
-# stays local. Re-include the dir, re-ignore its contents, then allow skills only.
-!/.claude/
-/.claude/*
-!/.claude/skills/
-
 # --- Tracked root files -------------------------------------------------------
 !/.env.example
 !/.gitattributes
 !/.gitignore
+!/.nvmrc
 !/.prettierignore
 !/.prettierrc.json
 !/CHANGELOG.md
-!/CLAUDE.md
+!/AGENTS.md
 !/CONTRIBUTING.md
 !/LICENSE
 !/README.md

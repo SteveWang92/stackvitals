@@ -23,7 +23,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24.18.1
           cache: npm
 
       - name: Install dependencies
@@ -62,4 +62,5 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           HTTP_HEALTH_CHECK_HEADER_NAME: ${{ secrets.HTTP_HEALTH_CHECK_HEADER_NAME }}
           HTTP_HEALTH_CHECK_HEADER_VALUE: ${{ secrets.HTTP_HEALTH_CHECK_HEADER_VALUE }}
+          SNAPSHOT_RETENTION_DAYS: ${{ vars.SNAPSHOT_RETENTION_DAYS }}
         run: npm run collect:status -- --config "$PROJECTS_CONFIG_PATH"

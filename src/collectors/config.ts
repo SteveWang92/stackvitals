@@ -16,8 +16,14 @@ export interface ProjectCollectorConfig {
     supabaseAnonKey?: string;
     // Marks the project that IS this dashboard, so its hub Supabase health is probed.
     hubSupabase?: boolean;
+    // Auth/data backend built from AWS primitives instead of a managed platform. Collected
+    // with `Describe*` calls only (aggregate pool/table metadata, never records), and the
+    // region defaults to AWS_REGION when omitted since a backend often lives in a different
+    // region from the Amplify app that fronts it.
+    awsBackendRegion?: string;
+    cognitoUserPoolId?: string;
+    dynamoDbTables?: string[];
     resendDomain?: string;
-    resendVerificationCategory?: string;
     githubRepository?: string;
     githubActionsEnabled?: boolean;
     // Workflow file name (e.g. "deploy-site.yml") whose latest run is the project's deploy
@@ -43,6 +49,11 @@ export interface DomainGroupConfig {
 export interface CollectorConfig {
   projects: ProjectCollectorConfig[];
   domains?: DomainGroupConfig[];
+  aws?: {
+    // Kept enabled by default for compatibility with existing collector configs. Set false
+    // when AWS credentials are intentionally scoped only to Amplify or app-backend reads.
+    costExplorerEnabled?: boolean;
+  };
   openAi?: {
     apiKeyLabels?: Record<string, string>;
     usageLookbackDays?: number;
@@ -51,6 +62,10 @@ export interface CollectorConfig {
     usageLookbackDays?: number;
     runLimit?: number;
   };
+}
+
+export function isAwsCostExplorerEnabled(config: CollectorConfig): boolean {
+  return config.aws?.costExplorerEnabled !== false;
 }
 
 const placeholderPattern = /\$\$|\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g;

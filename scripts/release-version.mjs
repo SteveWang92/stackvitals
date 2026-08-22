@@ -26,11 +26,7 @@ export const incrementVersion = (version, level) => {
 };
 
 export const suggestLevel = (commits) => {
-  const breaking = commits.some(
-    ({ subject, body }) =>
-      /^[a-z]+(?:\([^)]*\))?!:/i.test(subject) ||
-      /BREAKING[ -]CHANGE:/i.test(body),
-  );
+  const breaking = commits.some(({ subject, body }) => /^[a-z]+(?:\([^)]*\))?!:/i.test(subject) || /BREAKING[ -]CHANGE:/i.test(body));
   if (breaking) return 'major';
   if (commits.some(({ subject }) => /^feat(?:\([^)]*\))?:/i.test(subject))) {
     return 'feature';

@@ -18,6 +18,7 @@ Typical tracked apps look like:
 
 - A static site deployed on AWS Amplify with DNS on Cloudflare.
 - A full app on Amplify with auth/data on Supabase and transactional email via Resend.
+- A full app on Amplify with auth/data on AWS primitives (Cognito + DynamoDB).
 - Another app using an Amplify backend environment.
 - The dashboard itself (it can track its own Supabase project and deployment).
 
@@ -44,7 +45,7 @@ is deliberately **not** "Project Status Hub", which would collide with the separ
 - Static React/Vite dashboard with Supabase Auth and RLS-protected reads.
 - Supabase schema for projects, providers, resources, metric snapshots, cost snapshots, health checks, and collector runs.
 - GitHub Actions/manual collector path for low-cost scheduled collection.
-- Provider adapters for HTTP health, Amplify status, AWS Cost Explorer, watched-app Supabase aggregate status, hub Supabase self-health, Resend verification-email health, OpenAI aggregate usage/cost, GitHub Actions usage/CI status, and Cloudflare domain inventory.
+- Provider adapters for HTTP health, Amplify status, AWS Cost Explorer, watched-app AWS backend status, watched-app Supabase aggregate status, hub Supabase self-health, Resend domain health, OpenAI aggregate usage/cost, GitHub Actions usage/CI status, and Cloudflare domain inventory.
 - Dashboard views for overview cards, tabbed app detail, tabbed collector diagnostics/settings, cost snapshots, OpenAI usage, GitHub Actions usage, loading, empty, stale, and failure states.
 - Mocked provider tests and focused status/data tests.
 - `${ENV_VAR}` placeholder interpolation in the collector config, so adapter credentials are declared in config and supplied by the environment — nothing app-specific lives in code.
@@ -132,9 +133,10 @@ Implemented adapters:
 - HTTP health: perform direct uptime checks for public app URLs.
 - Amplify: collect app, branch, deployment, domain, and backend environment status.
 - AWS core: collect account/service cost through Cost Explorer and resource metadata where needed.
+- AWS app backend (watched app): collect Cognito user-pool availability and estimated user count plus each DynamoDB table's status, item count, and size, for apps whose auth/data layer is AWS primitives rather than a managed platform. `Describe*` calls only — the same count-only boundary the Supabase aggregate adapter keeps. A project opts in with `cognitoUserPoolId` / `dynamoDbTables`, and `awsBackendRegion` covers a backend in a different region from the Amplify app fronting it.
 - Supabase (watched app): call a count-only aggregate RPC in the app's own project (see `docs/examples/app-aggregate-rpc.sql`) so operational counts arrive without raw data.
 - Supabase (hub self-health): collect project status for the dashboard's own Supabase project, selected by the `hubSupabase` config flag.
-- Resend: collect sending-domain verification status and API health. Aggregate verification-email delivery/error counts are **deferred** — the live client currently stubs them to zero, so the `resend_verification_email_*_count` metrics are placeholders until the real Resend API integration lands.
+- Resend: collect sending-domain verification status and API health. Aggregate delivery counts are **not collectable** within this project's boundaries and have been removed: Resend exposes no analytics/statistics endpoint, `GET /emails` returns raw per-message rows (recipient addresses, subjects) with no date or tag filter, and the only documented aggregate path is streaming webhook events into a self-run database, which needs an always-on receiver. Both conflict with the non-goals above.
 - OpenAI: collect aggregate organization API usage by API key/model plus cost totals without prompts, responses, files, user identifiers, or request payloads.
 - GitHub Actions: collect workflow status, CI failures, scheduled-run health, and runtime minutes from workflow run duration. Projects deployed by a GitHub Actions workflow (e.g. GitHub Pages) can name that workflow via `githubDeployWorkflow`; its latest run is reported as the project's deploy status, the same role Amplify metrics play for Amplify-hosted projects.
 - Cloudflare: collect zone status, paused state, relevant DNS record presence/counts, registrar name, and expiration days when the account exposes registrar data. For projects deployed on Cloudflare Pages, set `cloudflarePagesProject` in the collector config to report the latest production deployment status — a third deploy-status source alongside Amplify and GitHub Actions.
@@ -149,9 +151,14 @@ local environment variables or deployment secrets. Adapter credentials are decla
 `${ENV_VAR}` placeholders and resolved at collector startup — a missing variable fails the run
 with a clear error; an empty value disables that adapter.
 
+AWS Cost Explorer stays enabled when AWS credentials are present for compatibility with existing
+configs, but a deployment whose credentials intentionally omit `ce:GetCostAndUsage` sets
+`aws.costExplorerEnabled` to `false`. Cognito and DynamoDB can then run with only their respective
+`Describe*` permissions instead of failing an unrelated cost collection.
+
 Example tracked resources per project: Amplify app id, public URL/domain, Cloudflare domain list,
-Supabase project ref + aggregate RPC name, Resend domain, GitHub repository, Amplify backend
-environment.
+Supabase project ref + aggregate RPC name, Cognito user pool id + DynamoDB table names, Resend
+domain, GitHub repository, Amplify backend environment.
 
 ## Collection
 
@@ -159,6 +166,21 @@ Collection runs at low frequency to control cost and complexity: daily cost snap
 provider inventory snapshots, and a manual `refresh now` path for ad hoc checks. Scheduling uses
 a GitHub Actions cron plus a manual workflow trigger, and scheduled production collectors run only
 from `main`. The frontend stays static with no always-on server.
+
+Retention reuses the same run: after recording results, the collector deletes snapshot rows older
+than `SNAPSHOT_RETENTION_DAYS` (default 90, floor 31) from `metric_snapshots`, `cost_snapshots`,
+`health_checks`, and `collector_runs`. The append-only tables would otherwise grow without bound
+even though nothing reads past the 30-day history window, and this keeps the cleanup on the
+existing schedule instead of adding pg_cron or a second service. A prune failure is logged, not
+thrown — the run's data is already stored, and housekeeping should not fail a good run.
+
+Alerting reuses the scheduler rather than adding a delivery service: the collector process exits
+non-zero when a run contains a hard failure (an adapter error, a `failed` metric, or a `failed`
+health check), which fails the scheduled workflow run and triggers GitHub's own failed-workflow
+email. Warning-level results deliberately do not fail the run — a known warning that emails daily
+is an alert the owner learns to ignore — so warnings stay confined to the dashboard's attention
+panel and the workflow step summary. Snapshots are recorded before the exit code is set, so a
+failing run still stores everything it collected.
 
 Development flow: feature work happens on short-lived `feat/*` branches that merge into `dev` for
 a combined manual check; the owner merges `dev` into `main` to trigger the production deploy.
@@ -199,5 +221,5 @@ The project documentation site (`site/`) deploys separately to GitHub Pages via
 - Store only aggregate metrics and operational state.
 - Do not copy raw app user data or private records of any kind.
 - For app-owned databases, use count-only RPCs, aggregate views, or provider metadata. Do not dump app tables into this project.
-- For Resend, store aggregate operational metrics only, such as send counts, delivery status counts, bounce/error counts, domain verification status, and last successful send check. Do not store recipient addresses, email content, verification URLs, or tokens.
+- For Resend, store only sending-domain verification status and API health. Do not store send counts, delivery events, recipient addresses, email content, verification URLs, or tokens.
 - If credential rotation or multi-user access becomes necessary, evaluate Supabase Vault or another secret manager.

@@ -66,6 +66,12 @@ These are used by `npm run collect:status` and the GitHub Actions workflow.
 | `HTTP_HEALTH_CHECK_HEADER_NAME` | Optional | Custom header name for health check requests |
 | `HTTP_HEALTH_CHECK_HEADER_VALUE` | Optional | Custom header value (for Cloudflare WAF bypass) |
 
+### Snapshot retention
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `SNAPSHOT_RETENTION_DAYS` | Optional | Days of snapshot history to keep (default `90`, minimum `31`) |
+
 ### Per-app placeholders
 
 Any project resource field in `projects.config.json` can use `${ENV_VAR}` placeholders. Create a

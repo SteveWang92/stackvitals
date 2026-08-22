@@ -3,26 +3,30 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { loadEnv } from 'vite';
 import { createAmplifyAdapter } from './providers/amplify';
+import { createAwsAppBackendAdapter } from './providers/awsAppBackend';
 import { createAwsCostExplorerAdapter } from './providers/awsCostExplorer';
 import { createHttpHealthAdapter } from './providers/httpHealth';
 import { createCloudflareDomainsAdapter } from './providers/cloudflare';
 import { createCloudflarePagesAdapter } from './providers/cloudflarePages';
 import { createGitHubActionsAdapter } from './providers/githubActions';
 import { createOpenAiUsageAdapter } from './providers/openaiUsage';
-import { createResendVerificationEmailAdapter } from './providers/resend';
+import { createResendDomainHealthAdapter } from './providers/resend';
 import { createSupabaseAggregateAdapter } from './providers/supabaseAggregate';
 import { createSupabaseProjectHealthAdapter } from './providers/supabaseProjectHealth';
 import { buildGithubStepSummary } from './githubStepSummary';
+import { collectRunFailures, formatRunFailures } from './runFailures';
 import { runCollectors } from './runCollectors';
 import { createSupabaseCollectorRunRecorder } from './stores/supabaseCollectorRunRecorder';
-import { getArgValue, resolveEnvPlaceholders, type CollectorConfig } from './config';
-import { createLiveAmplifyClient, createLiveCostExplorerClient } from './liveClients/aws';
+import { getArgValue, isAwsCostExplorerEnabled, resolveEnvPlaceholders, type CollectorConfig } from './config';
+import { createLiveAmplifyClient, createLiveAwsAppBackendClient, createLiveCostExplorerClient } from './liveClients/aws';
 import { createLiveResendClient } from './liveClients/resend';
 import {
   createLiveSupabaseAggregateClient,
   createLiveSupabaseCollectorRunClient,
   createLiveSupabaseProjectHealthClient,
+  createLiveSupabaseSnapshotPruneClient,
 } from './liveClients/supabase';
+import { formatPruneResults, parseRetentionDays, pruneSnapshots } from './stores/pruneSnapshots';
 import type { ProviderAdapter } from './types';
 import { createLiveCloudflareClient, createLiveCloudflarePagesClient } from './liveClients/cloudflare';
 import { createLiveGitHubActionsClient } from './liveClients/github';
@@ -82,6 +86,9 @@ loadLocalEnv();
 
 const configPath = getArgValue(process.argv, '--config') ?? (await defaultConfigPath());
 const config = await readConfig(configPath);
+// Parsed before any provider work so a bad retention value fails immediately instead of
+// after a full round of API calls.
+const retentionDays = parseRetentionDays(process.env.SNAPSHOT_RETENTION_DAYS);
 const adapters: ProviderAdapter[] = [];
 
 const httpTargets = config.projects
@@ -110,7 +117,26 @@ if (hasAwsCredentials()) {
     }));
 
   adapters.push(createAmplifyAdapter(amplifyTargets, { client: createLiveAmplifyClient(region) }));
-  adapters.push(createAwsCostExplorerAdapter({ client: createLiveCostExplorerClient(region) }));
+
+  if (isAwsCostExplorerEnabled(config)) {
+    adapters.push(createAwsCostExplorerAdapter({ client: createLiveCostExplorerClient(region) }));
+  }
+
+  // Apps whose auth/data backend is Cognito + DynamoDB rather than a managed platform. A
+  // project opts in by naming either resource; the shared AWS credentials need read-only
+  // cognito-idp:DescribeUserPool / dynamodb:DescribeTable on those ARNs.
+  const awsBackendTargets = config.projects
+    .filter((project) => project.resources?.cognitoUserPoolId || (project.resources?.dynamoDbTables?.length ?? 0) > 0)
+    .map((project) => ({
+      projectSlug: project.slug,
+      region: project.resources!.awsBackendRegion ?? region,
+      cognitoUserPoolId: project.resources!.cognitoUserPoolId,
+      dynamoDbTables: project.resources!.dynamoDbTables ?? [],
+    }));
+
+  if (awsBackendTargets.length > 0) {
+    adapters.push(createAwsAppBackendAdapter(awsBackendTargets, { client: createLiveAwsAppBackendClient() }));
+  }
 }
 
 const hubSupabaseServiceRoleKey = getHubSupabaseServiceRoleKey();
@@ -174,10 +200,9 @@ if (process.env.RESEND_API_KEY) {
     .map((project) => ({
       projectSlug: project.slug,
       domain: project.resources!.resendDomain!,
-      verificationCategory: project.resources!.resendVerificationCategory ?? 'verification_email',
     }));
 
-  adapters.push(createResendVerificationEmailAdapter(resendTargets, { client: createLiveResendClient(process.env.RESEND_API_KEY) }));
+  adapters.push(createResendDomainHealthAdapter(resendTargets, { client: createLiveResendClient(process.env.RESEND_API_KEY) }));
 }
 
 if (process.env.CLOUDFLARE_API_TOKEN) {
@@ -325,4 +350,33 @@ console.log(
 
 if (process.env.GITHUB_STEP_SUMMARY) {
   await appendFile(process.env.GITHUB_STEP_SUMMARY, buildGithubStepSummary(summary));
+}
+
+// Retention runs after the write, and only when this run could write at all — pruning from a
+// collector that just failed to record anything would trim history while adding none. A prune
+// failure is logged rather than thrown: the run's collected data is already safely stored, and
+// storage housekeeping is not worth turning a good run into a failed one.
+if (process.env.VITE_SUPABASE_URL && isJwtKey(hubSupabaseServiceRoleKey)) {
+  try {
+    const pruneClient = createLiveSupabaseSnapshotPruneClient(
+      process.env.VITE_SUPABASE_URL,
+      hubSupabaseServiceRoleKey,
+      process.env.VITE_SUPABASE_ANON_KEY,
+    );
+
+    console.log(formatPruneResults(await pruneSnapshots(pruneClient, { retentionDays }), retentionDays));
+  } catch (error) {
+    console.warn(`Snapshot retention skipped: ${error instanceof Error ? error.message : 'unknown error'}`);
+  }
+}
+
+// Alerting is the scheduled workflow's own failure notification: GitHub emails the owner
+// when a cron run fails, so a non-zero exit is the whole delivery mechanism — no webhook,
+// no always-on service. Snapshots are already recorded by this point, so failing here
+// costs no data.
+const failures = collectRunFailures(summary);
+
+if (failures.length > 0) {
+  console.error(formatRunFailures(failures));
+  process.exitCode = 1;
 }

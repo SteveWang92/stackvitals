@@ -118,7 +118,8 @@ Quick order:
 | AWS Cost Explorer    | AWS account/payer, region                                             | User can copy from AWS console; costs are collected account-level per AWS service                                             |
 | Hub Supabase         | Project URL, anon key, JWT service-role key                           | User copies from the dashboard's own Supabase project; JWT service-role key is secret and used only by collectors            |
 | Watched app Supabase | Project URL, anon key, service-role key, aggregate RPC name           | User copies from the watched app's Supabase project; collector calls count-only aggregate RPCs only                          |
-| Resend               | API key, sending domain, optional email category/tag                  | User creates/copies API key                                                                                                   |
+| Watched app AWS backend | Cognito user pool ID, DynamoDB table names, optional region        | User copies from the watched app's AWS console; add read-only `cognito-idp:DescribeUserPool` and `dynamodb:DescribeTable` on those ARNs to the permissions required by any other enabled AWS adapters |
+| Resend               | API key and sending domain                                            | User creates/copies API key                                                                                                   |
 | OpenAI               | Admin API key, optional API key ID labels                             | User creates/copies admin key; labels are fake-safe display names for API key IDs, not secret key values                     |
 | GitHub Actions       | Repository `owner/repo` mappings, read token                          | GitHub Actions can use the built-in token for the collector's own repo; private cross-repo collection needs a PAT            |
 | Cloudflare           | API token, optional account ID, configured domain names               | User creates/copies a read-only token; account ID enables registrar expiration lookup when available                         |
@@ -148,9 +149,17 @@ Quick order:
 - Optional `HTTP_HEALTH_CHECK_HEADER_NAME` / `HTTP_HEALTH_CHECK_HEADER_VALUE`: sent as a
   request header on the public-URL health check so a Cloudflare WAF rule can skip **Super Bot
   Fight Mode** for this collector only; does not work for free-plan Bot Fight Mode (see below)
+- Optional `SNAPSHOT_RETENTION_DAYS`: how many days of snapshot history to keep (default `90`,
+  minimum `31`)
 
-Every adapter is opt-in: it's only added to the run when its credentials are present, so a
-fresh clone with nothing but `PROJECTS_CONFIG_JSON` still runs the HTTP-health adapter alone.
+AWS Cost Explorer remains enabled by default for compatibility with existing configs. If the
+collector credentials are intentionally limited to Amplify, Cognito, or DynamoDB reads, set the
+top-level config field `"aws": { "costExplorerEnabled": false }`; the collector will then avoid
+calling `ce:GetCostAndUsage`.
+
+Adapters are credential-gated, so a fresh clone with nothing but `PROJECTS_CONFIG_JSON` still
+runs the HTTP-health adapter alone. AWS credentials enable Cost Explorer by default; use the
+config switch above when those credentials do not include cost access.
 
 ### Local commands
 
@@ -237,12 +246,18 @@ Collect aggregate operational signals only:
   totals, and scheduled-run counts.
 - Cloudflare zone status, paused state, DNS record counts, apex/www/MX presence, proxied record
   counts, registrar name, and expiration days when available.
+- For an app whose backend is Cognito + DynamoDB, the user-pool availability and estimated user
+  count, and each table's status, item count, and size. These come from `Describe*` calls that
+  return pool and table metadata only — the collector never reads a user record or a table item.
 - Do not collect user records, email addresses, email bodies, verification links, prompts,
   responses, files, user identifiers, request payloads, expenses, bills, raw workflow logs,
   commit contents, patches, or raw app table dumps.
 - Keep your dashboard's Supabase credentials separate from tracked apps' Supabase credentials.
   The hub JWT service-role key writes collector results into the dashboard; a watched app's key
-  should only call count-only RPCs or aggregate views in that app's own project.
+  should only call count-only RPCs or aggregate views in that app's own project. The same rule
+  applies to a watched AWS backend: grant the collector's credentials `cognito-idp:DescribeUserPool`
+  and `dynamodb:DescribeTable` on those ARNs, but no data-read actions — never `Scan`, `Query`,
+  `GetItem`, or any `ListUsers`-style action.
 
 ## 3. Set frontend secrets
 
@@ -292,6 +307,22 @@ logs are publicly visible and the collector prints project slugs, URLs, health s
 error messages — running it from a public repo publishes a daily operational status feed of
 your apps. Keep the collector workflow in a private repo, or in a separate private repo from
 your public code, if that matters to you.
+
+### Getting notified when something breaks
+
+`npm run collect:status` exits non-zero when the run contains a hard failure — an adapter error,
+a `failed` metric, or a `failed` health check. On GitHub Actions that marks the scheduled run as
+failed, and GitHub emails you about it: **Settings → Notifications → Actions**, with "Send
+notifications for failed workflows only" enabled. That is the whole alerting path — no webhook
+receiver and no always-on monitoring service.
+
+Warning-level results deliberately do **not** fail the run. A domain three weeks from expiry or a
+slow-but-answering health check would otherwise email you every single day until you fixed it,
+which is how a real alert ends up ignored. Warnings surface in the dashboard's "Needs Attention"
+panel and in the workflow's step summary instead.
+
+Snapshots are written before the exit code is set, so a failed run still records everything it
+collected — the dashboard shows the failure rather than a gap.
 
 ## 7. Verify
 

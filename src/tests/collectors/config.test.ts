@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveEnvPlaceholders } from '../../collectors/config';
+import { isAwsCostExplorerEnabled, resolveEnvPlaceholders, type CollectorConfig } from '../../collectors/config';
 
 describe('resolveEnvPlaceholders', () => {
   it('resolves placeholders in nested string values and leaves other types untouched', () => {
@@ -55,5 +55,17 @@ describe('resolveEnvPlaceholders', () => {
     expect(() => resolveEnvPlaceholders(config, {}, 'projects.config.json')).toThrowError(
       'Missing environment variable "MISSING_VAR" referenced by ${MISSING_VAR} at projects.config.json.projects[0].resources.supabaseUrl.',
     );
+  });
+});
+
+describe('isAwsCostExplorerEnabled', () => {
+  const config = { projects: [] } satisfies CollectorConfig;
+
+  it('preserves Cost Explorer collection for existing configs', () => {
+    expect(isAwsCostExplorerEnabled(config)).toBe(true);
+  });
+
+  it('allows least-privilege AWS backends to disable Cost Explorer', () => {
+    expect(isAwsCostExplorerEnabled({ ...config, aws: { costExplorerEnabled: false } })).toBe(false);
   });
 });

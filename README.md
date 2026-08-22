@@ -47,7 +47,7 @@ turn on exactly the adapters you use.
 | AWS Cost Explorer | Account-level month-to-date / last-month cost per AWS service | AWS access key/secret, region | Read-only Cost Explorer access |
 | Supabase project health | Reachability of the hub's own project or a watched app's | Supabase project URL + service-role key | Project-scoped service-role key |
 | Watched-app Supabase aggregate | Count-only aggregate stats from a custom RPC you define in the watched app | That app's Supabase URL, anon key, service-role key, RPC name | Service-role key used only to call a count-only aggregate RPC — never raw table reads |
-| Resend | Sending-domain verification status (delivery counts are planned, not collected yet) | Resend API key | Read-only API key |
+| Resend | Sending-domain verification status | Resend API key | Read-only API key |
 | OpenAI usage | Token totals, request counts, cached-token counts, spend, by API key/model | OpenAI admin API key | Admin key (required by OpenAI's usage endpoints) |
 | GitHub Actions | Workflow run counts, latest status, trigger type, branch, duration, scheduled-run health | Repo `owner/repo` mapping + read token (or the workflow's built-in token) | Actions: read |
 | Cloudflare domains | Zone status, DNS record counts, apex/www/MX presence, registrar name + expiration when available | Cloudflare API token, optional account ID | Read-only token scoped to zones/DNS |

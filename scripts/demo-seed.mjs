@@ -351,31 +351,9 @@ function projectMetricRows(project, projectId, now, dayOffset) {
     );
   }
 
-  // Resend — a quota warning that is not an outage.
+  // Resend — a sending domain that has slipped out of verified state.
   if (project.slug === 'acme_site') {
-    rows.push(
-      metric(projectId, 'resend', 'resend_domain_verified', 1, 'healthy', { domain: 'mail.example.dev' }, at),
-      metric(
-        projectId,
-        'resend',
-        'resend_verification_email_sent_count',
-        2_460 - dayOffset * 90,
-        'warning',
-        { category: 'verification' },
-        at,
-      ),
-      metric(
-        projectId,
-        'resend',
-        'resend_verification_email_delivered_count',
-        2_402 - dayOffset * 88,
-        'healthy',
-        { category: 'verification' },
-        at,
-      ),
-      metric(projectId, 'resend', 'resend_verification_email_bounced_count', 41, 'warning', { category: 'verification' }, at),
-      metric(projectId, 'resend', 'resend_verification_email_failed_count', 17, 'warning', { category: 'verification' }, at),
-    );
+    rows.push(metric(projectId, 'resend', 'resend_domain_verified', 0, 'warning', { domain: 'mail.example.dev' }, at));
   }
 
   // HTTP response time alongside the health_checks rows, mirroring the http adapter.

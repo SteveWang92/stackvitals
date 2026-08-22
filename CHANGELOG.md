@@ -9,6 +9,44 @@ below as its notes.
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-08-23
+
+### Added
+
+- Collector support for apps whose auth and data live on AWS primitives: set `cognitoUserPoolId`,
+  `dynamoDbTables` and an optional `awsBackendRegion` on a project and the dashboard reports the
+  Cognito user pool's availability and estimated user count beside each DynamoDB table's status,
+  item count and size. The collector's AWS credentials need read-only `cognito-idp:DescribeUserPool`
+  and `dynamodb:DescribeTable` on the configured ARNs.
+- `collect:status` now exits non-zero when a run contains a hard failure, so a scheduled GitHub
+  Actions run is marked failed and GitHub's own failed-workflow email becomes the alerting path.
+- Snapshot retention: each collector run now deletes snapshot, cost, health-check and collector-run
+  rows older than `SNAPSHOT_RETENTION_DAYS` (default 90, minimum 31).
+- Cost Explorer collection can be turned off with `"aws": { "costExplorerEnabled": false }` in the
+  collector config, for AWS credentials that intentionally omit `ce:GetCostAndUsage`.
+
+### Changed
+
+- The supported Node.js version is now 24.18.1. Self-hosters building from source need Node 24;
+  Node 22 is no longer tested.
+
+### Removed
+
+- The `resend_verification_email_*_count` metrics, which always reported zero, and the
+  `resendVerificationCategory` config field that selected them. Self-hosters should apply migration
+  `008_drop_resend_delivery_metrics.sql` to delete the retired rows.
+
+### Fixed
+
+- A provider whose stored sync timestamp could not be parsed no longer crashes the dashboard render.
+- A provider now reports the worst status among the resources it is still collecting, instead of
+  whichever reading happened to be written last or a resource that has since been removed.
+
+### Security
+
+- Updated the transitive `nanoid` and `js-yaml` build dependencies to patched releases.
+
+
 ## [1.5.0] - 2026-07-30
 
 ### Added
@@ -144,7 +182,8 @@ source projects.
   to the GitHub Actions job summary.
 - Self-hosting guide and contributing guide (including how to add a new adapter).
 
-[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/SteveWang92/stackvitals/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/SteveWang92/stackvitals/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/SteveWang92/stackvitals/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/SteveWang92/stackvitals/compare/v1.2.0...v1.3.0

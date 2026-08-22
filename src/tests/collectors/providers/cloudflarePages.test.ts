@@ -115,16 +115,10 @@ describe('collectCloudflarePages', () => {
 
   it('reports partial_success when one target succeeds and another fails', async () => {
     const client: CloudflarePagesClient = {
-      getLatestProductionDeployment: vi
-        .fn()
-        .mockResolvedValueOnce(deployment())
-        .mockRejectedValueOnce(new Error('not found')),
+      getLatestProductionDeployment: vi.fn().mockResolvedValueOnce(deployment()).mockRejectedValueOnce(new Error('not found')),
     };
 
-    const result = await collectCloudflarePages(
-      [target, { projectSlug: 'other_app', projectName: 'other-project' }],
-      { client },
-    );
+    const result = await collectCloudflarePages([target, { projectSlug: 'other_app', projectName: 'other-project' }], { client });
 
     expect(result.status).toBe('partial_success');
     expect(result.summary).toBe('1/2 Cloudflare Pages projects collected.');

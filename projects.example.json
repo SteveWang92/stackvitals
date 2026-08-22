@@ -25,8 +25,20 @@
         "supabaseUrl": "${MY_APP_SUPABASE_URL}",
         "supabaseServiceRoleKey": "${MY_APP_SUPABASE_SERVICE_ROLE_KEY}",
         "supabaseAnonKey": "${MY_APP_SUPABASE_ANON_KEY}",
-        "resendDomain": "mail.example.com",
-        "resendVerificationCategory": "verification_email"
+        "resendDomain": "mail.example.com"
+      }
+    },
+    {
+      "slug": "my_aws_app",
+      "name": "My AWS App",
+      "publicUrl": "https://aws.example.com",
+      "resources": {
+        "amplifyAppId": "fake-amplify-app-id",
+        "amplifyBranchName": "main",
+        "githubRepository": "example/my-aws-app",
+        "awsBackendRegion": "ap-southeast-2",
+        "cognitoUserPoolId": "ap-southeast-2_FakePool",
+        "dynamoDbTables": ["my-aws-app-prod-data"]
       }
     },
     {
@@ -62,6 +74,9 @@
       "domains": ["shared.example"]
     }
   ],
+  "aws": {
+    "costExplorerEnabled": true
+  },
   "githubActions": {
     "usageLookbackDays": 30,
     "runLimit": 50

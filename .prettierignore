@@ -1,7 +1,9 @@
-# Generated output and dependencies.
+# Generated output and dependencies. site/.astro is Astro's content cache — git-ignored
+# already, but prettier does not read .gitignore and would otherwise check it.
 dist
 node_modules
 coverage
+site/.astro
 
 # Secrets/local config (never read these at all).
 .env
@@ -11,6 +13,17 @@ coverage
 # npm owns this file's formatting; formatting it only creates churn.
 package-lock.json
 
+# Icons and favicons are shipped assets, minified on purpose. Prettier expands each one
+# to ~15 lines, which only makes the served file bigger.
+*.svg
+
 # Docs are hand-wrapped; prettier's markdown emphasis/list normalization is not
 # idempotent on these files and has corrupted literal `_`/`*` text in them.
+#
+# .mdx is worse, not merely noisy: prettier reflows the children of a JSX element as
+# prose, so the numbered list inside Starlight's <Steps> collapses into one run-on
+# paragraph and the fenced code blocks in it are flattened inline. Both self-hosting
+# pages render as garbage afterwards. It also re-pads tables to equal column widths,
+# which turns a one-word edit into a whole-table diff.
 *.md
+*.mdx
