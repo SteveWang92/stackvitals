@@ -30,8 +30,9 @@ npm run collect:status   # runs ALL configured collectors via vite-node
 
 npm run demo:screenshots # 1080p demo screenshots via scripts/demo-screenshots/capture.mjs (VITE_DEMO_MODE, fictional data, no auth)
 
-npm run release:prep     # create release PR from dev -> main (non-interactive)
-npm run release:ship     # finalize, squash-merge, tag, GitHub release (non-interactive)
+npm run release:prep     # bump, finalize changelog, push dev, open/refresh release PR
+npm run release:reversion -- X.Y.Z  # change a prepped release's version (files left uncommitted)
+npm run release:ship     # verify the PR can merge, then squash-merge, tag, GitHub release
 ```
 
 Run a single test file: `npx vitest run src/tests/services/dashboardData.test.ts`. Filter by name: `npx vitest run -t "openai"`. There is no Vitest config file and globals are off — every test imports `describe`, `it`, `expect`, and `vi` from `vitest` directly. Component tests under `src/tests/components/` opt into a DOM with a `// @vitest-environment jsdom` pragma on the first line rather than a config file, use `@testing-library/react`, and assert with plain DOM checks (`container.innerHTML`, `getAttribute`, `textContent`) — jest-dom's matchers would need a setup file, which would mean adding the config this repo does without.
@@ -84,7 +85,8 @@ General commit, branch, reuse, and working rules live in the user-global `~/.cla
 
 - Add mocked tests for provider adapters before relying on live provider APIs.
 - Tests live under `src/tests/` mirroring the source tree — do **not** colocate `*.test.ts` beside implementation files.
-- Release uses `scripts/release.mjs` — a two-phase, non-interactive script. `npm run release:prep` creates the release PR; after review, `npm run release:ship` finalizes the version, squash-merges, tags, and publishes the GitHub release. Follow the active `release` skill for the full workflow.
+- Release uses `scripts/release.mjs` — a two-phase, non-interactive script. `npm run release:prep` bumps the version, finalizes `CHANGELOG.md`, pushes `dev` and opens the release PR, so the review and CI both run against the exact commit that will be tagged; it is idempotent, so re-run it after landing review fixes to refresh the PR. `npm run release:ship` pushes nothing: it verifies the PR can merge and fails without side effects if it cannot, then squash-merges, tags, and publishes the GitHub release. Follow the active `release` skill for the full workflow.
+- Changing a prepped release's version — the review concludes it should be a minor, not a patch — is `npm run release:reversion -- X.Y.Z`. It rewrites all four places the version lives (version fields, changelog heading, compare links, PR title) and leaves the file changes uncommitted so they go in with the review fix that caused them. Never hand-edit those four places; `ship` refuses to merge when they disagree.
 - `CHANGELOG.md` follows the changelog rules in Steve's global `CLAUDE.md`, which is where they are explained: user-facing results only, one entry to one line, Keep a Changelog categories in order.
 - Two differences here. StackVitals is public and self-hosted, so an entry may carry a second sentence when it tells a self-hoster what they must **do** — apply a migration, add an IAM permission, change a config field — but never to explain the reasoning; such an entry wraps to the file's line width, since the one-line rule is about carrying one result, not about a character count. And the bottom compare links are left for `release:ship` to maintain.
 - This folder is a standalone project; do not touch `D:\Projects\Integration-Dashboard`.
