@@ -18,14 +18,6 @@ below as its notes.
   `Describe*` calls are made, so the collector reads pool and table metadata and never a user
   record or a table item. The collector's AWS credentials need read-only
   `cognito-idp:DescribeUserPool` and `dynamodb:DescribeTable` on the configured ARNs.
-
-### Changed
-
-- The supported Node.js version is now 24.18.1, pinned in a new `.nvmrc` and in every GitHub
-  Actions workflow. Self-hosters building from source need Node 24; Node 22 is no longer tested.
-
-### Added
-
 - `collect:status` exits non-zero when a run contains a hard failure — an adapter error, a
   `failed` metric, or a `failed` health check — so a scheduled GitHub Actions run is marked failed
   and GitHub's own failed-workflow email becomes the alerting path. Warning-level results still do
@@ -36,10 +28,10 @@ below as its notes.
   own schedule and credentials — no database scheduler and no extra service — and a prune failure
   is logged instead of failing the run.
 
-### Fixed
+### Changed
 
-- A provider whose stored sync timestamp could not be parsed crashed the dashboard render instead
-  of showing that one timestamp as never synced.
+- The supported Node.js version is now 24.18.1, pinned in a new `.nvmrc` and in every GitHub
+  Actions workflow. Self-hosters building from source need Node 24; Node 22 is no longer tested.
 
 ### Removed
 
@@ -50,6 +42,11 @@ below as its notes.
   only, and the `resendVerificationCategory` config field is gone. Migration
   `008_drop_resend_delivery_metrics.sql` deletes the retired rows so they stop showing as the
   latest snapshot; self-hosters should apply it.
+
+### Fixed
+
+- A provider whose stored sync timestamp could not be parsed crashed the dashboard render instead
+  of showing that one timestamp as never synced.
 
 ## [1.5.0] - 2026-07-30
 
