@@ -11,42 +11,30 @@ below as its notes.
 
 ### Added
 
-- Collector support for apps whose auth and data live on AWS primitives instead of a managed
-  platform: set `cognitoUserPoolId` and/or `dynamoDbTables` on a project (with an optional
-  `awsBackendRegion`) and the dashboard reports the Cognito user pool's availability and
-  estimated user count alongside each DynamoDB table's status, item count, and size. Only
-  `Describe*` calls are made, so the collector reads pool and table metadata and never a user
-  record or a table item. The collector's AWS credentials need read-only
-  `cognito-idp:DescribeUserPool` and `dynamodb:DescribeTable` on the configured ARNs.
-- `collect:status` exits non-zero when a run contains a hard failure — an adapter error, a
-  `failed` metric, or a `failed` health check — so a scheduled GitHub Actions run is marked failed
-  and GitHub's own failed-workflow email becomes the alerting path. Warning-level results still do
-  not fail the run, and snapshots are recorded before the exit code is set.
-- Snapshot retention: each collector run now deletes `metric_snapshots`, `cost_snapshots`,
-  `health_checks`, and `collector_runs` rows older than `SNAPSHOT_RETENTION_DAYS` (default 90,
-  minimum 31), so the append-only tables stop growing without bound. Pruning reuses the collector's
-  own schedule and credentials — no database scheduler and no extra service — and a prune failure
-  is logged instead of failing the run.
+- Collector support for apps whose auth and data live on AWS primitives: set `cognitoUserPoolId`,
+  `dynamoDbTables` and an optional `awsBackendRegion` on a project and the dashboard reports the
+  Cognito user pool's availability and estimated user count beside each DynamoDB table's status,
+  item count and size. The collector's AWS credentials need read-only `cognito-idp:DescribeUserPool`
+  and `dynamodb:DescribeTable` on the configured ARNs.
+- `collect:status` now exits non-zero when a run contains a hard failure, so a scheduled GitHub
+  Actions run is marked failed and GitHub's own failed-workflow email becomes the alerting path.
+- Snapshot retention: each collector run now deletes snapshot, cost, health-check and collector-run
+  rows older than `SNAPSHOT_RETENTION_DAYS` (default 90, minimum 31).
 
 ### Changed
 
-- The supported Node.js version is now 24.18.1, pinned in a new `.nvmrc` and in every GitHub
-  Actions workflow. Self-hosters building from source need Node 24; Node 22 is no longer tested.
+- The supported Node.js version is now 24.18.1. Self-hosters building from source need Node 24;
+  Node 22 is no longer tested.
 
 ### Removed
 
-- The `resend_verification_email_*_count` metrics, which always reported zero. Resend has no
-  aggregate delivery-statistics endpoint, and the two ways to derive one — paging the account's
-  raw message list, or running a webhook receiver — are both outside this project's data and
-  infrastructure boundaries. The Resend adapter now collects sending-domain verification status
-  only, and the `resendVerificationCategory` config field is gone. Migration
-  `008_drop_resend_delivery_metrics.sql` deletes the retired rows so they stop showing as the
-  latest snapshot; self-hosters should apply it.
+- The `resend_verification_email_*_count` metrics, which always reported zero, and the
+  `resendVerificationCategory` config field that selected them. Self-hosters should apply migration
+  `008_drop_resend_delivery_metrics.sql` to delete the retired rows.
 
 ### Fixed
 
-- A provider whose stored sync timestamp could not be parsed crashed the dashboard render instead
-  of showing that one timestamp as never synced.
+- A provider whose stored sync timestamp could not be parsed no longer crashes the dashboard render.
 
 ## [1.5.0] - 2026-07-30
 
