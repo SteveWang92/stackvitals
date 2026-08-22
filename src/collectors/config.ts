@@ -16,6 +16,13 @@ export interface ProjectCollectorConfig {
     supabaseAnonKey?: string;
     // Marks the project that IS this dashboard, so its hub Supabase health is probed.
     hubSupabase?: boolean;
+    // Auth/data backend built from AWS primitives instead of a managed platform. Collected
+    // with `Describe*` calls only (aggregate pool/table metadata, never records), and the
+    // region defaults to AWS_REGION when omitted since a backend often lives in a different
+    // region from the Amplify app that fronts it.
+    awsBackendRegion?: string;
+    cognitoUserPoolId?: string;
+    dynamoDbTables?: string[];
     resendDomain?: string;
     githubRepository?: string;
     githubActionsEnabled?: boolean;

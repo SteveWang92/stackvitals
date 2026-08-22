@@ -18,6 +18,7 @@ Typical tracked apps look like:
 
 - A static site deployed on AWS Amplify with DNS on Cloudflare.
 - A full app on Amplify with auth/data on Supabase and transactional email via Resend.
+- A full app on Amplify with auth/data on AWS primitives (Cognito + DynamoDB).
 - Another app using an Amplify backend environment.
 - The dashboard itself (it can track its own Supabase project and deployment).
 
@@ -132,6 +133,7 @@ Implemented adapters:
 - HTTP health: perform direct uptime checks for public app URLs.
 - Amplify: collect app, branch, deployment, domain, and backend environment status.
 - AWS core: collect account/service cost through Cost Explorer and resource metadata where needed.
+- AWS app backend (watched app): collect Cognito user-pool availability and estimated user count plus each DynamoDB table's status, item count, and size, for apps whose auth/data layer is AWS primitives rather than a managed platform. `Describe*` calls only — the same count-only boundary the Supabase aggregate adapter keeps. A project opts in with `cognitoUserPoolId` / `dynamoDbTables`, and `awsBackendRegion` covers a backend in a different region from the Amplify app fronting it.
 - Supabase (watched app): call a count-only aggregate RPC in the app's own project (see `docs/examples/app-aggregate-rpc.sql`) so operational counts arrive without raw data.
 - Supabase (hub self-health): collect project status for the dashboard's own Supabase project, selected by the `hubSupabase` config flag.
 - Resend: collect sending-domain verification status and API health. Aggregate delivery counts are **not collectable** within this project's boundaries and have been removed: Resend exposes no analytics/statistics endpoint, `GET /emails` returns raw per-message rows (recipient addresses, subjects) with no date or tag filter, and the only documented aggregate path is streaming webhook events into a self-run database, which needs an always-on receiver. Both conflict with the non-goals above.
@@ -150,8 +152,8 @@ local environment variables or deployment secrets. Adapter credentials are decla
 with a clear error; an empty value disables that adapter.
 
 Example tracked resources per project: Amplify app id, public URL/domain, Cloudflare domain list,
-Supabase project ref + aggregate RPC name, Resend domain, GitHub repository, Amplify backend
-environment.
+Supabase project ref + aggregate RPC name, Cognito user pool id + DynamoDB table names, Resend
+domain, GitHub repository, Amplify backend environment.
 
 ## Collection
 

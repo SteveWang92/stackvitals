@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { loadEnv } from 'vite';
 import { createAmplifyAdapter } from './providers/amplify';
+import { createAwsAppBackendAdapter } from './providers/awsAppBackend';
 import { createAwsCostExplorerAdapter } from './providers/awsCostExplorer';
 import { createHttpHealthAdapter } from './providers/httpHealth';
 import { createCloudflareDomainsAdapter } from './providers/cloudflare';
@@ -17,7 +18,7 @@ import { collectRunFailures, formatRunFailures } from './runFailures';
 import { runCollectors } from './runCollectors';
 import { createSupabaseCollectorRunRecorder } from './stores/supabaseCollectorRunRecorder';
 import { getArgValue, resolveEnvPlaceholders, type CollectorConfig } from './config';
-import { createLiveAmplifyClient, createLiveCostExplorerClient } from './liveClients/aws';
+import { createLiveAmplifyClient, createLiveAwsAppBackendClient, createLiveCostExplorerClient } from './liveClients/aws';
 import { createLiveResendClient } from './liveClients/resend';
 import {
   createLiveSupabaseAggregateClient,
@@ -117,6 +118,22 @@ if (hasAwsCredentials()) {
 
   adapters.push(createAmplifyAdapter(amplifyTargets, { client: createLiveAmplifyClient(region) }));
   adapters.push(createAwsCostExplorerAdapter({ client: createLiveCostExplorerClient(region) }));
+
+  // Apps whose auth/data backend is Cognito + DynamoDB rather than a managed platform. A
+  // project opts in by naming either resource; the shared AWS credentials need read-only
+  // cognito-idp:DescribeUserPool / dynamodb:DescribeTable on those ARNs.
+  const awsBackendTargets = config.projects
+    .filter((project) => project.resources?.cognitoUserPoolId || (project.resources?.dynamoDbTables?.length ?? 0) > 0)
+    .map((project) => ({
+      projectSlug: project.slug,
+      region: project.resources!.awsBackendRegion ?? region,
+      cognitoUserPoolId: project.resources!.cognitoUserPoolId,
+      dynamoDbTables: project.resources!.dynamoDbTables ?? [],
+    }));
+
+  if (awsBackendTargets.length > 0) {
+    adapters.push(createAwsAppBackendAdapter(awsBackendTargets, { client: createLiveAwsAppBackendClient() }));
+  }
 }
 
 const hubSupabaseServiceRoleKey = getHubSupabaseServiceRoleKey();

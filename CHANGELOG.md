@@ -9,6 +9,16 @@ below as its notes.
 
 ## [Unreleased]
 
+### Added
+
+- Collector support for apps whose auth and data live on AWS primitives instead of a managed
+  platform: set `cognitoUserPoolId` and/or `dynamoDbTables` on a project (with an optional
+  `awsBackendRegion`) and the dashboard reports the Cognito user pool's availability and
+  estimated user count alongside each DynamoDB table's status, item count, and size. Only
+  `Describe*` calls are made, so the collector reads pool and table metadata and never a user
+  record or a table item. The collector's AWS credentials need read-only
+  `cognito-idp:DescribeUserPool` and `dynamodb:DescribeTable` on the configured ARNs.
+
 ### Changed
 
 - The supported Node.js version is now 24.18.1, pinned in a new `.nvmrc` and in every GitHub

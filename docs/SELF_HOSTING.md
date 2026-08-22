@@ -118,6 +118,7 @@ Quick order:
 | AWS Cost Explorer    | AWS account/payer, region                                             | User can copy from AWS console; costs are collected account-level per AWS service                                             |
 | Hub Supabase         | Project URL, anon key, JWT service-role key                           | User copies from the dashboard's own Supabase project; JWT service-role key is secret and used only by collectors            |
 | Watched app Supabase | Project URL, anon key, service-role key, aggregate RPC name           | User copies from the watched app's Supabase project; collector calls count-only aggregate RPCs only                          |
+| Watched app AWS backend | Cognito user pool ID, DynamoDB table names, optional region        | User copies from the watched app's AWS console; the collector's AWS credentials need read-only `cognito-idp:DescribeUserPool` and `dynamodb:DescribeTable` on those ARNs |
 | Resend               | API key, sending domain, optional email category/tag                  | User creates/copies API key                                                                                                   |
 | OpenAI               | Admin API key, optional API key ID labels                             | User creates/copies admin key; labels are fake-safe display names for API key IDs, not secret key values                     |
 | GitHub Actions       | Repository `owner/repo` mappings, read token                          | GitHub Actions can use the built-in token for the collector's own repo; private cross-repo collection needs a PAT            |
@@ -239,12 +240,18 @@ Collect aggregate operational signals only:
   totals, and scheduled-run counts.
 - Cloudflare zone status, paused state, DNS record counts, apex/www/MX presence, proxied record
   counts, registrar name, and expiration days when available.
+- For an app whose backend is Cognito + DynamoDB, the user-pool availability and estimated user
+  count, and each table's status, item count, and size. These come from `Describe*` calls that
+  return pool and table metadata only — the collector never reads a user record or a table item.
 - Do not collect user records, email addresses, email bodies, verification links, prompts,
   responses, files, user identifiers, request payloads, expenses, bills, raw workflow logs,
   commit contents, patches, or raw app table dumps.
 - Keep your dashboard's Supabase credentials separate from tracked apps' Supabase credentials.
   The hub JWT service-role key writes collector results into the dashboard; a watched app's key
-  should only call count-only RPCs or aggregate views in that app's own project.
+  should only call count-only RPCs or aggregate views in that app's own project. The same rule
+  applies to a watched AWS backend: grant the collector's credentials `cognito-idp:DescribeUserPool`
+  and `dynamodb:DescribeTable` on those ARNs and nothing else — never `Scan`, `Query`, `GetItem`,
+  or any `ListUsers`-style action.
 
 ## 3. Set frontend secrets
 

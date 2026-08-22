@@ -8,7 +8,8 @@ import { metadataText, providerKey, type MetricSnapshotRow } from './rows';
 function snapshotServiceKey(row: MetricSnapshotRow): string {
   const provider = providerKey(row) ?? 'unknown';
   const service =
-    metadataText(row.metadata, ['serviceName', 'url', 'domain', 'appId', 'projectRef', 'rpcName', 'category']) ?? row.metric_key;
+    metadataText(row.metadata, ['serviceName', 'url', 'domain', 'appId', 'projectRef', 'rpcName', 'userPoolId', 'tableName', 'category']) ??
+    row.metric_key;
 
   return `${provider}:${service}`;
 }

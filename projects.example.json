@@ -29,6 +29,19 @@
       }
     },
     {
+      "slug": "my_aws_app",
+      "name": "My AWS App",
+      "publicUrl": "https://aws.example.com",
+      "resources": {
+        "amplifyAppId": "fake-amplify-app-id",
+        "amplifyBranchName": "main",
+        "githubRepository": "example/my-aws-app",
+        "awsBackendRegion": "ap-southeast-2",
+        "cognitoUserPoolId": "ap-southeast-2_FakePool",
+        "dynamoDbTables": ["my-aws-app-prod-data"]
+      }
+    },
+    {
       "slug": "my_second_app",
       "name": "My Second App",
       "publicUrl": "https://second.example.com",
