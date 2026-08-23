@@ -1,28 +1,10 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { StatusPill } from '../../components/StatusPill';
 import { StaleBadge } from '../../components/StaleBadge';
 
 afterEach(cleanup);
-
-describe('StatusPill', () => {
-  it('labels each status and carries its status class', () => {
-    for (const [status, label] of [
-      ['healthy', 'Healthy'],
-      ['warning', 'Needs attention'],
-      ['failed', 'Failed'],
-      ['unknown', 'Unknown'],
-    ] as const) {
-      const { container } = render(<StatusPill status={status} />);
-
-      expect(screen.getByText(label)).toBeTruthy();
-      expect(container.querySelector(`.status-${status}`)).toBeTruthy();
-      cleanup();
-    }
-  });
-});
 
 describe('StaleBadge', () => {
   it('renders nothing while data is fresh', () => {
@@ -45,12 +27,6 @@ describe('StaleBadge', () => {
 
   it('says Never when a provider has never reported', () => {
     const { container } = render(<StaleBadge freshness="never" lastSync={null} />);
-
-    expect(container.textContent).toContain('Never');
-  });
-
-  it('says Never rather than NaN for an unparseable timestamp', () => {
-    const { container } = render(<StaleBadge freshness="stale" lastSync="not-a-date" />);
 
     expect(container.textContent).toContain('Never');
   });

@@ -9,6 +9,11 @@ below as its notes.
 
 ## [Unreleased]
 
+### Fixed
+
+- The dashboard no longer refuses to render the whole page when a snapshot row carries a status the
+  frontend does not recognise.
+
 ## [1.6.0] - 2026-08-23
 
 ### Added

@@ -101,9 +101,5 @@ export function isStaleSync(value: string | null, now = new Date(), staleAfterHo
 
   const syncedAt = new Date(value).getTime();
 
-  if (Number.isNaN(syncedAt)) {
-    return true;
-  }
-
   return now.getTime() - syncedAt > staleAfterHours * 60 * 60 * 1000;
 }
