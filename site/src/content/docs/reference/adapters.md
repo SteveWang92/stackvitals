@@ -19,7 +19,8 @@ config switch below when those credentials do not include cost access.
 | Watched-app Supabase aggregate | Count-only aggregate stats from a custom RPC | App's Supabase URL, anon key, service-role key, RPC name | Service-role key (count-only RPC — never raw reads) |
 | Resend | Sending-domain verification status | Resend API key | Read-only API key |
 | OpenAI usage | Token totals, request counts, cached tokens, spend by key/model | OpenAI admin API key | Admin key (required by usage endpoints) |
-| GitHub Actions | Workflow run counts, latest status, trigger type, branch, duration | Repo `owner/repo` mapping + read token | Actions: read |
+| GitHub Actions | Workflow run counts, latest status, branch, duration, optional deploy status | Repo `owner/repo` mapping + read token | Actions: read |
+| Cloudflare Pages | Latest production deployment status | Cloudflare API token + account ID | Read-only account access to Pages |
 | Cloudflare domains | Zone status, DNS record counts, apex/www/MX, registrar expiry | Cloudflare API token, optional account ID | Read-only token scoped to zones/DNS |
 
 ## Adapter details
@@ -89,6 +90,17 @@ Collects workflow run counts, latest status/conclusion, trigger type, branch, an
 totals. Uses the built-in `GITHUB_TOKEN` for the collector's own repo; private cross-repo
 collection needs a PAT with Actions read access. Runtime minutes are derived from run durations,
 not GitHub billing endpoints.
+
+Set `resources.githubRepository` to `owner/repo`. To use one workflow as the project's deploy
+status, set `resources.githubDeployWorkflow` to its workflow file name, such as
+`deploy-site.yml`. Set `resources.githubActionsEnabled` to `false` to disable GitHub collection
+for a mapped repository.
+
+### Cloudflare Pages
+
+Set `resources.cloudflarePagesProject` to the Pages project name. With
+`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` present, the collector reports the latest
+production deployment; preview deployments are excluded.
 
 ### Cloudflare domains
 

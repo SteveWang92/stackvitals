@@ -12,13 +12,13 @@ import costsImg from '../../assets/screenshots/06-costs.png';
 
 const features = [
   { icon: '🟢', title: '正常运行时间监控', desc: '对公共 URL 进行 HTTP 健康检查。响应时间、状态码、可用/不可用历史。' },
-  { icon: '🚀', title: '部署状态', desc: 'AWS Amplify 构建状态、分支和最新部署时间戳一目了然。' },
+  { icon: '🚀', title: '部署状态', desc: '查看 AWS Amplify、GitHub Actions 或 Cloudflare Pages 的最新生产部署状态。' },
   { icon: '💰', title: '云成本', desc: 'AWS Cost Explorer 当月与上月对比，按服务细分。' },
   { icon: '🤖', title: 'AI 使用量', desc: 'OpenAI Token 总数、请求次数、缓存 Token 以及按 API Key 和模型的花费。' },
   { icon: '⚙️', title: 'CI 状态', desc: 'GitHub Actions 工作流运行次数、最新状态、触发类型和定时运行健康状况。' },
   { icon: '🌐', title: '域名健康', desc: 'Cloudflare zone 状态、DNS 记录数、apex/www/MX 存在性和注册商过期信息。' },
   { icon: '✉️', title: '邮件投递', desc: 'Resend 发送域名验证状态，用于你的事务性邮件设置。' },
-  { icon: '🗄️', title: '数据库健康', desc: 'Supabase 项目可达性以及来自你应用的仅计数聚合统计。' },
+  { icon: '🗄️', title: '后端健康', desc: 'Supabase 聚合，以及 Cognito 可用性和 DynamoDB 表元数据。' },
 ];
 
 const screenshots = [
@@ -154,6 +154,12 @@ const screenshots = [
               <td>只读 Cost Explorer 访问</td>
             </tr>
             <tr>
+              <td>AWS 应用后端</td>
+              <td>Cognito 用户池可用性/用户估算值，以及 DynamoDB 表状态/条目数/大小</td>
+              <td>AWS access key/secret、资源 ID、可选 region</td>
+              <td>对已配置资源的 DescribeUserPool 和 DescribeTable</td>
+            </tr>
+            <tr>
               <td>Supabase 项目健康</td>
               <td>仪表盘自身项目或被监控应用的可达性</td>
               <td>Supabase 项目 URL + service-role key</td>
@@ -179,9 +185,15 @@ const screenshots = [
             </tr>
             <tr>
               <td>GitHub Actions</td>
-              <td>工作流运行次数、最新状态、触发类型、分支、持续时间</td>
+              <td>工作流使用量和可选的部署工作流状态</td>
               <td>仓库 <code>owner/repo</code> 映射 + 读取 token</td>
               <td>Actions: read</td>
+            </tr>
+            <tr>
+              <td>Cloudflare Pages</td>
+              <td>最新生产部署状态</td>
+              <td>Cloudflare API token + account ID</td>
+              <td>对 Pages 的只读账户访问</td>
             </tr>
             <tr>
               <td>Cloudflare 域名</td>

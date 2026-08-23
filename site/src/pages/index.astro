@@ -12,13 +12,13 @@ import costsImg from '../assets/screenshots/06-costs.png';
 
 const features = [
   { icon: '🟢', title: 'Uptime monitoring', desc: 'HTTP health checks against your public URLs. Response time, status codes, up/down history.' },
-  { icon: '🚀', title: 'Deploy health', desc: 'AWS Amplify build status, branch, and latest deploy timestamp at a glance.' },
+  { icon: '🚀', title: 'Deploy health', desc: 'Latest production status from AWS Amplify, GitHub Actions, or Cloudflare Pages.' },
   { icon: '💰', title: 'Cloud costs', desc: 'AWS Cost Explorer month-to-date vs. last month, broken down by service.' },
   { icon: '🤖', title: 'AI usage', desc: 'OpenAI token totals, request counts, cached tokens, and spend by API key and model.' },
   { icon: '⚙️', title: 'CI status', desc: 'GitHub Actions workflow run counts, latest status, trigger types, and scheduled-run health.' },
   { icon: '🌐', title: 'Domain health', desc: 'Cloudflare zone status, DNS record counts, apex/www/MX presence, and registrar expiration.' },
   { icon: '✉️', title: 'Email delivery', desc: 'Resend sending-domain verification status for your transactional email setup.' },
-  { icon: '🗄️', title: 'Database health', desc: 'Supabase project reachability and count-only aggregate stats from your apps.' },
+  { icon: '🗄️', title: 'Backend health', desc: 'Supabase aggregates plus Cognito availability and DynamoDB table metadata.' },
 ];
 
 const screenshots = [
@@ -160,6 +160,12 @@ const screenshots = [
               <td>Read-only Cost Explorer access</td>
             </tr>
             <tr>
+              <td>AWS app backend</td>
+              <td>Cognito pool availability/user estimate and DynamoDB table status/count/size</td>
+              <td>AWS access key/secret, resource IDs, optional region</td>
+              <td>DescribeUserPool and DescribeTable on configured resources</td>
+            </tr>
+            <tr>
               <td>Supabase project health</td>
               <td>Reachability of the hub's own project or a watched app's</td>
               <td>Supabase project URL + service-role key</td>
@@ -185,9 +191,15 @@ const screenshots = [
             </tr>
             <tr>
               <td>GitHub Actions</td>
-              <td>Workflow run counts, latest status, trigger type, branch, duration</td>
+              <td>Workflow usage and optional deploy-workflow status</td>
               <td>Repo owner/repo mapping + read token</td>
               <td>Actions: read</td>
+            </tr>
+            <tr>
+              <td>Cloudflare Pages</td>
+              <td>Latest production deployment status</td>
+              <td>Cloudflare API token + account ID</td>
+              <td>Read-only account access to Pages</td>
             </tr>
             <tr>
               <td>Cloudflare domains</td>

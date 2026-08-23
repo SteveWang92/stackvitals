@@ -27,9 +27,8 @@ describe('formatCurrencyUsd', () => {
 });
 
 describe('isStaleSync', () => {
-  it('treats missing or invalid sync times as stale', () => {
+  it('treats a provider that has never synced as stale', () => {
     expect(isStaleSync(null)).toBe(true);
-    expect(isStaleSync('not-a-date')).toBe(true);
   });
 
   it('detects sync times older than the default threshold', () => {

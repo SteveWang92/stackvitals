@@ -40,7 +40,7 @@ Supabase 是后端数据库和认证层。前端是部署在任意静态主机�
 
 ## 前端读取路径
 
-`src/services/dashboardData.ts` 是读取侧的核心。`fetchDashboardData(client)` 并行发起 Supabase 查询，然后进行客户端聚合：
+`src/services/dashboardData.ts` 负责读取边界。`fetchDashboardData(client)` 并行发起 Supabase 查询，然后把客户端聚合交给 `src/services/dashboard/` 下按职责拆分的模块：
 
 - 按键去重取最新值
 - 当月与上月成本范围
@@ -49,7 +49,7 @@ Supabase 是后端数据库和认证层。前端是部署在任意静态主机�
 - 按项目的提供商状态
 - 采集器错误范围限定（当某提供商有更新的成功运行时，旧错误会被抑制）
 
-原始数据库的 `snake_case` 行结构定义在 `dashboardData.ts` 中；面向应用的 `camelCase` 类型在 `src/types.ts` 中。`App.tsx` 将返回的 `DashboardData` 渲染到各个标签页中。
+原始数据库的 `snake_case` 行结构定义在 `src/services/dashboard/rows.ts` 中；面向应用的 `camelCase` 类型在 `src/types.ts` 中。`App.tsx` 负责导航并组合各个专用组件，将返回的 `DashboardData` 渲染到各标签页中。
 
 ## 数据模型
 

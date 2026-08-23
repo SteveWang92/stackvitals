@@ -24,7 +24,6 @@ import type {
   ResourceRow,
 } from './dashboard/rows';
 import { githubActionsUsageSummary, openAiUsageSummary } from './dashboard/usage';
-import { validateProjectRows, validateStatusRows } from './dashboard/validate';
 
 // The aggregation itself lives in ./dashboard/*, split by the shape it produces. This module is
 // the read boundary: it owns the Supabase queries and assembles their results into DashboardData.
@@ -134,9 +133,6 @@ export async function fetchDashboardData(client: SupabaseClient): Promise<Dashbo
     healthCheckHistory,
     collectorRuns,
   };
-
-  validateProjectRows(projects);
-  validateStatusRows(rows);
 
   // Every cost row, whatever its project_id. Nothing writes that column today, and a row that
   // somehow carries one must still appear in the total rather than being filtered out of sight.

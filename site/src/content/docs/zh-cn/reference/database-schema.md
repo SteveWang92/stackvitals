@@ -42,6 +42,12 @@ StackVitals 使用 Supabase Postgres，迁移文件按编号顺序从 `supabase/
 
 1. 核心 schema（projects、providers、resources、snapshots、health checks、collector runs）
 2. Dashboard users 表 + RLS 策略
-3. 额外的索引和优化
+3. 注册 GitHub Actions 提供商
+4. 从零启动本地 Supabase 环境所需的数据表权限
+5. 可选的项目卡片排序字段
+6. 删除未使用的成本归属字段
+7. 支持 30 天历史视图的时间戳索引
+8. 删除已停用的 Resend 投递指标
 
 在开发过程中运行 `npm run db:reset` 可以从头重新应用所有迁移和种子数据。
+现有安装应按顺序应用所有较新的迁移；迁移 008 会删除已停用的数据行，避免仪表盘继续显示不再更新的 Resend 投递数值。

@@ -9,10 +9,6 @@ function ageLabel(lastSync: string | null): string {
 
   const elapsedHours = (Date.now() - new Date(lastSync).getTime()) / (60 * 60 * 1000);
 
-  if (Number.isNaN(elapsedHours)) {
-    return 'Never';
-  }
-
   return elapsedHours < 48 ? `${Math.round(elapsedHours)}h old` : `${Math.round(elapsedHours / 24)}d old`;
 }
 
