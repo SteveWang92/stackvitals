@@ -15,6 +15,11 @@ This page is adapted from the repo's
 [`docs/SELF_HOSTING.md`](https://github.com/SteveWang92/stackvitals/blob/main/docs/SELF_HOSTING.md).
 </Aside>
 
+## Prerequisites
+
+- Node.js 24.18.1, as pinned in the repository's `.nvmrc`. Node 22 is no longer tested.
+- Docker Desktop for the local Supabase workflow described below.
+
 ## Local development
 
 <Aside type="caution">
@@ -59,6 +64,10 @@ own.
    ON CONFLICT (email) DO NOTHING;
    ```
 </Steps>
+
+For an existing installation, apply every migration added since the version you deployed. The
+[database schema reference](/reference/database-schema/#migrations) lists the purpose of each
+migration, including upgrade actions that remove retired data.
 
 You manually create the login user in Supabase. The app checks that signed-in user's email
 against `VITE_DASHBOARD_ALLOWED_EMAIL`, and the database checks the same email against

@@ -17,7 +17,8 @@ description: 所有支持的采集器适配器的完整参考——采集内容�
 | 被监控应用 Supabase 聚合 | 通过自定义 RPC 获取的仅计数聚合统计 | 应用的 Supabase URL、anon key、service-role key、RPC 名称 | Service-role key（仅计数 RPC——从不读取原始数据） |
 | Resend | 发送域名验证状态 | Resend API key | 只读 API key |
 | OpenAI 使用量 | Token 总数、请求次数、缓存 Token、按 Key/模型的花费 | OpenAI admin API key | Admin key（使用量端点需要） |
-| GitHub Actions | 工作流运行次数、最新状态、触发类型、分支、持续时间 | 仓库 `owner/repo` 映射 + 读取 token | Actions: read |
+| GitHub Actions | 工作流运行次数、最新状态、分支、持续时间和可选部署状态 | 仓库 `owner/repo` 映射 + 读取 token | Actions: read |
+| Cloudflare Pages | 最新生产部署状态 | Cloudflare API token + account ID | 对 Pages 的只读账户访问 |
 | Cloudflare 域名 | Zone 状态、DNS 记录数、apex/www/MX、注册商过期信息 | Cloudflare API token、可选 account ID | 只读 token（范围限定为 zones/DNS） |
 
 ## 适配器详情
@@ -66,6 +67,12 @@ description: 所有支持的采集器适配器的完整参考——采集内容�
 ### GitHub Actions
 
 采集工作流运行次数、最新状态/结论、触发类型、分支和持续时间总计。对采集器自身的仓库使用内置的 `GITHUB_TOKEN`；私有跨仓库采集需要具有 Actions read 权限的 PAT。运行时长由运行持续时间推导，不使用 GitHub 计费端点。
+
+将 `resources.githubRepository` 设置为 `owner/repo`。如需把某个工作流作为项目的部署状态，请将 `resources.githubDeployWorkflow` 设置为该工作流的文件名，例如 `deploy-site.yml`。将 `resources.githubActionsEnabled` 设置为 `false` 可停止采集已映射仓库的 GitHub 数据。
+
+### Cloudflare Pages
+
+将 `resources.cloudflarePagesProject` 设置为 Pages 项目名称。提供 `CLOUDFLARE_API_TOKEN` 和 `CLOUDFLARE_ACCOUNT_ID` 后，采集器会报告最新的生产部署，并排除预览部署。
 
 ### Cloudflare 域名
 

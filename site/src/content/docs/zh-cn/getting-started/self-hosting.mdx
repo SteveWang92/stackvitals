@@ -12,6 +12,11 @@ import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
 [`docs/SELF_HOSTING.md`](https://github.com/SteveWang92/stackvitals/blob/main/docs/SELF_HOSTING.md)。
 </Aside>
 
+## 环境要求
+
+- Node.js 24.18.1，与仓库 `.nvmrc` 中固定的版本一致；Node 22 已不再测试。
+- Docker Desktop，用于下文介绍的本地 Supabase 工作流程。
+
 ## 本地开发
 
 <Aside type="caution">
@@ -51,6 +56,8 @@ npm run db:up
    ON CONFLICT (email) DO NOTHING;
    ```
 </Steps>
+
+升级现有安装时，请应用当前部署版本之后新增的每一个迁移。[数据库结构参考](/zh-cn/reference/database-schema/#迁移)列出了各迁移的用途，包括删除已停用数据的升级操作。
 
 你需要在 Supabase 中手动创建登录用户。应用会将已登录用户的邮箱与 `VITE_DASHBOARD_ALLOWED_EMAIL` 进行比对，数据库通过 RLS 将同一邮箱与 `dashboard_users` 进行比对。如果需要允许多人访问，请使用逗号分隔的列表，并将每个邮箱添加到两个关卡中。
 

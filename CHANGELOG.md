@@ -13,6 +13,7 @@ below as its notes.
 
 - The dashboard no longer refuses to render the whole page when a snapshot row carries a status the
   frontend does not recognise.
+- The project site now documents the current Node.js requirement, deploy adapters, AWS backend collector, database migrations, and read architecture.
 
 ## [1.6.0] - 2026-08-23
 

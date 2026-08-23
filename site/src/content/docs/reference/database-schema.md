@@ -50,6 +50,13 @@ Migrations are applied in numeric order from `supabase/migrations/`:
 
 1. Core schema (projects, providers, resources, snapshots, health checks, collector runs)
 2. Dashboard users table + RLS policies
-3. Additional indexes and refinements
+3. GitHub Actions provider registration
+4. Table privileges required by a from-scratch local Supabase stack
+5. Optional project-card sort order
+6. Removal of the unused cost-attribution column
+7. Timestamp indexes supporting the 30-day history views
+8. Removal of the retired Resend delivery metrics
 
 Run `npm run db:reset` to reapply all migrations and seeds from scratch during development.
+Existing installations should apply every newer migration in order; migration 008 removes retired
+rows that would otherwise leave frozen Resend delivery values in the dashboard.

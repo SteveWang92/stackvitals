@@ -50,8 +50,9 @@ implementations live in `liveClients/`, and tests inject fakes.
 
 ## Frontend read path
 
-`src/services/dashboardData.ts` is the heart of the read side. `fetchDashboardData(client)`
-issues parallel Supabase selects, then does client-side aggregation:
+`src/services/dashboardData.ts` owns the read boundary. `fetchDashboardData(client)` issues
+parallel Supabase selects, then delegates client-side aggregation to focused modules under
+`src/services/dashboard/`:
 
 - Dedup-to-latest per key
 - Month-to-date vs. last-month cost bounds
@@ -60,8 +61,9 @@ issues parallel Supabase selects, then does client-side aggregation:
 - Per-project provider status
 - Collector-error scoping (errors are suppressed once a newer successful run exists)
 
-The raw DB `snake_case` row shapes are defined in `dashboardData.ts`; the app-facing `camelCase`
-types live in `src/types.ts`. `App.tsx` renders the returned `DashboardData` across tabs.
+The raw DB `snake_case` row shapes live in `src/services/dashboard/rows.ts`; the app-facing
+`camelCase` types live in `src/types.ts`. `App.tsx` coordinates navigation and composes the
+focused components that render the returned `DashboardData` across tabs.
 
 ## Data model
 

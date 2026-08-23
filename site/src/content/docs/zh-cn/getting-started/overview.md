@@ -21,11 +21,13 @@ StackVitals 是一个轻量级、自托管的运维仪表盘，专为独立开�
 | HTTP 健康检查 | 公共 URL 的可用性和响应时间 |
 | Amplify | 部署状态、分支、最新构建 |
 | AWS Cost Explorer | 按 AWS 服务划分的账户级当月/上月成本 |
+| AWS 应用后端 | Cognito 用户池可用性/用户估算值，以及 DynamoDB 表状态/条目数/大小 |
 | Supabase 项目健康 | 仪表盘自身项目或被监控应用的可达性 |
 | 被监控应用 Supabase 聚合 | 通过自定义 RPC 获取的仅计数聚合统计 |
 | Resend | 发送域名验证状态 |
 | OpenAI 使用量 | Token 总数、请求次数、缓存 Token、按 Key/模型的花费 |
-| GitHub Actions | 工作流运行次数、最新状态、触发类型、持续时间 |
+| GitHub Actions | 工作流运行次数、最新状态、持续时间和可选的部署工作流状态 |
+| Cloudflare Pages | 最新生产部署状态 |
 | Cloudflare 域名 | Zone 状态、DNS 记录数、注册商过期信息 |
 
 完整信息请参阅[适配器参考](/zh-cn/reference/adapters/)。

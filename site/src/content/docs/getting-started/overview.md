@@ -27,11 +27,13 @@ ones you use:
 | HTTP health | Public URL up/down, response time |
 | Amplify | Deploy status, branch, latest build |
 | AWS Cost Explorer | Account-level month-to-date / last-month cost per AWS service |
+| AWS app backend | Cognito pool availability/user estimate and DynamoDB table status/count/size |
 | Supabase project health | Reachability of the hub's own project or a watched app's |
 | Watched-app Supabase aggregate | Count-only aggregate stats from a custom RPC |
 | Resend | Sending-domain verification status |
 | OpenAI usage | Token totals, request counts, cached tokens, spend by key/model |
-| GitHub Actions | Workflow run counts, latest status, trigger type, duration |
+| GitHub Actions | Workflow run counts, latest status, duration, and optional deploy-workflow status |
+| Cloudflare Pages | Latest production deployment status |
 | Cloudflare domains | Zone status, DNS record counts, registrar expiry |
 
 See the full [adapter reference](/reference/adapters/) for credentials and permissions.
