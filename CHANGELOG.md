@@ -9,11 +9,14 @@ below as its notes.
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-08-23
+
 ### Fixed
 
 - The dashboard no longer refuses to render the whole page when a snapshot row carries a status the
   frontend does not recognise.
 - The project site now documents the current Node.js requirement, deploy adapters, AWS backend collector, database migrations, and read architecture.
+
 
 ## [1.6.0] - 2026-08-23
 
@@ -188,7 +191,8 @@ source projects.
   to the GitHub Actions job summary.
 - Self-hosting guide and contributing guide (including how to add a new adapter).
 
-[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.6.1...HEAD
+[1.6.1]: https://github.com/SteveWang92/stackvitals/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/SteveWang92/stackvitals/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/SteveWang92/stackvitals/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/SteveWang92/stackvitals/compare/v1.3.0...v1.4.0
