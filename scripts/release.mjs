@@ -412,6 +412,11 @@ const describeChecks = (rollup) => {
 
 const preflight = async (pr, version) => {
   const problems = [];
+  const expectedTitle = `chore(release): v${version}`;
+
+  if (pr.title !== expectedTitle) {
+    problems.push(`PR title must be exactly "${expectedTitle}", found "${pr.title}".`);
+  }
 
   const localHead = git(['rev-parse', 'HEAD']);
   if (pr.headRefOid !== localHead) {
@@ -423,6 +428,19 @@ const preflight = async (pr, version) => {
   const pkgVersion = JSON.parse(await readFile(join(projectRoot, 'package.json'), 'utf8')).version;
   if (pkgVersion !== version) {
     problems.push(`PR title says v${version} but package.json is ${pkgVersion}. Use "reversion" to change the version everywhere at once.`);
+  }
+
+  const lock = JSON.parse(await readFile(join(projectRoot, 'package-lock.json'), 'utf8'));
+  const lockVersions = [
+    ['package-lock.json', lock.version],
+    ['package-lock.json packages[""]', lock.packages?.['']?.version],
+  ];
+  for (const [field, value] of lockVersions) {
+    if (value !== version) {
+      problems.push(
+        `PR title says v${version} but ${field} is ${value ?? 'missing'}. Use "reversion" to change the version everywhere at once.`,
+      );
+    }
   }
 
   const changelog = await readChangelog();
