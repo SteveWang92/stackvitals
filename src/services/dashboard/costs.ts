@@ -2,6 +2,8 @@ import type { CostPoint } from '../../types';
 import { utcDayKey } from './history';
 import { providerKey, type CostSnapshotRow } from './rows';
 
+type PositiveCostSnapshotRow = CostSnapshotRow & { amount_usd: number };
+
 export interface CostPeriod {
   startDate: string;
   endDate: string;
@@ -25,11 +27,11 @@ export function isPeriodRow(row: CostSnapshotRow, period: CostPeriod): boolean {
   return row.period_start === period.startDate && row.period_end <= period.endDate && row.period_end > period.startDate;
 }
 
-export function latestCostRows(rows: CostSnapshotRow[]): CostSnapshotRow[] {
+export function latestCostRows(rows: CostSnapshotRow[]): PositiveCostSnapshotRow[] {
   const latest = new Map<string, CostSnapshotRow>();
 
   for (const row of rows) {
-    const key = [row.project_id ?? 'unallocated', providerKey(row) ?? 'unknown', row.service_name, row.period_start].join(':');
+    const key = [row.project_id ?? 'unallocated', providerKey(row), row.service_name, row.period_start].join(':');
     const existing = latest.get(key);
 
     if (!existing || new Date(row.collected_at).getTime() > new Date(existing.collected_at).getTime()) {
@@ -37,7 +39,9 @@ export function latestCostRows(rows: CostSnapshotRow[]): CostSnapshotRow[] {
     }
   }
 
-  return Array.from(latest.values()).filter((row) => (row.amount_usd ?? 0) > 0);
+  return Array.from(latest.values()).filter(
+    (row): row is PositiveCostSnapshotRow => row.amount_usd !== null && row.amount_usd > 0,
+  );
 }
 
 export function costTotal(rows: CostSnapshotRow[]): number | null {
@@ -61,7 +65,7 @@ export function buildMtdCostSeries(costs: CostSnapshotRow[], now = new Date()): 
 
   for (const row of costs.filter((cost) => isPeriodRow(cost, period))) {
     const day = utcDayKey(row.collected_at);
-    const key = [row.project_id ?? 'unallocated', providerKey(row) ?? 'unknown', row.service_name].join(':');
+    const key = [row.project_id ?? 'unallocated', providerKey(row), row.service_name].join(':');
     const dayRows = latestPerDay.get(day) ?? new Map<string, CostSnapshotRow>();
     const existing = dayRows.get(key);
 

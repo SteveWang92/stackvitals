@@ -155,7 +155,7 @@ export function buildTrendSeries(
 
     return {
       day,
-      value: daySubjects ? Array.from(daySubjects.values()).reduce((total, row) => total + (row.metric_value ?? 0), 0) * scale : null,
+      value: daySubjects ? Array.from(daySubjects.values()).reduce((total, row) => total + row.metric_value!, 0) * scale : null,
     };
   });
 }

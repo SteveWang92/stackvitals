@@ -1,4 +1,4 @@
-import { AlertTriangle, CircleHelp, Server } from 'lucide-react';
+import { AlertTriangle, Server } from 'lucide-react';
 import { formatLatencyScale, formatLatencySummary } from '../lib/format';
 import { formatRelativeSync } from '../lib/status';
 import type { ProjectStatus } from '../types';
@@ -55,7 +55,7 @@ export function AppDetail({ project }: { project: ProjectStatus }) {
           ) : (
             <div className="provider-list provider-list-detail">
               {project.providers.map((provider) => {
-                const Icon = providerIcon[provider.provider] ?? CircleHelp;
+                const Icon = providerIcon[provider.provider];
 
                 return (
                   <div className="provider-row" key={`${project.slug}-${provider.provider}-${provider.label}`}>

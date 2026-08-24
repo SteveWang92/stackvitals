@@ -38,10 +38,6 @@ export function latestMetricRowsBySubject(rows: MetricSnapshotRow[]): MetricSnap
     const key = metricSubjectKey(row);
     const timestamp = new Date(row.collected_at).getTime();
 
-    if (Number.isNaN(timestamp)) {
-      continue;
-    }
-
     newestTimestamp = Math.max(newestTimestamp, timestamp);
 
     const existing = latest.get(key);

@@ -62,7 +62,7 @@ export function openAiUsageSummary(metrics: MetricSnapshotRow[], costs: CostSnap
         requests: 0,
         collectedAt: metric.collected_at,
       } satisfies OpenAiUsageRow & { collectedAt: string });
-    const value = metric.metric_value ?? 0;
+    const value = metric.metric_value!;
 
     if (metric.metric_key === 'openai_input_tokens') {
       existing.inputTokens = value;
@@ -182,7 +182,8 @@ export function githubActionsUsageSummary(metrics: MetricSnapshotRow[], projects
   const rows = Array.from(grouped.values())
     .flatMap<GitHubActionsUsageRow>((group) => {
       const latestByMetric = latestMetricsByKey(group);
-      const projectId = group[0]?.project_id ?? '';
+      const firstMetric = group[0]!;
+      const projectId = firstMetric.project_id!;
       const project = projectById.get(projectId);
       const durationSeconds = latestByMetric.get('github_actions_recent_duration_seconds')?.metric_value ?? null;
       const latestRunMetric = latestByMetric.get('github_actions_latest_run_status');
@@ -200,7 +201,7 @@ export function githubActionsUsageSummary(metrics: MetricSnapshotRow[], projects
         {
           projectSlug: project?.slug ?? 'unknown',
           projectName: project?.name ?? 'Unknown project',
-          repository: metadataText(group[0]?.metadata ?? null, ['repository']) ?? 'Unknown repository',
+          repository: metadataText(firstMetric.metadata, ['repository']) ?? 'Unknown repository',
           latestRun: latestRunDescription(latestRunMetric),
           recentRuns: latestByMetric.get('github_actions_recent_run_count')?.metric_value ?? null,
           recentFailures: latestByMetric.get('github_actions_recent_failure_count')?.metric_value ?? null,
@@ -209,7 +210,7 @@ export function githubActionsUsageSummary(metrics: MetricSnapshotRow[], projects
           durationSeconds,
           runtimeMinutes: durationSeconds === null ? null : durationSeconds / 60,
           lastSync: latestSync,
-          status: latestRunMetric?.status ?? 'unknown',
+          status: latestRunMetric.status,
         },
       ];
     })

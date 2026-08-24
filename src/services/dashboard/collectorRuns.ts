@@ -9,11 +9,7 @@ function runDurationMs(run: CollectorRunRow): number | null {
   const startedAt = new Date(run.started_at).getTime();
   const finishedAt = new Date(run.finished_at).getTime();
 
-  if (Number.isNaN(startedAt) || Number.isNaN(finishedAt)) {
-    return null;
-  }
-
-  return Math.max(0, finishedAt - startedAt);
+  return finishedAt - startedAt;
 }
 
 function affectedProjects(run: CollectorRunRow): ProjectSlug[] {

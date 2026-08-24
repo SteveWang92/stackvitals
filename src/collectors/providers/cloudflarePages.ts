@@ -19,7 +19,6 @@ export interface CloudflarePagesDeployment {
   createdOn: string;
   modifiedOn: string;
   branch: string | null;
-  commitHash: string | null;
   commitMessage: string | null;
 }
 
@@ -86,7 +85,6 @@ export async function collectCloudflarePages(
               stageName: deployment.latestStage.name,
               stageStatus: deployment.latestStage.status,
               branch: deployment.branch,
-              commitHash: deployment.commitHash,
               commitMessage: deployment.commitMessage,
             },
             collectedAt,

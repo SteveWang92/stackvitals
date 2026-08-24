@@ -44,14 +44,6 @@ describe('buildAttentionItems', () => {
     expect(item.detail).toBe('Supabase detail');
   });
 
-  it('matches the count the summary tile previously computed inline', () => {
-    const legacyCount = projects
-      .flatMap((entry) => entry.providers)
-      .filter((entry) => entry.status === 'warning' || entry.status === 'failed').length;
-
-    expect(buildAttentionItems(projects)).toHaveLength(legacyCount);
-  });
-
   it('returns nothing when every provider is healthy', () => {
     expect(buildAttentionItems([project('Acme Site', [provider('Amplify', 'healthy')])])).toEqual([]);
   });

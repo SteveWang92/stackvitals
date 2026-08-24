@@ -9,7 +9,6 @@ export interface HttpHealthTarget {
 
 export interface HttpHealthOptions {
   fetch: typeof fetch;
-  timeoutMs?: number;
   bypassHeaderName?: string;
   bypassHeaderValue?: string;
 }
@@ -42,22 +41,9 @@ function resultStatusFromChecks(checks: CollectorHealthCheck[]): CollectorAdapte
   return 'partial_success';
 }
 
-function healthCheckErrorMessage(error: unknown): string {
-  if (error instanceof Error && error.name === 'AbortError') {
-    return 'Health check timed out';
-  }
-
-  return getErrorMessage(error, 'Health check failed');
-}
-
-async function checkTarget(
-  target: HttpHealthTarget,
-  options: Required<Pick<HttpHealthOptions, 'fetch' | 'timeoutMs'>> & Pick<HttpHealthOptions, 'bypassHeaderName' | 'bypassHeaderValue'>,
-): Promise<CollectorHealthCheck> {
+async function checkTarget(target: HttpHealthTarget, options: HttpHealthOptions): Promise<CollectorHealthCheck> {
   const startedAt = Date.now();
   const checkedAt = new Date().toISOString();
-  const controller = new AbortController();
-  const timeout = globalThis.setTimeout(() => controller.abort(), options.timeoutMs);
 
   try {
     const headers: Record<string, string> = {
@@ -72,7 +58,6 @@ async function checkTarget(
     const response = await options.fetch(target.url, {
       method: 'GET',
       redirect: 'follow',
-      signal: controller.signal,
       headers,
     });
 
@@ -92,23 +77,14 @@ async function checkTarget(
       httpStatus: null,
       responseTimeMs: Date.now() - startedAt,
       checkedAt,
-      errorMessage: healthCheckErrorMessage(error),
+      errorMessage: getErrorMessage(error, 'Health check failed'),
     };
-  } finally {
-    globalThis.clearTimeout(timeout);
   }
 }
 
 export async function collectHttpHealth(targets: HttpHealthTarget[], options: HttpHealthOptions): Promise<CollectorAdapterResult> {
   const startedAt = new Date().toISOString();
-  const resolvedOptions = {
-    fetch: options.fetch,
-    timeoutMs: options.timeoutMs ?? 10_000,
-    bypassHeaderName: options.bypassHeaderName,
-    bypassHeaderValue: options.bypassHeaderValue,
-  };
-
-  const healthChecks = await Promise.all(targets.map((target) => checkTarget(target, resolvedOptions)));
+  const healthChecks = await Promise.all(targets.map((target) => checkTarget(target, options)));
   const failedChecks = healthChecks.filter((check) => check.status === 'failed');
   const status = resultStatusFromChecks(healthChecks);
 

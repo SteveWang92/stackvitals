@@ -4,7 +4,7 @@ import { displayCostLabel } from './format';
 export interface CostRow {
   provider: ProviderKey;
   label: string;
-  amountUsd: number | null;
+  amountUsd: number;
 }
 
 /**
@@ -13,11 +13,11 @@ export interface CostRow {
  */
 export function buildCostRows(costs: CostSnapshot[]): CostRow[] {
   return costs
+    .filter((cost): cost is CostSnapshot & { monthToDateUsd: number } => cost.monthToDateUsd !== null && cost.monthToDateUsd > 0)
     .map((cost) => ({
       provider: cost.provider,
       label: displayCostLabel(cost.serviceName),
       amountUsd: cost.monthToDateUsd,
     }))
-    .filter((row) => (row.amountUsd ?? 0) > 0)
-    .sort((a, b) => (b.amountUsd ?? 0) - (a.amountUsd ?? 0));
+    .sort((a, b) => b.amountUsd - a.amountUsd);
 }

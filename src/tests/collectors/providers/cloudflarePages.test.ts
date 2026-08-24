@@ -14,7 +14,6 @@ function deployment(overrides: Partial<CloudflarePagesDeployment> = {}): Cloudfl
     createdOn: '2026-07-01T00:00:00Z',
     modifiedOn: '2026-07-01T00:05:00Z',
     branch: 'main',
-    commitHash: 'abc123',
     commitMessage: 'Update index.html',
     ...overrides,
   };
@@ -46,7 +45,6 @@ describe('collectCloudflarePages', () => {
     expect(metric!.metadata).toMatchObject({
       deploymentId: 'deploy-1',
       branch: 'main',
-      commitHash: 'abc123',
       stageStatus: 'success',
     });
 

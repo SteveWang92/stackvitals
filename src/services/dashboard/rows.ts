@@ -23,9 +23,9 @@ export interface ResourceRow {
   project_id: string | null;
   resource_type: string;
   display_name: string;
-  metadata: Record<string, unknown> | null;
+  metadata: Record<string, unknown>;
   last_seen_at: string | null;
-  providers: ProviderRow | ProviderRow[] | null;
+  providers: ProviderRow | ProviderRow[];
 }
 
 export interface MetricSnapshotRow {
@@ -46,7 +46,7 @@ export interface CostSnapshotRow {
   amount_usd: number | null;
   metadata: Record<string, unknown> | null;
   collected_at: string;
-  providers: ProviderRow | ProviderRow[] | null;
+  providers: ProviderRow | ProviderRow[];
 }
 
 export interface HealthCheckRow {
@@ -106,10 +106,12 @@ const providerLabels: Record<ProviderKey, string> = {
 };
 
 export function providerLabel(provider: ProviderKey): string {
-  return providerLabels[provider] ?? provider;
+  return providerLabels[provider];
 }
 
 /** Supabase embeds a joined row as either an object or a single-element array. */
+export function providerKey(row: { providers: ProviderRow | ProviderRow[] }): ProviderKey;
+export function providerKey(row: { providers: ProviderRow | ProviderRow[] | null }): ProviderKey | null;
 export function providerKey(row: { providers: ProviderRow | ProviderRow[] | null }): ProviderKey | null {
   const provider = Array.isArray(row.providers) ? row.providers[0] : row.providers;
 

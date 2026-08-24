@@ -96,15 +96,8 @@ function parseNumericAmount(value: unknown): number | null {
   return null;
 }
 
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 export function createLiveOpenAiUsageClient(apiKey: string): OpenAiUsageClient {
-  async function requestOnce<T>(
-    path: string,
-    params: Record<string, string | number | string[]>,
-  ): Promise<{ ok: true; value: T } | { ok: false; status: number; message: string }> {
+  async function request<T>(path: string, params: Record<string, string | number | string[]>): Promise<T> {
     const response = await fetch(requestUrl(path, params), {
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -114,31 +107,10 @@ export function createLiveOpenAiUsageClient(apiKey: string): OpenAiUsageClient {
 
     if (!response.ok) {
       const detail = text.trim() ? `: ${text.slice(0, 500)}` : '';
-      return { ok: false, status: response.status, message: `OpenAI API request failed with ${response.status}${detail}` };
+      throw new Error(`OpenAI API request failed with ${response.status}${detail}`);
     }
 
-    return { ok: true, value: JSON.parse(text) as T };
-  }
-
-  async function request<T>(path: string, params: Record<string, string | number | string[]>): Promise<T> {
-    const first = await requestOnce<T>(path, params);
-
-    if (first.ok) {
-      return first.value;
-    }
-
-    if (first.status < 500) {
-      throw new Error(first.message);
-    }
-
-    await delay(1000);
-    const retry = await requestOnce<T>(path, params);
-
-    if (retry.ok) {
-      return retry.value;
-    }
-
-    throw new Error(retry.message);
+    return JSON.parse(text) as T;
   }
 
   // Both endpoints use daily buckets with limit: 31 and no pagination, so at most 31 days
