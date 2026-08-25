@@ -85,8 +85,9 @@ General commit, branch, reuse, and working rules live in the user-global `~/.cla
 
 - Add mocked tests for provider adapters before relying on live provider APIs.
 - Tests live under `src/tests/` mirroring the source tree — do **not** colocate `*.test.ts` beside implementation files.
-- Release uses `scripts/release.mjs` — a two-phase, non-interactive script. `npm run release:prep` bumps the version, finalizes `CHANGELOG.md`, pushes `dev` and opens the release PR, so the review and CI both run against the exact commit that will be tagged; it is idempotent, so re-run it after landing review fixes to refresh the PR. `npm run release:ship` pushes nothing: it verifies the PR can merge and fails without side effects if it cannot, then squash-merges, tags, and publishes the GitHub release. Follow the active `release` skill for the full workflow.
-- Changing a prepped release's version — the review concludes it should be a minor, not a patch — is `npm run release:reversion -- X.Y.Z`. It rewrites all four places the version lives (version fields, changelog heading, compare links, PR title) and leaves the file changes uncommitted so they go in with the review fix that caused them. Never hand-edit those four places; `ship` refuses to merge when they disagree.
+- Releases use `scripts/release.mjs` through the active release skill. The script is the
+  authoritative implementation for version fields and repository-specific checks; the
+  shared `prep` / `reversion` / `ship` workflow lives only in Steve's global guidance.
 - `CHANGELOG.md` follows the changelog rules in Steve's global `CLAUDE.md`, which is where they are explained: user-facing results only, one entry to one line, Keep a Changelog categories in order.
 - Two differences here. StackVitals is public and self-hosted, so an entry may carry a second sentence when it tells a self-hoster what they must **do** — apply a migration, add an IAM permission, change a config field — but never to explain the reasoning; such an entry wraps to the file's line width, since the one-line rule is about carrying one result, not about a character count. And the bottom compare links are left for `release:ship` to maintain.
 - This folder is a standalone project; do not touch `D:\Projects\Integration-Dashboard`.
