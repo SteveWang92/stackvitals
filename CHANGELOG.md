@@ -9,6 +9,10 @@ below as its notes.
 
 ## [Unreleased]
 
+### Changed
+
+- Collector writes now accept Supabase `sb_secret_` keys as well as legacy JWT service-role keys, so self-hosters can migrate to the current API key system.
+
 ## [1.6.1] - 2026-08-23
 
 ### Fixed

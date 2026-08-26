@@ -48,8 +48,8 @@ function getHubSupabaseServiceRoleKey(): string | undefined {
   return process.env.HUB_SUPABASE_JWT_SERVICE_ROLE_KEY;
 }
 
-function isJwtKey(key: string | undefined): key is string {
-  return Boolean(key && key.split('.').length === 3);
+function isHubSupabaseWriteKey(key: string | undefined): key is string {
+  return Boolean(key && (key.split('.').length === 3 || key.startsWith('sb_secret_')));
 }
 
 function githubActionsToken(): string | undefined {
@@ -146,9 +146,9 @@ if (process.env.VITE_SUPABASE_URL && hubSupabaseReadKey) {
   const hubSupabaseProject = config.projects.find((project) => project.resources?.hubSupabase && project.resources?.supabaseProjectRef);
 
   if (hubSupabaseProject?.resources?.supabaseProjectRef) {
-    // The REST root probe requires a secret-tier key (service-role JWT); publishable/anon
-    // keys get a 401 "Secret API key required" from Supabase's newer key system.
-    const healthCheckKey = isJwtKey(hubSupabaseServiceRoleKey) ? hubSupabaseServiceRoleKey : hubSupabaseReadKey;
+    // The REST root probe requires a secret-tier key (legacy service-role JWT or new secret
+    // key); publishable/anon keys get a 401 "Secret API key required".
+    const healthCheckKey = isHubSupabaseWriteKey(hubSupabaseServiceRoleKey) ? hubSupabaseServiceRoleKey : hubSupabaseReadKey;
 
     adapters.push(
       createSupabaseProjectHealthAdapter(
@@ -291,14 +291,14 @@ if (githubToken) {
 }
 
 const recorder =
-  process.env.VITE_SUPABASE_URL && isJwtKey(hubSupabaseServiceRoleKey)
+  process.env.VITE_SUPABASE_URL && isHubSupabaseWriteKey(hubSupabaseServiceRoleKey)
     ? createSupabaseCollectorRunRecorder(
         createLiveSupabaseCollectorRunClient(process.env.VITE_SUPABASE_URL, hubSupabaseServiceRoleKey, process.env.VITE_SUPABASE_ANON_KEY),
       )
     : undefined;
 
-if (process.env.VITE_SUPABASE_URL && hubSupabaseServiceRoleKey && !isJwtKey(hubSupabaseServiceRoleKey)) {
-  console.warn('Collector result recording skipped: configure HUB_SUPABASE_JWT_SERVICE_ROLE_KEY with a JWT-style service-role key.');
+if (process.env.VITE_SUPABASE_URL && hubSupabaseServiceRoleKey && !isHubSupabaseWriteKey(hubSupabaseServiceRoleKey)) {
+  console.warn('Collector result recording skipped: configure HUB_SUPABASE_JWT_SERVICE_ROLE_KEY with a service-role JWT or sb_secret_ key.');
 }
 
 const summary = await runCollectors(adapters, { recorder });
@@ -356,7 +356,7 @@ if (process.env.GITHUB_STEP_SUMMARY) {
 // collector that just failed to record anything would trim history while adding none. A prune
 // failure is logged rather than thrown: the run's collected data is already safely stored, and
 // storage housekeeping is not worth turning a good run into a failed one.
-if (process.env.VITE_SUPABASE_URL && isJwtKey(hubSupabaseServiceRoleKey)) {
+if (process.env.VITE_SUPABASE_URL && isHubSupabaseWriteKey(hubSupabaseServiceRoleKey)) {
   try {
     const pruneClient = createLiveSupabaseSnapshotPruneClient(
       process.env.VITE_SUPABASE_URL,
