@@ -51,7 +51,6 @@ interface CloudflarePagesDeploymentResponse {
   deployment_trigger?: {
     metadata?: {
       branch?: string | null;
-      commit_hash?: string | null;
       commit_message?: string | null;
     };
   };
@@ -73,7 +72,6 @@ function normalizeDeployment(deployment: CloudflarePagesDeploymentResponse): Clo
     createdOn: deployment.created_on ?? '',
     modifiedOn: deployment.modified_on ?? '',
     branch: deployment.deployment_trigger?.metadata?.branch ?? null,
-    commitHash: deployment.deployment_trigger?.metadata?.commit_hash ?? null,
     commitMessage: deployment.deployment_trigger?.metadata?.commit_message ?? null,
   };
 }
@@ -155,14 +153,6 @@ function createApiRequest(apiToken: string) {
 export function createLiveCloudflareClient(apiToken: string, accountId?: string): CloudflareClient {
   const request = createApiRequest(apiToken);
 
-  async function optionalRequest<T>(path: string): Promise<T | null> {
-    try {
-      return await request<T>(path);
-    } catch {
-      return null;
-    }
-  }
-
   return {
     getDomainInventory: async (domain) => {
       const zones = await request<CloudflareZoneResponse[]>(`/zones?name=${encodeURIComponent(domain)}&per_page=1`);
@@ -178,9 +168,9 @@ export function createLiveCloudflareClient(apiToken: string, accountId?: string)
         .filter((record): record is CloudflareDnsRecord => Boolean(record));
       const registrarDomain = accountId
         ? normalizeRegistrarDomain(
-            (await optionalRequest<CloudflareRegistrarDomainResponse>(
+            await request<CloudflareRegistrarDomainResponse>(
               `/accounts/${encodeURIComponent(accountId)}/registrar/domains/${encodeURIComponent(domain)}`,
-            )) ?? {},
+            ),
           )
         : null;
 

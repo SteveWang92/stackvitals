@@ -121,42 +121,16 @@ export function createSupabaseCollectorRunRecorder(client: SupabaseCollectorRunC
 
   async function metricRows(metrics: CollectorMetric[]): Promise<MetricSnapshotInsert[]> {
     return Promise.all(
-      metrics.map(async (metric) => {
-        const normalizedValue = normalizeMetricValue(metric.metricValue);
-
-        if (normalizedValue === undefined && metric.metricValue !== undefined) {
-          console.warn('[collector] skipping invalid metric value', {
-            provider: metric.provider,
-            metricKey: metric.metricKey,
-            metricValue: metric.metricValue,
-          });
-        }
-        return {
-          project_id: await nullableProjectId(metric.projectSlug),
-          provider_id: await providerId(metric.provider),
-          metric_key: metric.metricKey,
-          metric_value: normalizedValue ?? null,
-          status: metric.status,
-          metadata: metric.metadata ?? {},
-          collected_at: metric.collectedAt,
-        };
-      }),
+      metrics.map(async (metric) => ({
+        project_id: await nullableProjectId(metric.projectSlug),
+        provider_id: await providerId(metric.provider),
+        metric_key: metric.metricKey,
+        metric_value: metric.metricValue ?? null,
+        status: metric.status,
+        metadata: metric.metadata ?? {},
+        collected_at: metric.collectedAt,
+      })),
     );
-  }
-
-  function normalizeMetricValue(value: unknown): number | undefined {
-    if (typeof value === 'number' && Number.isFinite(value)) {
-      return value;
-    }
-
-    if (typeof value === 'string' && value.trim()) {
-      const parsed = Number(value);
-      if (Number.isFinite(parsed)) {
-        return parsed;
-      }
-    }
-
-    return undefined;
   }
 
   async function costRows(costs: CollectorCost[]): Promise<CostSnapshotInsert[]> {

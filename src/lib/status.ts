@@ -64,13 +64,6 @@ export function formatRelativeSync(value: string | null): string {
 
   const parsed = new Date(value);
 
-  // Intl throws a RangeError on an invalid date, which would take down the whole dashboard
-  // render rather than degrading one timestamp. Every caller already treats a missing sync as
-  // a normal state, so an unparseable one reads the same way.
-  if (Number.isNaN(parsed.getTime())) {
-    return 'Never synced';
-  }
-
   // h23, not the locale default: every timestamp on the dashboard is a machine event, and a
   // 24-hour clock reads the same in every locale the browser might be set to.
   return new Intl.DateTimeFormat('en-AU', {

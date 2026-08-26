@@ -116,7 +116,7 @@ Quick order:
 | HTTP health          | Public URL for each app, optional `resources.healthCheckUrl` override | User provides; the override is only needed when the public URL is blocked by Cloudflare Bot Fight Mode                       |
 | Amplify              | App ID, branch name, region                                           | User can copy from AWS console                                                                                                |
 | AWS Cost Explorer    | AWS account/payer, region                                             | User can copy from AWS console; costs are collected account-level per AWS service                                             |
-| Hub Supabase         | Project URL, anon key, JWT service-role key                           | User copies from the dashboard's own Supabase project; JWT service-role key is secret and used only by collectors            |
+| Hub Supabase         | Project URL, publishable/anon key, secret/service-role key            | User copies from the dashboard's own Supabase project; the collector accepts a new `sb_secret_` key or legacy JWT service-role key, and it is used only by collectors |
 | Watched app Supabase | Project URL, anon key, service-role key, aggregate RPC name           | User copies from the watched app's Supabase project; collector calls count-only aggregate RPCs only                          |
 | Watched app AWS backend | Cognito user pool ID, DynamoDB table names, optional region        | User copies from the watched app's AWS console; add read-only `cognito-idp:DescribeUserPool` and `dynamodb:DescribeTable` on those ARNs to the permissions required by any other enabled AWS adapters |
 | Resend               | API key and sending domain                                            | User creates/copies API key                                                                                                   |
@@ -128,9 +128,9 @@ Quick order:
 
 - `PROJECTS_CONFIG_JSON`: private collector config JSON for your scheduler.
 - `VITE_SUPABASE_URL`: your dashboard's Supabase URL.
-- `VITE_SUPABASE_ANON_KEY`: your dashboard's anon key.
-- `HUB_SUPABASE_JWT_SERVICE_ROLE_KEY`: your dashboard's JWT service-role key for collector
-  writes.
+- `VITE_SUPABASE_ANON_KEY`: your dashboard's publishable key (or legacy anon key).
+- `HUB_SUPABASE_JWT_SERVICE_ROLE_KEY`: your dashboard's `sb_secret_` key (or legacy JWT
+  service-role key) for collector writes.
 - Per-app credentials referenced by `${...}` placeholders in the collector config. A project
   with `resources.supabaseAggregateRpcName` also declares `supabaseUrl` /
   `supabaseServiceRoleKey` / `supabaseAnonKey` whose values are placeholders (e.g.
@@ -267,7 +267,7 @@ Set these in your hosting provider:
 - `VITE_SUPABASE_ANON_KEY`
 - `VITE_DASHBOARD_ALLOWED_EMAIL`
 
-Do not put `HUB_SUPABASE_JWT_SERVICE_ROLE_KEY`, any watched app's Supabase service-role key,
+Do not put `HUB_SUPABASE_JWT_SERVICE_ROLE_KEY`, any watched app's Supabase secret/service-role key,
 AWS keys, or Resend keys in frontend hosting env vars.
 
 ## 4. Deploy the static site

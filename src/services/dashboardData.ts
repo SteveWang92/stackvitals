@@ -136,8 +136,8 @@ export async function fetchDashboardData(client: SupabaseClient): Promise<Dashbo
 
   // Every cost row, whatever its project_id. Nothing writes that column today, and a row that
   // somehow carries one must still appear in the total rather than being filtered out of sight.
-  const costSnapshots = latestCosts.map<CostSnapshot>((cost) => ({
-    provider: providerKey(cost) ?? 'aws',
+  const costSnapshots = latestCosts.map((cost) => ({
+    provider: providerKey(cost),
     serviceName: cost.service_name,
     monthToDateUsd: cost.amount_usd,
   }));
@@ -149,7 +149,7 @@ export async function fetchDashboardData(client: SupabaseClient): Promise<Dashbo
       }),
     ),
     domains: buildDomainSummaries(resources, metrics),
-    costs: costSnapshots.sort((a, b) => (b.monthToDateUsd ?? 0) - (a.monthToDateUsd ?? 0)),
+    costs: costSnapshots.sort((a, b) => b.monthToDateUsd - a.monthToDateUsd),
     collectorRuns: collectorRunSummaries(collectorRuns),
     openAiUsage: openAiUsageSummary(metrics, costs),
     githubActionsUsage: githubActionsUsageSummary(metrics, projects),

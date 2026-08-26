@@ -33,19 +33,14 @@ const targets = config.projects
     url: project.publicUrl,
   }));
 
-const timeoutMs = 10_000;
-
 async function checkTarget(target) {
   const startedAt = performance.now();
   const checkedAt = new Date().toISOString();
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const response = await fetch(target.url, {
       method: 'GET',
       redirect: 'follow',
-      signal: controller.signal,
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; StackVitals/1.0)',
         Accept: 'text/html,application/xhtml+xml',
@@ -69,15 +64,8 @@ async function checkTarget(target) {
       httpStatus: null,
       responseTimeMs: Math.round(performance.now() - startedAt),
       checkedAt,
-      errorMessage:
-        error instanceof Error && error.name === 'AbortError'
-          ? 'Health check timed out'
-          : error instanceof Error
-            ? error.message
-            : 'Health check failed',
+      errorMessage: error instanceof Error ? error.message : 'Health check failed',
     };
-  } finally {
-    clearTimeout(timeout);
   }
 }
 

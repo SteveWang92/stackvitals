@@ -80,7 +80,7 @@ function Dashboard() {
   const attentionItems = buildAttentionItems(projects);
   const staleProviders = countStaleProviders(projects);
   const costRows = buildCostRows(costs);
-  const monthToDateCost = costRows.reduce((total, row) => total + (row.amountUsd ?? 0), 0);
+  const monthToDateCost = costRows.reduce((total, row) => total + row.amountUsd, 0);
 
   const loadDashboardData = useCallback(async () => {
     const client = supabase;
@@ -94,7 +94,7 @@ function Dashboard() {
     setDataError('');
 
     try {
-      const liveData = isDemoMode || !client ? demoDashboardData : await fetchDashboardData(client);
+      const liveData = isDemoMode ? demoDashboardData : await fetchDashboardData(client!);
       const liveProjects = liveData.projects;
 
       setProjects(liveProjects);

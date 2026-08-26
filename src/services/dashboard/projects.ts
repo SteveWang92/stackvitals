@@ -15,8 +15,7 @@ import {
 import { latestMetricRowsBySubject, latestSnapshotRows, metricValue, snapshotLabel } from './snapshots';
 
 function resourceDetail(resource: ResourceRow): string {
-  const metadata = resource.metadata ?? {};
-  const details = Object.entries(metadata)
+  const details = Object.entries(resource.metadata)
     .filter(
       ([key, value]) => key !== 'aggregateOnly' && (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'),
     )
@@ -149,7 +148,7 @@ export function projectFromRows(project: ProjectRow, rows: DashboardRows): Proje
       .filter((resource) => providerKey(resource) !== 'cloudflare')
       .map<ProjectResource>((resource) => ({
         id: resource.id,
-        provider: providerKey(resource) ?? 'http',
+        provider: providerKey(resource),
         type: resource.resource_type,
         name: resource.display_name,
         status: 'healthy',
