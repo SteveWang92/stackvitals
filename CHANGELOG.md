@@ -9,9 +9,12 @@ below as its notes.
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-08-27
+
 ### Changed
 
 - Collector writes now accept Supabase `sb_secret_` keys as well as legacy JWT service-role keys, so self-hosters can migrate to the current API key system.
+
 
 ## [1.6.1] - 2026-08-23
 
@@ -195,7 +198,8 @@ source projects.
   to the GitHub Actions job summary.
 - Self-hosting guide and contributing guide (including how to add a new adapter).
 
-[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.6.1...HEAD
+[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.7.0...HEAD
+[1.7.0]: https://github.com/SteveWang92/stackvitals/compare/v1.6.1...v1.7.0
 [1.6.1]: https://github.com/SteveWang92/stackvitals/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/SteveWang92/stackvitals/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/SteveWang92/stackvitals/compare/v1.4.0...v1.5.0
