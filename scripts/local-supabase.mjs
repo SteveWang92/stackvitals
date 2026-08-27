@@ -365,7 +365,7 @@ async function provision(stack) {
   const updates = {
     VITE_SUPABASE_URL: stack.apiUrl,
     VITE_SUPABASE_ANON_KEY: stack.publishableKey,
-    HUB_SUPABASE_JWT_SERVICE_ROLE_KEY: stack.secretKey,
+    HUB_SUPABASE_SECRET_KEY: stack.secretKey,
     VITE_DASHBOARD_ALLOWED_EMAIL: email,
   };
 

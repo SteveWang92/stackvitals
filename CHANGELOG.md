@@ -11,7 +11,7 @@ below as its notes.
 
 ### Fixed
 
-- Collector writes now use Supabase `sb_secret_` keys for privileged REST access instead of falling back to the frontend Publishable key.
+- Collector writes now require `HUB_SUPABASE_SECRET_KEY` with a Supabase `sb_secret_` key for privileged REST access. Rename the previous Hub secret before the next collector run.
 
 ## [1.7.1] - 2026-08-28
 

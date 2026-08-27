@@ -24,6 +24,13 @@ function headers(authKey: string, apiKey = authKey): Record<string, string> {
   return result;
 }
 
+function secretKeyHeaders(secretKey: string): Record<string, string> {
+  return {
+    apikey: secretKey,
+    'Content-Type': 'application/json',
+  };
+}
+
 async function requestJson<T>(url: string, init: RequestInit, errorPrefix: string): Promise<T> {
   const response = await fetch(url, init);
   const text = await response.text();
@@ -95,7 +102,7 @@ export function createLiveSupabaseProjectHealthClient(authKey: string, apiKey?: 
   };
 }
 
-export function createLiveSupabaseSnapshotPruneClient(url: string, authKey: string, apiKey?: string): SnapshotPruneClient {
+export function createLiveSupabaseSnapshotPruneClient(url: string, secretKey: string): SnapshotPruneClient {
   return {
     deleteRowsOlderThan: async (table, timestampColumn, cutoff) => {
       // `return=representation` with `select=id` is what makes the deleted count available:
@@ -106,7 +113,7 @@ export function createLiveSupabaseSnapshotPruneClient(url: string, authKey: stri
         {
           method: 'DELETE',
           headers: {
-            ...headers(authKey, apiKey),
+            ...secretKeyHeaders(secretKey),
             Prefer: 'return=representation',
           },
         },
@@ -118,7 +125,7 @@ export function createLiveSupabaseSnapshotPruneClient(url: string, authKey: stri
   };
 }
 
-export function createLiveSupabaseCollectorRunClient(url: string, authKey: string, apiKey?: string): SupabaseCollectorRunClient {
+export function createLiveSupabaseCollectorRunClient(url: string, secretKey: string): SupabaseCollectorRunClient {
   async function insertRows<T>(table: string, rows: T[], errorPrefix: string): Promise<void> {
     if (rows.length === 0) {
       return;
@@ -129,7 +136,7 @@ export function createLiveSupabaseCollectorRunClient(url: string, authKey: strin
       {
         method: 'POST',
         headers: {
-          ...headers(authKey, apiKey),
+          ...secretKeyHeaders(secretKey),
           Prefer: 'return=minimal',
         },
         body: JSON.stringify(rows),
@@ -143,7 +150,7 @@ export function createLiveSupabaseCollectorRunClient(url: string, authKey: strin
       `${url}/rest/v1/${table}?select=id&${column}=eq.${encodeURIComponent(value)}`,
       {
         method: 'GET',
-        headers: headers(authKey, apiKey),
+        headers: secretKeyHeaders(secretKey),
       },
       `${table} lookup failed for ${value}`,
     );
@@ -169,7 +176,7 @@ export function createLiveSupabaseCollectorRunClient(url: string, authKey: strin
         {
           method: 'POST',
           headers: {
-            ...headers(authKey, apiKey),
+            ...secretKeyHeaders(secretKey),
             Prefer: 'resolution=merge-duplicates,return=minimal',
           },
           body: JSON.stringify(rows),
