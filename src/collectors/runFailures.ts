@@ -8,6 +8,30 @@ export interface RunFailure {
   detail: string;
 }
 
+export interface RunFailureOptions {
+  // `owner/repo` of the repository this collector run is executing in, when it runs in
+  // GitHub Actions. See `isSelfMonitoringMetric`.
+  selfRepository?: string;
+}
+
+/**
+ * A GitHub Actions metric the collector reports about the repository it is running in.
+ *
+ * The collector watches its own repository, so its own previous failed run is part of that
+ * repository's latest-run and failure-count metrics. Letting those fail the job makes the
+ * failure self-sustaining: once one run goes red, every later run reads that red run and
+ * fails again, and fixing the real cause never turns the workflow green. The metrics are
+ * still collected and still shown on the dashboard — they just cannot be the reason this
+ * run failed. A genuinely broken run fails on its own errors instead.
+ */
+function isSelfMonitoringMetric(
+  provider: ProviderKey,
+  metadata: Record<string, unknown> | undefined,
+  selfRepository: string | undefined,
+): boolean {
+  return provider === 'github' && Boolean(selfRepository) && metadata?.repository === selfRepository;
+}
+
 /**
  * The hard failures in a run — the ones worth interrupting the owner for.
  *
@@ -18,7 +42,7 @@ export interface RunFailure {
  * so warnings are deliberately excluded here. They still appear in the dashboard's attention
  * panel and in the step summary.
  */
-export function collectRunFailures(summary: CollectorRunSummary): RunFailure[] {
+export function collectRunFailures(summary: CollectorRunSummary, options: RunFailureOptions = {}): RunFailure[] {
   return summary.results.flatMap((result) => [
     ...result.errors.map<RunFailure>((error) => ({
       provider: result.provider,
@@ -27,7 +51,7 @@ export function collectRunFailures(summary: CollectorRunSummary): RunFailure[] {
       detail: error.message,
     })),
     ...result.metrics
-      .filter((metric) => metric.status === 'failed')
+      .filter((metric) => metric.status === 'failed' && !isSelfMonitoringMetric(result.provider, metric.metadata, options.selfRepository))
       .map<RunFailure>((metric) => ({
         provider: result.provider,
         projectSlug: metric.projectSlug,

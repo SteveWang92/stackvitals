@@ -9,6 +9,10 @@ below as its notes.
 
 ## [Unreleased]
 
+### Fixed
+
+- A failed collector run no longer keeps failing every later run through its own GitHub Actions metrics.
+
 ## [1.7.2] - 2026-08-28
 
 ### Fixed

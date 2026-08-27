@@ -113,6 +113,45 @@ describe('collectRunFailures', () => {
     ]);
   });
 
+  it('does not fail the run on GitHub metrics about the repository the collector runs in', () => {
+    const failures = collectRunFailures(
+      summary([
+        result({
+          provider: 'github',
+          status: 'partial_success',
+          metrics: [
+            {
+              projectSlug: 'hub',
+              provider: 'github',
+              metricKey: 'github_actions_latest_run_status',
+              status: 'failed',
+              metadata: { repository: 'owner/hub' },
+              collectedAt: '2026-07-30T00:00:00.000Z',
+            },
+            {
+              projectSlug: 'demo',
+              provider: 'github',
+              metricKey: 'github_actions_latest_run_status',
+              status: 'failed',
+              metadata: { repository: 'owner/demo' },
+              collectedAt: '2026-07-30T00:00:00.000Z',
+            },
+          ],
+        }),
+      ]),
+      { selfRepository: 'owner/hub' },
+    );
+
+    expect(failures).toEqual([
+      {
+        provider: 'github',
+        projectSlug: 'demo',
+        kind: 'metric',
+        detail: 'github_actions_latest_run_status reported failed.',
+      },
+    ]);
+  });
+
   it('prefers a health check error message over the synthesised detail', () => {
     const failures = collectRunFailures(
       summary([
