@@ -368,7 +368,7 @@ if (process.env.VITE_SUPABASE_URL && isHubSupabaseSecretKey(hubSupabaseSecretKey
 // when a cron run fails, so a non-zero exit is the whole delivery mechanism — no webhook,
 // no always-on service. Snapshots are already recorded by this point, so failing here
 // costs no data.
-const failures = collectRunFailures(summary);
+const failures = collectRunFailures(summary, { selfRepository: process.env.GITHUB_REPOSITORY });
 
 if (failures.length > 0) {
   console.error(formatRunFailures(failures));
