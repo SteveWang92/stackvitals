@@ -9,6 +9,13 @@ below as its notes.
 
 ## [Unreleased]
 
+## [1.7.2] - 2026-08-28
+
+### Fixed
+
+- Collector writes now require `HUB_SUPABASE_SECRET_KEY` with a Supabase `sb_secret_` key for privileged REST access. Rename the previous Hub secret before the next collector run.
+
+
 ## [1.7.1] - 2026-08-28
 
 ### Fixed
@@ -205,7 +212,8 @@ source projects.
   to the GitHub Actions job summary.
 - Self-hosting guide and contributing guide (including how to add a new adapter).
 
-[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.7.1...HEAD
+[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.7.2...HEAD
+[1.7.2]: https://github.com/SteveWang92/stackvitals/compare/v1.7.1...v1.7.2
 [1.7.1]: https://github.com/SteveWang92/stackvitals/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/SteveWang92/stackvitals/compare/v1.6.1...v1.7.0
 [1.6.1]: https://github.com/SteveWang92/stackvitals/compare/v1.6.0...v1.6.1

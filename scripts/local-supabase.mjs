@@ -185,15 +185,16 @@ function readStackStatus(cli) {
   }
 
   const apiUrl = pick(status, 'API_URL');
-  // Newer CLI versions also print the sb_publishable_/sb_secret_ pair; either works.
-  const anonKey = pick(status, 'ANON_KEY', 'PUBLISHABLE_KEY');
-  const serviceKey = pick(status, 'SERVICE_ROLE_KEY', 'SECRET_KEY');
+  const anonKey = pick(status, 'ANON_KEY');
+  const serviceKey = pick(status, 'SERVICE_ROLE_KEY');
+  const publishableKey = pick(status, 'PUBLISHABLE_KEY') ?? anonKey;
+  const secretKey = pick(status, 'SECRET_KEY') ?? serviceKey;
 
-  if (!apiUrl || !anonKey || !serviceKey) {
+  if (!apiUrl || !anonKey || !serviceKey || !publishableKey || !secretKey) {
     return null;
   }
 
-  return { apiUrl, anonKey, serviceKey, studioUrl: pick(status, 'STUDIO_URL') };
+  return { apiUrl, anonKey, serviceKey, publishableKey, secretKey, studioUrl: pick(status, 'STUDIO_URL') };
 }
 
 function ensureStack(cli) {
@@ -363,8 +364,8 @@ async function provision(stack) {
 
   const updates = {
     VITE_SUPABASE_URL: stack.apiUrl,
-    VITE_SUPABASE_ANON_KEY: stack.anonKey,
-    HUB_SUPABASE_JWT_SERVICE_ROLE_KEY: stack.serviceKey,
+    VITE_SUPABASE_ANON_KEY: stack.publishableKey,
+    HUB_SUPABASE_SECRET_KEY: stack.secretKey,
     VITE_DASHBOARD_ALLOWED_EMAIL: email,
   };
 

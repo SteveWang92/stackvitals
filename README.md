@@ -66,7 +66,7 @@ npm install
 1. Create a Supabase project, apply everything in `supabase/migrations/`, then run
    `supabase/seed.sql`.
 2. Copy `.env.example` to `.env` and fill in `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` /
-   `VITE_DASHBOARD_ALLOWED_EMAIL` (and `HUB_SUPABASE_JWT_SERVICE_ROLE_KEY` for the collector; it accepts a legacy service-role JWT or a new `sb_secret_` key).
+   `VITE_DASHBOARD_ALLOWED_EMAIL` (and `HUB_SUPABASE_SECRET_KEY` with an `sb_secret_` key for the collector).
 3. Copy `projects.example.json` to `projects.config.json` and describe your own project(s) —
    at minimum a `slug`, `name`, and `publicUrl` gets you HTTP health monitoring with zero other
    credentials.

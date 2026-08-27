@@ -212,7 +212,7 @@ The project documentation site (`site/`) deploys separately to GitHub Pages via
 
 - Treat all provider credentials as secrets.
 - Never commit `.env` files or real tokens.
-- Keep the hub's Supabase credentials separate from every tracked app's credentials. The hub JWT service-role key writes dashboard data; a watched app's credentials are used only for aggregate RPCs or aggregate views in that app's own project.
+- Keep the hub's Supabase credentials separate from every tracked app's credentials. The hub Secret key writes dashboard data; a watched app's credentials are used only for aggregate RPCs or aggregate views in that app's own project.
 - Prefer read-only provider credentials for collectors.
 - Use least privilege IAM permissions for AWS collection.
 - Require Supabase Auth before dashboard data renders in the frontend.

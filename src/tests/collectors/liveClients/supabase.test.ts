@@ -31,24 +31,4 @@ describe('createLiveSupabaseCollectorRunClient', () => {
       }),
     );
   });
-
-  it('keeps a legacy service-role JWT as the bearer token', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(successfulLookupResponse());
-    vi.stubGlobal('fetch', fetchMock);
-    const legacyJwt = 'header.payload.signature';
-
-    const client = createLiveSupabaseCollectorRunClient('https://example.supabase.co', legacyJwt);
-    await client.getProviderId('aws');
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://example.supabase.co/rest/v1/providers?select=id&key=eq.aws',
-      expect.objectContaining({
-        headers: {
-          apikey: legacyJwt,
-          Authorization: `Bearer ${legacyJwt}`,
-          'Content-Type': 'application/json',
-        },
-      }),
-    );
-  });
 });

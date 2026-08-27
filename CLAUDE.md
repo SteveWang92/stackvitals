@@ -65,8 +65,8 @@ Supabase Postgres, schema in `supabase/migrations/*.sql` (applied in numeric ord
 
 ## Security & data boundaries (non-negotiable)
 
-- **Never commit** provider credentials, API keys, AWS secrets, Supabase service-role keys, `.env`, `projects.config.json` (contains real resource IDs), or `supabase/seed.local.sql` (real project rows). `projects.example.json` is the safe committed template.
-- **Separate Supabase projects, separate keys.** `HUB_SUPABASE_JWT_SERVICE_ROLE_KEY` writes collector results into *this* dashboard's Supabase. A watched app's service-role key is used only to call count-only aggregate RPCs in that app's own project — never to read raw records. Collect aggregate operational metrics only; never copy raw app user data into this tool.
+- **Never commit** provider credentials, API keys, AWS secrets, Supabase secret/service-role keys, `.env`, `projects.config.json` (contains real resource IDs), or `supabase/seed.local.sql` (real project rows). `projects.example.json` is the safe committed template.
+- **Separate Supabase projects, separate keys.** `HUB_SUPABASE_SECRET_KEY` writes collector results into *this* dashboard's Supabase. A watched app's service-role key is used only to call count-only aggregate RPCs in that app's own project — never to read raw records. Collect aggregate operational metrics only; never copy raw app user data into this tool.
 - Collector/service secrets must never reach the frontend (only `VITE_*` env is exposed to the browser).
 - Access is gated twice: frontend login before data renders (`src/lib/supabase.ts`, allow-listed via `VITE_DASHBOARD_ALLOWED_EMAIL`) and Supabase RLS restricting reads to authenticated emails in `public.dashboard_users` (`migrations/002`).
 
