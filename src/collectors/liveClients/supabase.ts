@@ -11,11 +11,16 @@ import type {
 } from '../stores/supabaseCollectorRunRecorder';
 
 function headers(authKey: string, apiKey = authKey): Record<string, string> {
-  return {
+  const result: Record<string, string> = {
     apikey: apiKey,
-    Authorization: `Bearer ${authKey}`,
     'Content-Type': 'application/json',
   };
+
+  if (authKey.split('.').length === 3) {
+    result.Authorization = `Bearer ${authKey}`;
+  }
+
+  return result;
 }
 
 async function requestJson<T>(url: string, init: RequestInit, errorPrefix: string): Promise<T> {

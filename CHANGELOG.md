@@ -9,6 +9,10 @@ below as its notes.
 
 ## [Unreleased]
 
+### Fixed
+
+- Collector writes and snapshot pruning now work with Supabase `sb_secret_` keys instead of failing with `PGRST301` JWT errors.
+
 ## [1.7.0] - 2026-08-27
 
 ### Changed
