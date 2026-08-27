@@ -1,6 +1,6 @@
 {
   "name": "stackvitals",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Stack Status Hub — a self-hosted operations dashboard for your web projects: uptime, deploy health, cloud cost, and AI/CI usage in one place.",
   "keywords": [
     "dashboard",

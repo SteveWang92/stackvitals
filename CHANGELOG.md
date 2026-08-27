@@ -9,6 +9,13 @@ below as its notes.
 
 ## [Unreleased]
 
+## [1.7.1] - 2026-08-28
+
+### Fixed
+
+- Collector writes and snapshot pruning now work with Supabase `sb_secret_` keys instead of failing with `PGRST301` JWT errors.
+
+
 ## [1.7.0] - 2026-08-27
 
 ### Changed
@@ -198,7 +205,8 @@ source projects.
   to the GitHub Actions job summary.
 - Self-hosting guide and contributing guide (including how to add a new adapter).
 
-[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.7.0...HEAD
+[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.7.1...HEAD
+[1.7.1]: https://github.com/SteveWang92/stackvitals/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/SteveWang92/stackvitals/compare/v1.6.1...v1.7.0
 [1.6.1]: https://github.com/SteveWang92/stackvitals/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/SteveWang92/stackvitals/compare/v1.5.0...v1.6.0
