@@ -18,7 +18,11 @@ describe('createLiveSupabaseCollectorRunClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(successfulLookupResponse());
     vi.stubGlobal('fetch', fetchMock);
 
-    const client = createLiveSupabaseCollectorRunClient('https://example.supabase.co', 'sb_secret_test-key');
+    const client = createLiveSupabaseCollectorRunClient(
+      'https://example.supabase.co',
+      'sb_secret_test-key',
+      'sb_publishable_frontend-key',
+    );
     await client.getProviderId('aws');
 
     expect(fetchMock).toHaveBeenCalledWith(
@@ -37,14 +41,14 @@ describe('createLiveSupabaseCollectorRunClient', () => {
     vi.stubGlobal('fetch', fetchMock);
     const legacyJwt = 'header.payload.signature';
 
-    const client = createLiveSupabaseCollectorRunClient('https://example.supabase.co', legacyJwt);
+    const client = createLiveSupabaseCollectorRunClient('https://example.supabase.co', legacyJwt, 'sb_publishable_frontend-key');
     await client.getProviderId('aws');
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://example.supabase.co/rest/v1/providers?select=id&key=eq.aws',
       expect.objectContaining({
         headers: {
-          apikey: legacyJwt,
+          apikey: 'sb_publishable_frontend-key',
           Authorization: `Bearer ${legacyJwt}`,
           'Content-Type': 'application/json',
         },

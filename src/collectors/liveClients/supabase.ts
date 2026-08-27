@@ -11,12 +11,13 @@ import type {
 } from '../stores/supabaseCollectorRunRecorder';
 
 function headers(authKey: string, apiKey = authKey): Record<string, string> {
+  const isJwt = authKey.split('.').length === 3;
   const result: Record<string, string> = {
-    apikey: apiKey,
+    apikey: isJwt ? apiKey : authKey,
     'Content-Type': 'application/json',
   };
 
-  if (authKey.split('.').length === 3) {
+  if (isJwt) {
     result.Authorization = `Bearer ${authKey}`;
   }
 

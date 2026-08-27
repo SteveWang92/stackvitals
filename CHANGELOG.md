@@ -9,6 +9,10 @@ below as its notes.
 
 ## [Unreleased]
 
+### Fixed
+
+- Collector writes now use Supabase `sb_secret_` keys for privileged REST access instead of falling back to the frontend Publishable key.
+
 ## [1.7.1] - 2026-08-28
 
 ### Fixed
