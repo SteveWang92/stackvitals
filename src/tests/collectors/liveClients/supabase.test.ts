@@ -52,6 +52,29 @@ describe('createLiveSupabaseCollectorRunClient', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it('upserts resources with project-aware identity', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 204, text: async () => '' } as Response);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = createLiveSupabaseCollectorRunClient('https://example.supabase.co', 'sb_secret_test-key');
+    await client.upsertResources([
+      {
+        project_id: 'project-id',
+        provider_id: 'provider-id',
+        resource_type: 'app',
+        external_id: 'app-id',
+        display_name: 'App',
+        metadata: {},
+        last_seen_at: '2026-08-28T00:00:00.000Z',
+      },
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://example.supabase.co/rest/v1/resources?on_conflict=project_id,provider_id,resource_type,external_id',
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
   it('deactivates omitted projects and removes providers omitted from configured projects', async () => {
     const emptyResponse = { ok: true, status: 204, text: async () => '' } as Response;
     const fetchMock = vi

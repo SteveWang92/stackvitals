@@ -9,6 +9,13 @@ below as its notes.
 
 ## [Unreleased]
 
+## [1.7.5] - 2026-08-28
+
+### Fixed
+
+- Resource writes now support the same provider resource appearing in multiple configured projects. Apply migration `010_project_scoped_resource_identity.sql` before the next collector run.
+
+
 ## [1.7.4] - 2026-08-28
 
 ### Changed
@@ -187,7 +194,8 @@ source projects.
   to the GitHub Actions job summary.
 - Self-hosting guide and contributing guide (including how to add a new adapter).
 
-[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.7.4...HEAD
+[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.7.5...HEAD
+[1.7.5]: https://github.com/SteveWang92/stackvitals/compare/v1.7.4...v1.7.5
 [1.7.4]: https://github.com/SteveWang92/stackvitals/compare/v1.7.3...v1.7.4
 [1.7.3]: https://github.com/SteveWang92/stackvitals/compare/v1.7.2...v1.7.3
 [1.7.2]: https://github.com/SteveWang92/stackvitals/compare/v1.7.1...v1.7.2

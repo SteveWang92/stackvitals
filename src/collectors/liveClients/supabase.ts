@@ -283,7 +283,7 @@ export function createLiveSupabaseCollectorRunClient(url: string, secretKey: str
       }
 
       await requestJson<unknown>(
-        `${url}/rest/v1/resources?on_conflict=provider_id,resource_type,external_id`,
+        `${url}/rest/v1/resources?on_conflict=project_id,provider_id,resource_type,external_id`,
         {
           method: 'POST',
           headers: {
