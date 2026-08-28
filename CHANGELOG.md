@@ -9,6 +9,10 @@ below as its notes.
 
 ## [Unreleased]
 
+### Fixed
+
+- Reachable Amplify development branches no longer appear as unhealthy solely because their stage is `DEVELOPMENT`.
+
 ## [1.7.5] - 2026-08-28
 
 ### Fixed

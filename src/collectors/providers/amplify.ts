@@ -1,4 +1,4 @@
-import type { ProjectSlug, StatusLevel } from '../../types';
+import type { ProjectSlug } from '../../types';
 import type { CollectorAdapterResult, CollectorMetric, CollectorResource, ProviderAdapter } from '../types';
 import { getErrorMessage } from '../errorMessage';
 import { deriveResultStatus } from './resultStatus';
@@ -34,10 +34,6 @@ export interface AmplifyOptions {
   client: AmplifyClient;
 }
 
-function branchStatus(branch: AmplifyBranch): StatusLevel {
-  return branch.stage?.toUpperCase() === 'DEVELOPMENT' ? 'warning' : 'healthy';
-}
-
 export async function collectAmplifyStatus(targets: AmplifyTarget[], options: AmplifyOptions): Promise<CollectorAdapterResult> {
   const startedAt = new Date().toISOString();
   const resources: CollectorResource[] = [];
@@ -53,8 +49,6 @@ export async function collectAmplifyStatus(targets: AmplifyTarget[], options: Am
           options.client.getApp({ appId: target.appId }),
           options.client.getBranch({ appId: target.appId, branchName: target.branchName }),
         ]);
-        const branchLevel = branchStatus(branch);
-
         resources.push(
           {
             projectSlug: target.projectSlug,
@@ -101,7 +95,7 @@ export async function collectAmplifyStatus(targets: AmplifyTarget[], options: Am
             provider: 'amplify',
             metricKey: 'amplify_branch_available',
             metricValue: 1,
-            status: branchLevel,
+            status: 'healthy',
             metadata: {
               appId: app.appId,
               branchName: branch.branchName,
