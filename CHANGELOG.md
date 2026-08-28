@@ -9,6 +9,10 @@ below as its notes.
 
 ## [Unreleased]
 
+### Fixed
+
+- Uptime history now renders missing days as quiet neutral segments instead of dense dashed outlines.
+
 ## [1.7.6] - 2026-08-28
 
 ### Fixed

@@ -493,12 +493,10 @@ a {
   fill: var(--status-failed-fg);
 }
 
-/* Hollow rather than filled: a day with no reading must not look like a recorded outcome. */
+/* Quiet neutral segments keep missing days distinct without turning a sparse history into
+   a row of stretched dashed outlines. */
 .uptime-day-no-data {
-  fill: none;
-  stroke: #b9c1cd;
-  stroke-width: 0.4;
-  stroke-dasharray: 1 1;
+  fill: #e4e8ee;
 }
 
 /* Stacked, not side by side: the sparkline and the uptime strip share an x axis, and reading one
