@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { isAwsCostExplorerEnabled, resolveEnvPlaceholders, type CollectorConfig } from '../../collectors/config';
+import {
+  configuredProjectInventory,
+  isAwsCostExplorerEnabled,
+  resolveEnvPlaceholders,
+  type CollectorConfig,
+} from '../../collectors/config';
 
 describe('resolveEnvPlaceholders', () => {
   it('resolves placeholders in nested string values and leaves other types untouched', () => {
@@ -67,5 +72,49 @@ describe('isAwsCostExplorerEnabled', () => {
 
   it('allows least-privilege AWS backends to disable Cost Explorer', () => {
     expect(isAwsCostExplorerEnabled({ ...config, aws: { costExplorerEnabled: false } })).toBe(false);
+  });
+});
+
+describe('configuredProjectInventory', () => {
+  it('derives only the providers each configured project still owns', () => {
+    const inventory = configuredProjectInventory({
+      projects: [
+        {
+          slug: 'shared_bill',
+          name: 'Shared Bill',
+          publicUrl: 'https://share.example',
+          resources: {
+            cognitoUserPoolId: 'pool-id',
+            dynamoDbTables: ['table-name'],
+            githubRepository: 'owner/shared-bill',
+          },
+        },
+        {
+          slug: 'docs',
+          name: 'Docs',
+          resources: {
+            healthCheckUrl: 'https://owner.github.io/docs/',
+            githubRepository: 'owner/docs',
+            githubDeployWorkflow: 'deploy.yml',
+          },
+        },
+      ],
+      domains: [{ provider: 'cloudflare', projectSlug: 'docs', domains: ['docs.example'] }],
+    });
+
+    expect(inventory).toEqual([
+      {
+        slug: 'shared_bill',
+        name: 'Shared Bill',
+        publicUrl: 'https://share.example',
+        providers: ['aws', 'github', 'http'],
+      },
+      {
+        slug: 'docs',
+        name: 'Docs',
+        publicUrl: null,
+        providers: ['cloudflare', 'github', 'http'],
+      },
+    ]);
   });
 });

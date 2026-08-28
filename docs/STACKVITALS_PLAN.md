@@ -9,10 +9,11 @@ StackVitals is a lightweight, self-hosted operations dashboard for a solo develo
 projects. It collects running status, deployment state, usage signals, and cost data for the
 apps you configure — in one place, on one database, without copying raw application data.
 
-The tool is a **config-driven template**: which apps it tracks is data, not code. Project rows
-live in the `projects` table (seeded per deployment), and per-project provider resources live
-in a git-ignored collector config (`projects.config.json`; `projects.example.json` is the
-committed shape). The original author's own deployment is just one instance of the template.
+The tool is a **config-driven template**: which apps it tracks is data, not code. A git-ignored
+collector config (`projects.config.json`; `projects.example.json` is the committed shape) owns
+the active projects and their provider resources, and each writable collector run synchronizes
+that inventory into the `projects` table. The original author's own deployment is just one
+instance of the template.
 
 Typical tracked apps look like:
 
@@ -130,7 +131,9 @@ Adapter logic lives in `providers/`; real API calls are isolated in `liveClients
 
 Implemented adapters:
 
-- HTTP health: perform direct uptime checks for public app URLs.
+- HTTP health: perform direct uptime checks for public app URLs. A separate `healthCheckUrl`
+  can target the deployment origin; set `healthCheckFollowRedirects` to `false` to accept its
+  redirect without following it through a protected custom domain.
 - Amplify: collect app, branch, deployment, domain, and backend environment status.
 - AWS core: collect account/service cost through Cost Explorer and resource metadata where needed.
 - AWS app backend (watched app): collect Cognito user-pool availability and estimated user count plus each DynamoDB table's status, item count, and size, for apps whose auth/data layer is AWS primitives rather than a managed platform. `Describe*` calls only — the same count-only boundary the Supabase aggregate adapter keeps. A project opts in with `cognitoUserPoolId` / `dynamoDbTables`, and `awsBackendRegion` covers a backend in a different region from the Amplify app fronting it.
@@ -150,6 +153,11 @@ keys, private account IDs, access tokens, Supabase service-role keys, and AWS cr
 local environment variables or deployment secrets. Adapter credentials are declared in config as
 `${ENV_VAR}` placeholders and resolved at collector startup — a missing variable fails the run
 with a clear error; an empty value disables that adapter.
+
+At the start of each writable collector run, configured projects are upserted and active, omitted
+projects are inactive, and stored resources, metrics, and health checks for providers removed from
+a project are deleted. The dashboard therefore reflects the current config instead of retaining
+retired providers indefinitely.
 
 AWS Cost Explorer stays enabled when AWS credentials are present for compatibility with existing
 configs, but a deployment whose credentials intentionally omit `ce:GetCostAndUsage` sets

@@ -9,6 +9,14 @@ below as its notes.
 
 ## [Unreleased]
 
+### Changed
+
+- Collector configuration now owns the active project and provider inventory, removing retired provider data from the dashboard and supporting deployment-origin health checks that stop before a protected custom-domain redirect.
+
+### Fixed
+
+- Cloudflare registrar status now reads the API's `current_registrar` field, HTTP summaries count only healthy checks as passed, and transient Supabase `PGRST303` clock-skew responses are retried once.
+
 ## [1.7.3] - 2026-08-28
 
 ### Fixed

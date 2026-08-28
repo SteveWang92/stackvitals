@@ -5,6 +5,7 @@ import { getErrorMessage } from '../errorMessage';
 export interface HttpHealthTarget {
   projectSlug: ProjectSlug;
   url: string;
+  followRedirects?: boolean;
 }
 
 export interface HttpHealthOptions {
@@ -57,7 +58,7 @@ async function checkTarget(target: HttpHealthTarget, options: HttpHealthOptions)
 
     const response = await options.fetch(target.url, {
       method: 'GET',
-      redirect: 'follow',
+      redirect: target.followRedirects === false ? 'manual' : 'follow',
       headers,
     });
 
@@ -86,6 +87,7 @@ export async function collectHttpHealth(targets: HttpHealthTarget[], options: Ht
   const startedAt = new Date().toISOString();
   const healthChecks = await Promise.all(targets.map((target) => checkTarget(target, options)));
   const failedChecks = healthChecks.filter((check) => check.status === 'failed');
+  const healthyChecks = healthChecks.filter((check) => check.status === 'healthy');
   const status = resultStatusFromChecks(healthChecks);
 
   return {
@@ -96,7 +98,7 @@ export async function collectHttpHealth(targets: HttpHealthTarget[], options: Ht
     summary:
       healthChecks.length === 0
         ? 'No HTTP health targets configured.'
-        : `${healthChecks.length - failedChecks.length}/${healthChecks.length} HTTP health checks passed.`,
+        : `${healthyChecks.length}/${healthChecks.length} HTTP health checks passed.`,
     resources: [],
     metrics: healthChecks.map((check) => ({
       projectSlug: check.projectSlug,
