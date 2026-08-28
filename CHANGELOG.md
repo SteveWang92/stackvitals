@@ -9,6 +9,13 @@ below as its notes.
 
 ## [Unreleased]
 
+## [1.7.7] - 2026-08-28
+
+### Fixed
+
+- Uptime history now renders missing days as quiet neutral segments instead of dense dashed outlines.
+
+
 ## [1.7.6] - 2026-08-28
 
 ### Fixed
@@ -201,7 +208,8 @@ source projects.
   to the GitHub Actions job summary.
 - Self-hosting guide and contributing guide (including how to add a new adapter).
 
-[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.7.6...HEAD
+[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.7.7...HEAD
+[1.7.7]: https://github.com/SteveWang92/stackvitals/compare/v1.7.6...v1.7.7
 [1.7.6]: https://github.com/SteveWang92/stackvitals/compare/v1.7.5...v1.7.6
 [1.7.5]: https://github.com/SteveWang92/stackvitals/compare/v1.7.4...v1.7.5
 [1.7.4]: https://github.com/SteveWang92/stackvitals/compare/v1.7.3...v1.7.4
