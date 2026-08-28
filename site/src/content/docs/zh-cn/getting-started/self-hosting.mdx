@@ -46,7 +46,7 @@ npm run db:up
 <Steps>
 1. 为你的仪表盘实例创建一个 Supabase 项目。
 2. 应用 `supabase/migrations/` 中的迁移。
-3. 运行 `supabase/seed.sql`（提供商注册表），然后插入你自己的项目行——使用一个被 git 忽略的 `supabase/seed.local.sql`，这样真实的 slug、名称和 URL 不会进入 git。
+3. 运行 `supabase/seed.sql` 创建提供商注册表。采集器会根据下文第 2 节的私有配置同步项目行，因此生产实例无需手写项目插入语句。
 4. 在 Supabase Auth 中，如果你想要单用户访问，请禁用公开注册。
 5. 在 Supabase 后台手动创建你的 Auth 用户。
 6. 将同一邮箱添加到允许列表：
@@ -73,6 +73,8 @@ npm run db:up
 5. 在本地验证通过后，将相同的配置/密钥添加到你的定时工作流中。
 </Steps>
 
+每次可写的采集器运行都会把此配置视为当前清单：更新或插入已配置项目、停用已移除项目，并删除项目中已移除提供商的存储数据。
+
 提供 AWS 凭据时，AWS Cost Explorer 默认启用。如果这些凭据刻意只授予 Amplify、Cognito 或
 DynamoDB 读取权限，请在采集器配置中设置 `"aws": { "costExplorerEnabled": false }`，这样就不需要
 Cost Explorer 权限。
@@ -88,7 +90,7 @@ Cost Explorer 权限。
 - `VITE_DASHBOARD_ALLOWED_EMAIL`
 
 <Aside type="danger">
-不要将 `HUB_SUPABASE_JWT_SERVICE_ROLE_KEY`、任何被监控应用的 service-role key、AWS 密钥或 Resend 密钥放在前端托管的环境变量中——只有 `VITE_*` 变量会暴露给浏览器。
+不要将 `HUB_SUPABASE_SECRET_KEY`、任何被监控应用的 service-role key、AWS 密钥或 Resend 密钥放在前端托管的环境变量中——只有 `VITE_*` 变量会暴露给浏览器。
 </Aside>
 
 ## 4. 部署静态网站
@@ -103,7 +105,7 @@ npm run build
 
 ## 5. 将仪表盘添加到自身
 
-仪表盘可以监控自身：在你的项目表中添加一行，并在采集器配置中设置 `"hubSupabase": true`，这样自检采集器就会将其作为目标。
+仪表盘可以监控自身：将它添加到采集器配置并设置 `"hubSupabase": true`，这样可写采集器会同步其项目行，自检采集器也会将其作为目标。
 
 ## 6. 运行定时采集器
 

@@ -57,7 +57,7 @@ Supabase Postgres，schema 在 `supabase/migrations/*.sql` 中。核心表：
 
 | 表 | 用途 |
 |---|---|
-| `projects` | 每个被跟踪的应用一行，以自由格式的 `slug` 为键 |
+| `projects` | 从采集器配置同步的当前被跟踪应用，以自由格式的 `slug` 为键 |
 | `providers` | 提供商注册表（`aws`、`amplify`、`supabase`、`openai` 等） |
 | `resources` | 部署、域名、数据库、API 账户和其他提供商资源 |
 | `metric_snapshots` | 状态、计数、使用量、延迟、部署状态的时间序列 |
@@ -66,6 +66,8 @@ Supabase Postgres，schema 在 `supabase/migrations/*.sql` 中。核心表：
 | `collector_runs` | 每次采集运行的审计跟踪，包括错误 |
 
 快照是**追加写入**的——读取层按逻辑键取最新值，而非就地更新。
+
+每次可写的采集器运行开始时，`projects.config.json` 都会同步到数据库。未出现的项目会被停用，项目中已移除提供商的数据会被删除，使仪表盘始终反映当前配置。
 
 ## 数据安全规则
 

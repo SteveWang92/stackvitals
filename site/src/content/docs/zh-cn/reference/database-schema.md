@@ -32,6 +32,10 @@ StackVitals 使用 Supabase Postgres，迁移文件按编号顺序从 `supabase/
 
 `projects.slug` 是自由格式的字符串，必须与 `projects.config.json` 中的 slug 匹配。`providers.key` 映射到 TypeScript 类型 `ProviderKey`。新的提供商键总是与其采集器适配器一起添加，不会提前添加。
 
+### 项目范围的资源
+
+资源标识包含 `project_id`，因此同一物理提供商资源可以出现在多个已配置项目中。账户级资源继续以 null 项目保持唯一。
+
 ### RLS
 
 行级安全策略将所有读取限制为邮箱出现在 `dashboard_users` 中的已认证用户。这是持久的数据边界——前端邮箱允许列表（`VITE_DASHBOARD_ALLOWED_EMAIL`）是额外的关卡，不是替代品。
@@ -48,6 +52,8 @@ StackVitals 使用 Supabase Postgres，迁移文件按编号顺序从 `supabase/
 6. 删除未使用的成本归属字段
 7. 支持 30 天历史视图的时间戳索引
 8. 删除已停用的 Resend 投递指标
+9. 为本地或显式配置的数据库授予快照保留所需的删除权限
+10. 将资源标识限定到项目，使同一提供商资源可以出现在多个项目中
 
 在开发过程中运行 `npm run db:reset` 可以从头重新应用所有迁移和种子数据。
-现有安装应按顺序应用所有较新的迁移；迁移 008 会删除已停用的数据行，避免仪表盘继续显示不再更新的 Resend 投递数值。
+现有安装应按顺序应用所有较新的迁移。迁移 008 删除已停用的 Resend 数据行，009 启用保留期清理，010 避免共享提供商资源在多个已配置项目之间发生冲突。

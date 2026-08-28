@@ -25,7 +25,7 @@ description: 所有支持的采集器适配器的完整参考——采集内容�
 
 ### HTTP 健康检查
 
-探测你项目的公共 URL。不需要凭证——只需在项目配置中设置 `publicUrl`。当公共 URL 位于 Cloudflare Bot Fight Mode 后面时，可以选择使用 `resources.healthCheckUrl` 覆盖。
+探测你项目的公共 URL。不需要凭证——只需在项目配置中设置 `publicUrl`。当公共 URL 位于 Cloudflare Bot Fight Mode 后面时，可以选择使用 `resources.healthCheckUrl` 覆盖。如果需要把部署源站本身的重定向视为健康，而不继续跳转到受保护的自定义域名，请将 `resources.healthCheckFollowRedirects` 设为 `false`。
 
 自定义请求头（`HTTP_HEALTH_CHECK_HEADER_NAME` / `HTTP_HEALTH_CHECK_HEADER_VALUE`）可用于通过 WAF Skip 规则绕过 Super Bot Fight Mode（Pro 计划）。Free 计划的 Bot Fight Mode 无法通过此方式绕过——请改用非 Cloudflare URL 进行健康检查。
 

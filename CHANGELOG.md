@@ -9,6 +9,18 @@ below as its notes.
 
 ## [Unreleased]
 
+## [1.7.8] - 2026-08-28
+
+### Added
+
+- Add a StackVitals project-site link to the public demo header.
+
+### Changed
+
+- Update the English and Chinese setup references for the current Hub Supabase secret,
+  config-synchronized project inventory, redirect-aware health checks, and migrations 009–010.
+
+
 ## [1.7.7] - 2026-08-28
 
 ### Fixed
@@ -208,7 +220,8 @@ source projects.
   to the GitHub Actions job summary.
 - Self-hosting guide and contributing guide (including how to add a new adapter).
 
-[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.7.7...HEAD
+[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.7.8...HEAD
+[1.7.8]: https://github.com/SteveWang92/stackvitals/compare/v1.7.7...v1.7.8
 [1.7.7]: https://github.com/SteveWang92/stackvitals/compare/v1.7.6...v1.7.7
 [1.7.6]: https://github.com/SteveWang92/stackvitals/compare/v1.7.5...v1.7.6
 [1.7.5]: https://github.com/SteveWang92/stackvitals/compare/v1.7.4...v1.7.5
