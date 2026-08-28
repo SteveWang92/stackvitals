@@ -155,9 +155,9 @@ local environment variables or deployment secrets. Adapter credentials are decla
 with a clear error; an empty value disables that adapter.
 
 At the start of each writable collector run, configured projects are upserted and active, omitted
-projects are inactive, and stored resources, metrics, and health checks for providers removed from
-a project are deleted. The dashboard therefore reflects the current config instead of retaining
-retired providers indefinitely.
+projects are inactive with their project-scoped data removed, and stored resources, metrics, and
+health checks for providers removed from a project are deleted. The dashboard therefore reflects
+the current config instead of retaining retired projects or providers indefinitely.
 
 AWS Cost Explorer stays enabled when AWS credentials are present for compatibility with existing
 configs, but a deployment whose credentials intentionally omit `ce:GetCostAndUsage` sets

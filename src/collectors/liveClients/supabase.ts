@@ -136,6 +136,11 @@ export function createLiveSupabaseConfiguredInventoryClient(url: string, secretK
               `project ${project.slug} deactivation failed`,
             );
           }
+
+          await deleteRows('metric_snapshots', `project_id=eq.${encodeURIComponent(project.id)}`);
+          await deleteRows('cost_snapshots', `project_id=eq.${encodeURIComponent(project.id)}`);
+          await deleteRows('resources', `project_id=eq.${encodeURIComponent(project.id)}`);
+          await deleteRows('health_checks', `project_id=eq.${encodeURIComponent(project.id)}`);
           continue;
         }
 

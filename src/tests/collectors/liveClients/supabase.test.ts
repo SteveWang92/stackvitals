@@ -94,5 +94,21 @@ describe('createLiveSupabaseCollectorRunClient', () => {
       'https://example.supabase.co/rest/v1/projects?id=eq.retired-id',
       expect.objectContaining({ method: 'PATCH' }),
     );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://example.supabase.co/rest/v1/metric_snapshots?project_id=eq.retired-id',
+      expect.objectContaining({ method: 'DELETE' }),
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://example.supabase.co/rest/v1/cost_snapshots?project_id=eq.retired-id',
+      expect.objectContaining({ method: 'DELETE' }),
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://example.supabase.co/rest/v1/resources?project_id=eq.retired-id',
+      expect.objectContaining({ method: 'DELETE' }),
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://example.supabase.co/rest/v1/health_checks?project_id=eq.retired-id',
+      expect.objectContaining({ method: 'DELETE' }),
+    );
   });
 });
