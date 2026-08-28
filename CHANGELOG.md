@@ -9,6 +9,10 @@ below as its notes.
 
 ## [Unreleased]
 
+### Fixed
+
+- Resource writes now support the same provider resource appearing in multiple configured projects. Apply migration `010_project_scoped_resource_identity.sql` before the next collector run.
+
 ## [1.7.4] - 2026-08-28
 
 ### Changed

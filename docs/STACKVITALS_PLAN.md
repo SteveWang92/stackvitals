@@ -98,7 +98,7 @@ The normalized tables support more providers later:
 
 - `projects`: one row per tracked app, keyed by a free-form `slug` that matches the collector config.
 - `providers`: provider registry, such as `aws`, `amplify`, `supabase`, `resend`, `openai`, `github`, `cloudflare`. New keys are added together with their collector, never ahead of it.
-- `resources`: deployments, domains, databases, auth stores, storage buckets, API accounts, and other provider resources.
+- `resources`: deployments, domains, databases, auth stores, storage buckets, API accounts, and other provider resources. Identity is scoped by project so one physical provider resource can appear in multiple configured environments; account-level rows remain unique with a null project.
 - `metric_snapshots`: status, counts, usage, latency, deploy state, and collection results over time.
 - `cost_snapshots`: daily or monthly cost by provider and service. Rows are always account-level: `project_id` exists for a future allocation scheme, but no adapter writes it, and the dashboard reads every row regardless of it.
 - `health_checks`: uptime, HTTP status, response time, and last successful collection.
