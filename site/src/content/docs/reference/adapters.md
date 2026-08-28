@@ -29,7 +29,9 @@ config switch below when those credentials do not include cost access.
 
 Probes your project's public URL. No credentials needed — just set `publicUrl` in the project
 config. Optionally override with `resources.healthCheckUrl` when the public URL is behind
-Cloudflare Bot Fight Mode.
+Cloudflare Bot Fight Mode. Set `resources.healthCheckFollowRedirects` to `false` when a
+deployment-origin redirect itself should count as healthy instead of following it to a protected
+custom domain.
 
 Custom headers (`HTTP_HEALTH_CHECK_HEADER_NAME` / `HTTP_HEALTH_CHECK_HEADER_VALUE`) can be sent
 to work around Super Bot Fight Mode (Pro plan) via a WAF Skip rule. Free-plan Bot Fight Mode

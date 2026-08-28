@@ -188,7 +188,15 @@ a {
   margin-top: -8px;
 }
 
-.refresh-button {
+.topbar-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.refresh-button,
+.site-link {
   display: inline-flex;
   min-height: 42px;
   align-items: center;
@@ -202,6 +210,10 @@ a {
   font-weight: 650;
   padding: 0 14px;
   box-shadow: 0 10px 24px rgba(35, 45, 62, 0.06);
+}
+
+.site-link {
+  text-decoration: none;
 }
 
 .refresh-button:disabled {

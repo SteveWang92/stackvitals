@@ -9,6 +9,15 @@ below as its notes.
 
 ## [Unreleased]
 
+### Added
+
+- Add a StackVitals project-site link to the public demo header.
+
+### Changed
+
+- Update the English and Chinese setup references for the current Hub Supabase secret,
+  config-synchronized project inventory, redirect-aware health checks, and migrations 009–010.
+
 ## [1.7.7] - 2026-08-28
 
 ### Fixed

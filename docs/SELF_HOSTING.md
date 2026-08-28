@@ -71,9 +71,9 @@ never in a local file.
 
 1. Create a Supabase project for your dashboard instance.
 2. Apply migrations in `supabase/migrations/`.
-3. Run `supabase/seed.sql` (providers registry), then insert your own project rows — copy the
-   commented template in that file into a git-ignored `supabase/seed.local.sql` and run it, so
-   your real slugs, names, and URLs never land in git.
+3. Run `supabase/seed.sql` to create the provider registry. The collector synchronizes project
+   rows from the private config in section 2, so a production instance does not need hand-written
+   project inserts.
 4. In Supabase Auth, disable public signup if you want this to stay single-owner.
 5. Create your own Auth user manually in Supabase.
 6. Add the same email to the allowlist:
@@ -108,6 +108,10 @@ Quick order:
    `projects.config.json` automatically when present; pass `-- --config path/to/file.json` to
    use a different file.
 5. After it works locally, add the same config/secrets to your scheduled workflow.
+
+Each writable collector run treats this config as the active inventory: it upserts configured
+projects, deactivates omitted projects, and removes stored data for providers removed from a
+project.
 
 ### Config values
 
@@ -204,7 +208,9 @@ Fight Mode** doesn't run on the Ruleset Engine at all, so no custom rule can exe
 free-plan zone, set `resources.healthCheckUrl` on the affected project to a target that
 bypasses Cloudflare entirely instead (an Amplify app's free default domain, for example). The
 dashboard's clickable link keeps using `publicUrl`; only the health-check probe uses the
-override.
+override. Set `resources.healthCheckFollowRedirects` to `false` when the deployment origin's
+redirect itself should count as healthy instead of following it back through the protected
+custom domain.
 
 Optional OpenAI display labels and GitHub repository mappings live in private collector config,
 not env vars:

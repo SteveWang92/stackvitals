@@ -38,6 +38,11 @@ project. The dashboard does not guess per-project cost splits.
 `providers.key` maps to the `ProviderKey` TypeScript type. New provider keys are added together
 with their collector adapter, never ahead of it.
 
+### Project-scoped resources
+
+Resource identity includes `project_id`, so one physical provider resource can appear in more
+than one configured project. Account-level resources remain unique with a null project.
+
 ### RLS
 
 Row-level security restricts all reads to authenticated users whose email appears in
@@ -56,7 +61,10 @@ Migrations are applied in numeric order from `supabase/migrations/`:
 6. Removal of the unused cost-attribution column
 7. Timestamp indexes supporting the 30-day history views
 8. Removal of the retired Resend delivery metrics
+9. Delete privileges for snapshot retention on local or explicitly provisioned databases
+10. Project-scoped resource identity, allowing one provider resource in multiple projects
 
 Run `npm run db:reset` to reapply all migrations and seeds from scratch during development.
-Existing installations should apply every newer migration in order; migration 008 removes retired
-rows that would otherwise leave frozen Resend delivery values in the dashboard.
+Existing installations should apply every newer migration in order. Migration 008 removes retired
+Resend rows, 009 enables retention deletes, and 010 prevents shared provider resources from
+colliding across configured projects.

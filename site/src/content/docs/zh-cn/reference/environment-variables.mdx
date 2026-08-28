@@ -38,7 +38,7 @@ import { Aside } from '@astrojs/starlight/components';
 | 变量 | 必需 | 用途 |
 |---|---|---|
 | `PROJECTS_CONFIG_JSON` | 仅 CI | 采集器配置 JSON（由 GitHub Actions 工作流使用） |
-| `HUB_SUPABASE_JWT_SERVICE_ROLE_KEY` | 是 | 仪表盘的 JWT service-role key，用于采集器写入 |
+| `HUB_SUPABASE_SECRET_KEY` | 是 | 仪表盘的 `sb_secret_` key，用于采集器清单同步和写入 |
 
 ### AWS
 

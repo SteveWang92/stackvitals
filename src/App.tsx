@@ -1,4 +1,4 @@
-import { AlertTriangle, LayoutDashboard, RefreshCw, Server } from 'lucide-react';
+import { AlertTriangle, ArrowUpRight, LayoutDashboard, RefreshCw, Server } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getOverallStatus } from './lib/status';
 import { buildAttentionItems, countStaleProviders } from './lib/attention';
@@ -134,21 +134,29 @@ function Dashboard() {
             <p>Uptime, deploys, cost, and usage for your web projects.</p>
           </div>
         </div>
-        <button
-          className="refresh-button"
-          type="button"
-          disabled={refreshing}
-          onClick={() =>
-            void (async () => {
-              setRefreshing(true);
-              await loadDashboardData();
-              setRefreshing(false);
-            })()
-          }
-        >
-          <RefreshCw aria-hidden="true" size={16} />
-          {refreshing ? 'Refreshing' : 'Refresh now'}
-        </button>
+        <div className="topbar-actions">
+          {isDemoMode && (
+            <a className="site-link" href="https://stackvitals.dev">
+              StackVitals home
+              <ArrowUpRight aria-hidden="true" size={16} />
+            </a>
+          )}
+          <button
+            className="refresh-button"
+            type="button"
+            disabled={refreshing}
+            onClick={() =>
+              void (async () => {
+                setRefreshing(true);
+                await loadDashboardData();
+                setRefreshing(false);
+              })()
+            }
+          >
+            <RefreshCw aria-hidden="true" size={16} />
+            {refreshing ? 'Refreshing' : 'Refresh now'}
+          </button>
+        </div>
       </header>
 
       {refreshing && (

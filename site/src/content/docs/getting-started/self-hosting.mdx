@@ -53,8 +53,9 @@ own.
 <Steps>
 1. Create a Supabase project for your dashboard instance.
 2. Apply migrations in `supabase/migrations/`.
-3. Run `supabase/seed.sql` (providers registry), then insert your own project rows — use a
-   git-ignored `supabase/seed.local.sql` so real slugs, names, and URLs never land in git.
+3. Run `supabase/seed.sql` to create the provider registry. The collector synchronizes project
+   rows from the private config in section 2 below, so production does not need hand-written project
+   inserts.
 4. In Supabase Auth, disable public signup if you want single-owner access.
 5. Create your Auth user manually in the Supabase dashboard.
 6. Add the same email to the allowlist:
@@ -88,6 +89,10 @@ store.
 5. After it works locally, add the same config/secrets to your scheduled workflow.
 </Steps>
 
+Each writable collector run treats this config as the active inventory: it upserts configured
+projects, deactivates omitted projects, and removes stored data for providers removed from a
+project.
+
 AWS Cost Explorer is enabled by default when AWS credentials are present. If those credentials
 are intentionally limited to Amplify, Cognito, or DynamoDB reads, set
 `"aws": { "costExplorerEnabled": false }` in the collector config so no Cost Explorer permission
@@ -105,7 +110,7 @@ Set these in your hosting provider's environment variables:
 - `VITE_DASHBOARD_ALLOWED_EMAIL`
 
 <Aside type="danger">
-Do not put `HUB_SUPABASE_JWT_SERVICE_ROLE_KEY`, any watched app's service-role key, AWS keys, or
+Do not put `HUB_SUPABASE_SECRET_KEY`, any watched app's service-role key, AWS keys, or
 Resend keys in frontend hosting env vars — only `VITE_*` variables are exposed to the browser.
 </Aside>
 
@@ -122,8 +127,8 @@ branch-level access control as an optional first layer; keep Supabase Auth and R
 
 ## 5. Add the dashboard to itself
 
-The dashboard can track itself: add a row for it in your projects table, and set
-`"hubSupabase": true` in the collector config so the self-health collector targets it.
+The dashboard can track itself: add it to the collector config and set `"hubSupabase": true` so
+the writable collector syncs its project row and the self-health collector targets it.
 
 ## 6. Run the scheduled collector
 
