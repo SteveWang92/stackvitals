@@ -134,7 +134,7 @@ Implemented adapters:
 - HTTP health: perform direct uptime checks for public app URLs. A separate `healthCheckUrl`
   can target the deployment origin; set `healthCheckFollowRedirects` to `false` to accept its
   redirect without following it through a protected custom domain.
-- Amplify: collect app, branch, deployment, domain, and backend environment status.
+- Amplify: collect app, branch, deployment, domain, and backend environment status. Branch stage is descriptive metadata; a reachable development branch is healthy rather than degraded.
 - AWS core: collect account/service cost through Cost Explorer and resource metadata where needed.
 - AWS app backend (watched app): collect Cognito user-pool availability and estimated user count plus each DynamoDB table's status, item count, and size, for apps whose auth/data layer is AWS primitives rather than a managed platform. `Describe*` calls only — the same count-only boundary the Supabase aggregate adapter keeps. A project opts in with `cognitoUserPoolId` / `dynamoDbTables`, and `awsBackendRegion` covers a backend in a different region from the Amplify app fronting it.
 - Supabase (watched app): call a count-only aggregate RPC in the app's own project (see `docs/examples/app-aggregate-rpc.sql`) so operational counts arrive without raw data.

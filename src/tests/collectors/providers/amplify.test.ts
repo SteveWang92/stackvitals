@@ -64,7 +64,7 @@ describe('collectAmplifyStatus', () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  it('marks development branches as warning signals', async () => {
+  it('keeps development branches healthy when the target is available', async () => {
     const client = createClient({
       getBranch: vi.fn().mockResolvedValue({
         branch: {
@@ -76,9 +76,9 @@ describe('collectAmplifyStatus', () => {
 
     const result = await collectAmplifyStatus([{ projectSlug: 'acme_site', appId: 'app-123', branchName: 'dev' }], { client });
 
-    expect(result.status).toBe('partial_success');
+    expect(result.status).toBe('success');
     expect(result.metrics.find((metric) => metric.metricKey === 'amplify_branch_available')).toMatchObject({
-      status: 'warning',
+      status: 'healthy',
       metadata: {
         branchName: 'dev',
         stage: 'DEVELOPMENT',
