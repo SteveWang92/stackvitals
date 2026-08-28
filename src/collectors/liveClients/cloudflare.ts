@@ -32,6 +32,7 @@ interface CloudflareRegistrarDomainResponse {
   domain?: string;
   name?: string;
   registrar?: string | null;
+  current_registrar?: string | null;
   expires_at?: string | null;
   expires_on?: string | null;
   auto_renew?: boolean | null;
@@ -125,7 +126,7 @@ function normalizeRegistrarDomain(domain: CloudflareRegistrarDomainResponse): Cl
 
   return {
     domain: name,
-    registrar: domain.registrar,
+    registrar: domain.current_registrar ?? domain.registrar,
     expiresAt: domain.expires_at ?? domain.expires_on,
     autoRenew: domain.auto_renew,
     locked: domain.locked,

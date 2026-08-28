@@ -9,6 +9,17 @@ below as its notes.
 
 ## [Unreleased]
 
+## [1.7.4] - 2026-08-28
+
+### Changed
+
+- Collector configuration now owns the active project and provider inventory, removing retired provider data from the dashboard and supporting deployment-origin health checks that stop before a protected custom-domain redirect.
+
+### Fixed
+
+- Cloudflare registrar status now reads the API's `current_registrar` field, HTTP summaries count only healthy checks as passed, and transient Supabase `PGRST303` clock-skew responses are retried once.
+
+
 ## [1.7.3] - 2026-08-28
 
 ### Fixed
@@ -176,7 +187,8 @@ source projects.
   to the GitHub Actions job summary.
 - Self-hosting guide and contributing guide (including how to add a new adapter).
 
-[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.7.3...HEAD
+[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.7.4...HEAD
+[1.7.4]: https://github.com/SteveWang92/stackvitals/compare/v1.7.3...v1.7.4
 [1.7.3]: https://github.com/SteveWang92/stackvitals/compare/v1.7.2...v1.7.3
 [1.7.2]: https://github.com/SteveWang92/stackvitals/compare/v1.7.1...v1.7.2
 [1.7.1]: https://github.com/SteveWang92/stackvitals/compare/v1.7.0...v1.7.1

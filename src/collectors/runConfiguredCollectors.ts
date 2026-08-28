@@ -17,12 +17,13 @@ import { buildGithubStepSummary } from './githubStepSummary';
 import { collectRunFailures, formatRunFailures } from './runFailures';
 import { runCollectors } from './runCollectors';
 import { createSupabaseCollectorRunRecorder } from './stores/supabaseCollectorRunRecorder';
-import { getArgValue, isAwsCostExplorerEnabled, resolveEnvPlaceholders, type CollectorConfig } from './config';
+import { configuredProjectInventory, getArgValue, isAwsCostExplorerEnabled, resolveEnvPlaceholders, type CollectorConfig } from './config';
 import { createLiveAmplifyClient, createLiveAwsAppBackendClient, createLiveCostExplorerClient } from './liveClients/aws';
 import { createLiveResendClient } from './liveClients/resend';
 import {
   createLiveSupabaseAggregateClient,
   createLiveSupabaseCollectorRunClient,
+  createLiveSupabaseConfiguredInventoryClient,
   createLiveSupabaseProjectHealthClient,
   createLiveSupabaseSnapshotPruneClient,
 } from './liveClients/supabase';
@@ -66,11 +67,14 @@ function githubRepositoryParts(repository: string): { owner: string; repo: strin
   return { owner, repo };
 }
 
-async function readConfig(path: string): Promise<CollectorConfig> {
+async function readConfig(path: string): Promise<{ config: CollectorConfig; inventory: ReturnType<typeof configuredProjectInventory> }> {
   const url = pathToFileURL(resolve(path));
   const parsed = JSON.parse(await readFile(url, 'utf8')) as CollectorConfig;
 
-  return resolveEnvPlaceholders(parsed, process.env, path);
+  return {
+    config: resolveEnvPlaceholders(parsed, process.env, path),
+    inventory: configuredProjectInventory(parsed),
+  };
 }
 
 async function defaultConfigPath(): Promise<string> {
@@ -85,7 +89,7 @@ async function defaultConfigPath(): Promise<string> {
 loadLocalEnv();
 
 const configPath = getArgValue(process.argv, '--config') ?? (await defaultConfigPath());
-const config = await readConfig(configPath);
+const { config, inventory } = await readConfig(configPath);
 // Parsed before any provider work so a bad retention value fails immediately instead of
 // after a full round of API calls.
 const retentionDays = parseRetentionDays(process.env.SNAPSHOT_RETENTION_DAYS);
@@ -96,6 +100,7 @@ const httpTargets = config.projects
   .map((project) => ({
     projectSlug: project.slug,
     url: project.resources?.healthCheckUrl ?? project.publicUrl!,
+    followRedirects: project.resources?.healthCheckFollowRedirects,
   }));
 
 adapters.push(
@@ -294,6 +299,10 @@ const recorder =
   process.env.VITE_SUPABASE_URL && isHubSupabaseSecretKey(hubSupabaseSecretKey)
     ? createSupabaseCollectorRunRecorder(createLiveSupabaseCollectorRunClient(process.env.VITE_SUPABASE_URL, hubSupabaseSecretKey))
     : undefined;
+
+if (process.env.VITE_SUPABASE_URL && isHubSupabaseSecretKey(hubSupabaseSecretKey)) {
+  await createLiveSupabaseConfiguredInventoryClient(process.env.VITE_SUPABASE_URL, hubSupabaseSecretKey).sync(inventory);
+}
 
 if (process.env.VITE_SUPABASE_URL && hubSupabaseSecretKey && !isHubSupabaseSecretKey(hubSupabaseSecretKey)) {
   console.warn('Collector result recording skipped: configure HUB_SUPABASE_SECRET_KEY with an sb_secret_ key.');

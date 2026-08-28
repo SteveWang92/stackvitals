@@ -27,10 +27,11 @@ async function defaultConfigUrl() {
 const configPath = configArg ? new URL(configArg, `file:///${process.cwd().replaceAll('\\', '/')}/`) : await defaultConfigUrl();
 const config = JSON.parse(await readFile(configPath, 'utf8'));
 const targets = config.projects
-  .filter((project) => project.publicUrl)
+  .filter((project) => project.resources?.healthCheckUrl || project.publicUrl)
   .map((project) => ({
     projectSlug: project.slug,
-    url: project.publicUrl,
+    url: project.resources?.healthCheckUrl ?? project.publicUrl,
+    followRedirects: project.resources?.healthCheckFollowRedirects !== false,
   }));
 
 async function checkTarget(target) {
@@ -40,7 +41,7 @@ async function checkTarget(target) {
   try {
     const response = await fetch(target.url, {
       method: 'GET',
-      redirect: 'follow',
+      redirect: target.followRedirects ? 'follow' : 'manual',
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; StackVitals/1.0)',
         Accept: 'text/html,application/xhtml+xml',
@@ -71,6 +72,7 @@ async function checkTarget(target) {
 
 const healthChecks = await Promise.all(targets.map(checkTarget));
 const failedChecks = healthChecks.filter((check) => check.status === 'failed');
+const healthyChecks = healthChecks.filter((check) => check.status === 'healthy');
 const warningChecks = healthChecks.filter((check) => check.status === 'warning');
 const run = {
   provider: 'http',
@@ -87,7 +89,7 @@ const run = {
   summary:
     healthChecks.length === 0
       ? 'No HTTP health targets configured.'
-      : `${healthChecks.length - failedChecks.length}/${healthChecks.length} HTTP health checks passed.`,
+      : `${healthyChecks.length}/${healthChecks.length} HTTP health checks passed.`,
   healthChecks,
   errors: failedChecks.map((check) => ({
     projectSlug: check.projectSlug,

@@ -1,6 +1,8 @@
 import type { SupabaseAggregateClient } from '../providers/supabaseAggregate';
 import type { SupabaseProjectHealthClient } from '../providers/supabaseProjectHealth';
 import type { SnapshotPruneClient } from '../stores/pruneSnapshots';
+import type { ConfiguredProjectInventory } from '../config';
+import type { ProviderKey } from '../../types';
 import type {
   CostSnapshotInsert,
   CollectorRunsInsert,
@@ -32,8 +34,16 @@ function secretKeyHeaders(secretKey: string): Record<string, string> {
 }
 
 async function requestJson<T>(url: string, init: RequestInit, errorPrefix: string): Promise<T> {
-  const response = await fetch(url, init);
-  const text = await response.text();
+  let response = await fetch(url, init);
+  let text = await response.text();
+
+  // Supabase's opaque secret-key gateway occasionally generated an internal JWT just ahead
+  // of the Data API clock. The next request in the same collector run succeeded, so replay
+  // this one named transient once instead of losing an otherwise complete daily snapshot.
+  if (response.status === 401 && text.includes('PGRST303') && text.includes('JWT issued at future')) {
+    response = await fetch(url, init);
+    text = await response.text();
+  }
 
   if (!response.ok) {
     const detail = text.trim() ? ` ${text.slice(0, 500)}` : '';
@@ -49,6 +59,107 @@ async function requestJson<T>(url: string, init: RequestInit, errorPrefix: strin
   }
 
   return JSON.parse(text) as T;
+}
+
+interface ProjectInventoryRow {
+  id: string;
+  slug: string;
+  is_active: boolean;
+}
+
+interface ProviderInventoryRow {
+  id: string;
+  key: string;
+}
+
+export function createLiveSupabaseConfiguredInventoryClient(url: string, secretKey: string) {
+  const apiHeaders = secretKeyHeaders(secretKey);
+
+  async function deleteRows(table: string, filters: string): Promise<void> {
+    await requestJson<unknown>(
+      `${url}/rest/v1/${table}?${filters}`,
+      { method: 'DELETE', headers: { ...apiHeaders, Prefer: 'return=minimal' } },
+      `${table} configured-inventory cleanup failed`,
+    );
+  }
+
+  return {
+    sync: async (configuredProjects: ConfiguredProjectInventory[]): Promise<void> => {
+      const now = new Date().toISOString();
+
+      if (configuredProjects.length > 0) {
+        await requestJson<unknown>(
+          `${url}/rest/v1/projects?on_conflict=slug`,
+          {
+            method: 'POST',
+            headers: { ...apiHeaders, Prefer: 'resolution=merge-duplicates,return=minimal' },
+            body: JSON.stringify(
+              configuredProjects.map((project) => ({
+                slug: project.slug,
+                name: project.name,
+                public_url: project.publicUrl,
+                is_active: true,
+                updated_at: now,
+              })),
+            ),
+          },
+          'projects configured-inventory sync failed',
+        );
+      }
+
+      const [projects, providers] = await Promise.all([
+        requestJson<ProjectInventoryRow[]>(
+          `${url}/rest/v1/projects?select=id,slug,is_active`,
+          { method: 'GET', headers: apiHeaders },
+          'projects configured-inventory lookup failed',
+        ),
+        requestJson<ProviderInventoryRow[]>(
+          `${url}/rest/v1/providers?select=id,key`,
+          { method: 'GET', headers: apiHeaders },
+          'providers configured-inventory lookup failed',
+        ),
+      ]);
+      const configuredBySlug = new Map(configuredProjects.map((project) => [project.slug, new Set(project.providers)]));
+
+      for (const project of projects) {
+        const configuredProviders = configuredBySlug.get(project.slug);
+
+        if (!configuredProviders) {
+          if (project.is_active) {
+            await requestJson<unknown>(
+              `${url}/rest/v1/projects?id=eq.${encodeURIComponent(project.id)}`,
+              {
+                method: 'PATCH',
+                headers: { ...apiHeaders, Prefer: 'return=minimal' },
+                body: JSON.stringify({ is_active: false, updated_at: now }),
+              },
+              `project ${project.slug} deactivation failed`,
+            );
+          }
+
+          await deleteRows('metric_snapshots', `project_id=eq.${encodeURIComponent(project.id)}`);
+          await deleteRows('cost_snapshots', `project_id=eq.${encodeURIComponent(project.id)}`);
+          await deleteRows('resources', `project_id=eq.${encodeURIComponent(project.id)}`);
+          await deleteRows('health_checks', `project_id=eq.${encodeURIComponent(project.id)}`);
+          continue;
+        }
+
+        const removedProviderIds = providers
+          .filter((provider) => !configuredProviders.has(provider.key as ProviderKey))
+          .map((provider) => provider.id);
+
+        if (removedProviderIds.length > 0) {
+          const filters = `project_id=eq.${encodeURIComponent(project.id)}&provider_id=in.(${removedProviderIds.join(',')})`;
+          await deleteRows('metric_snapshots', filters);
+          await deleteRows('resources', filters);
+        }
+
+        if (!configuredProviders.has('http')) {
+          await deleteRows('health_checks', `project_id=eq.${encodeURIComponent(project.id)}`);
+        }
+      }
+    },
+  };
 }
 
 export function createLiveSupabaseAggregateClient(url: string, authKey: string, apiKey?: string): SupabaseAggregateClient {

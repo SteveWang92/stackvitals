@@ -1,4 +1,4 @@
-import type { ProjectSlug } from '../types';
+import type { ProjectSlug, ProviderKey } from '../types';
 
 export interface ProjectCollectorConfig {
   slug: ProjectSlug;
@@ -34,7 +34,17 @@ export interface ProjectCollectorConfig {
     // deploy status. Requires CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID.
     cloudflarePagesProject?: string;
     healthCheckUrl?: string;
+    // Keep a deployment-origin redirect as the health signal instead of following it to a
+    // custom domain. This is useful when the custom domain is protected by a WAF.
+    healthCheckFollowRedirects?: boolean;
   };
+}
+
+export interface ConfiguredProjectInventory {
+  slug: ProjectSlug;
+  name: string;
+  publicUrl: string | null;
+  providers: ProviderKey[];
 }
 
 export interface DomainGroupConfig {
@@ -66,6 +76,35 @@ export interface CollectorConfig {
 
 export function isAwsCostExplorerEnabled(config: CollectorConfig): boolean {
   return config.aws?.costExplorerEnabled !== false;
+}
+
+export function configuredProjectInventory(config: CollectorConfig): ConfiguredProjectInventory[] {
+  const cloudflareProjects = new Set((config.domains ?? []).flatMap((group) => (group.projectSlug ? [group.projectSlug] : [])));
+
+  return config.projects.map((project) => {
+    const resources = project.resources;
+    const providers = new Set<ProviderKey>();
+
+    if (resources?.healthCheckUrl || project.publicUrl) providers.add('http');
+    if (resources?.amplifyAppId && resources.amplifyBranchName) providers.add('amplify');
+    if (resources?.cognitoUserPoolId || (resources?.dynamoDbTables?.length ?? 0) > 0) providers.add('aws');
+    if (
+      resources?.supabaseProjectRef &&
+      (resources.hubSupabase || (resources.supabaseAggregateRpcName && resources.supabaseUrl && resources.supabaseServiceRoleKey))
+    ) {
+      providers.add('supabase');
+    }
+    if (resources?.resendDomain) providers.add('resend');
+    if (resources?.githubRepository && resources.githubActionsEnabled !== false) providers.add('github');
+    if (resources?.cloudflarePagesProject || cloudflareProjects.has(project.slug)) providers.add('cloudflare');
+
+    return {
+      slug: project.slug,
+      name: project.name,
+      publicUrl: project.publicUrl ?? null,
+      providers: Array.from(providers).sort(),
+    };
+  });
 }
 
 const placeholderPattern = /\$\$|\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g;

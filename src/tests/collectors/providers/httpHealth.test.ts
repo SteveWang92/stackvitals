@@ -31,6 +31,7 @@ describe('collectHttpHealth', () => {
       status: 'warning',
       httpStatus: 404,
     });
+    expect(result.summary).toBe('0/1 HTTP health checks passed.');
   });
 
   it('isolates failed requests into errors without throwing', async () => {
@@ -93,5 +94,17 @@ describe('collectHttpHealth', () => {
       'User-Agent': expect.stringContaining('Mozilla/5.0'),
       'X-Health-Check-Token': 'secret-value',
     });
+  });
+
+  it('can accept a deployment-origin redirect without following it', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(response(301));
+
+    const result = await collectHttpHealth([{ projectSlug: 'docs', url: 'https://owner.github.io/docs/', followRedirects: false }], {
+      fetch: fetchMock,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith('https://owner.github.io/docs/', expect.objectContaining({ redirect: 'manual' }));
+    expect(result.status).toBe('success');
+    expect(result.healthChecks[0]).toMatchObject({ status: 'healthy', httpStatus: 301 });
   });
 });

@@ -9,7 +9,8 @@
         "amplifyBranchName": "main",
         "githubRepository": "example/my-site",
         "githubActionsEnabled": false,
-        "healthCheckUrl": "https://main.fake-amplify-app-id.amplifyapp.com"
+        "healthCheckUrl": "https://main.fake-amplify-app-id.amplifyapp.com",
+        "healthCheckFollowRedirects": true
       }
     },
     {
