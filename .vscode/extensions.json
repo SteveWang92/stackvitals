@@ -1,0 +1,6 @@
+{
+  "recommendations": ["esbenp.prettier-vscode", "dbaeumer.vscode-eslint", "editorconfig.editorconfig", "astro-build.astro-vscode"],
+  // These claim files Prettier and ESLint own here and would silently reformat them a
+  // second way.
+  "unwantedRecommendations": ["biomejs.biome", "rome.rome"]
+}

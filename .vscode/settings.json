@@ -1,0 +1,59 @@
+{
+  // Shared workspace settings, committed so that every editor formats this repository the
+  // way its gates do. Without them a differently configured global Prettier, or a second
+  // formatter extension, rewrites files that `npm run lint` and code review then reject.
+
+  // Prettier is the formatter for everything it owns. The extension is pointed at the copy
+  // in node_modules, so it is the version pinned in package.json rather than whatever is
+  // installed globally, and it only touches files this repository actually configures.
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "prettier.prettierPath": "node_modules/prettier",
+  "prettier.requireConfig": true,
+
+  // ESLint carries no formatting rules here (js + typescript-eslint recommended only), so
+  // its fixes cannot fight Prettier. `npm run lint` is a CI gate, so applying them on save
+  // keeps a hand edit from failing that check later.
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+
+  // Named per language as well, because a language-specific default set in a user profile
+  // beats a workspace-wide one.
+  "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[javascript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[jsonc]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[css]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[html]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[yaml]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+
+  // Markdown and MDX are hand-wrapped and listed in .prettierignore; see the reasons there.
+  // Saving must not hand them to whichever other extension claims the language, and the
+  // two-space hard line break has to survive a save.
+  "[markdown]": {
+    "editor.formatOnSave": false,
+    "files.trimTrailingWhitespace": false
+  },
+  "[mdx]": {
+    "editor.formatOnSave": false,
+    "files.trimTrailingWhitespace": false
+  },
+
+  // Nothing in this repository formats these. Prettier has no parser for .astro or .sql
+  // without plugins that are not dependencies, so `npm run format` skips them; letting an
+  // extension format them on save would apply a second style no gate can reproduce.
+  "[astro]": { "editor.formatOnSave": false },
+  "[sql]": { "editor.formatOnSave": false },
+
+  // .gitattributes is `* text=auto` with no `eol`: LF in the repository, platform-native in
+  // the working tree. "auto" is that same rule for the editor, and matches .prettierrc.json's
+  // `endOfLine: "auto"`. Mirrors .editorconfig without depending on an extension.
+  "files.eol": "auto",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+
+  // The TypeScript version the build uses, so the editor reports the same errors CI does.
+  "typescript.tsdk": "node_modules/typescript/lib"
+}
