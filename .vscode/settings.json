@@ -47,10 +47,9 @@
   "[astro]": { "editor.formatOnSave": false },
   "[sql]": { "editor.formatOnSave": false },
 
-  // .gitattributes is `* text=auto` with no `eol`: LF in the repository, platform-native in
-  // the working tree. "auto" is that same rule for the editor, and matches .prettierrc.json's
-  // `endOfLine: "auto"`. Mirrors .editorconfig without depending on an extension.
-  "files.eol": "auto",
+  // .gitattributes pins LF in the repository and the working tree alike, so the editor
+  // writes LF too. Mirrors .editorconfig without depending on an extension.
+  "files.eol": "\n",
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
 

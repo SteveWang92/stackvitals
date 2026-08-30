@@ -2,15 +2,11 @@ root = true
 
 [*]
 charset = utf-8
+end_of_line = lf
 insert_final_newline = true
 indent_style = space
 indent_size = 2
 trim_trailing_whitespace = true
-
-# end_of_line is deliberately unset. .gitattributes uses `* text=auto` with no `eol`, so the
-# repository stores LF while the working tree stays platform-native, and .prettierrc.json's
-# `endOfLine: "auto"` follows the file it finds. Pinning a value here would make every save
-# rewrite the whole file on the platform that disagrees.
 
 # Two trailing spaces are a hard line break in Markdown, and these files are hand-wrapped.
 [*.{md,mdx}]

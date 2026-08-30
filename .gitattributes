@@ -1,3 +1,4 @@
-# Normalize all text files to LF in the repository regardless of the committer's
-# platform or local git config; working-tree line endings stay platform-native.
-* text=auto
+# Normalize all text files to LF in the repository and in the working tree, regardless of
+# the committer's platform or local git config, so the same bytes appear on Windows, Linux
+# and macOS.
+* text=auto eol=lf
