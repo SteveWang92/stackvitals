@@ -7,7 +7,7 @@
 //   node scripts/release.mjs reversion X.Y.Z
 //
 // Phase 2 — ship:  verify the PR can merge, then squash-merge, tag, GitHub release,
-//                   reset dev. Pushes nothing of its own.
+//                   reset dev. Pushes only the tag and the reset dev.
 //   node scripts/release.mjs ship [--dry-run]
 //
 // Every phase is non-interactive — no TTY prompts. Safe for AI and CI use.
@@ -114,7 +114,7 @@ const finalizeChangelog = async (version, prevTag) => {
   const before = content.slice(0, headingPos);
   const after = nextSection >= 0 ? content.slice(nextSection) : '';
 
-  content = `${before}## [Unreleased]\n\n## [${version}] - ${dateStr}${unreleasedBody}\n${after}`;
+  content = `${before}## [Unreleased]\n\n## [${version}] - ${dateStr}${unreleasedBody}${after}`;
 
   if (prevTag) {
     content = content.replace(
@@ -200,6 +200,61 @@ const openReleasePR = () => {
     ]),
   );
   return list[0] ?? null;
+};
+
+// After the squash-merge the release PR is closed, so a failure in a later step
+// would leave ship with nothing to find. Locating the merged PR lets a rerun
+// resume the tag, the GitHub release, and the dev reset.
+const mergedReleasePR = () => {
+  const list = JSON.parse(
+    gh([
+      'pr',
+      'list',
+      '--repo',
+      REPO,
+      '--head',
+      INTEGRATION_BRANCH,
+      '--base',
+      DEPLOY_BRANCH,
+      '--state',
+      'merged',
+      '--json',
+      'number,title',
+      '--limit',
+      '1',
+    ]),
+  );
+  return list[0] ?? null;
+};
+
+const versionFromTitle = (title) => {
+  const match = title.match(/v(\d+\.\d+\.\d+)/);
+  if (!match) {
+    throw new Error(`Could not read a version from the PR title "${title}".`);
+  }
+  return match[1];
+};
+
+const tagExists = (tag) => Boolean(git(['tag', '--list', tag]));
+
+const githubReleaseExists = (tag) => {
+  try {
+    gh(['release', 'view', tag, '--repo', REPO, '--json', 'tagName']);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+// True once the squash-merged deploy branch is an ancestor of the integration
+// branch — i.e. the reset either happened or dev has moved on past it.
+const integrationContainsDeploy = () => {
+  try {
+    git(['merge-base', '--is-ancestor', `origin/${DEPLOY_BRANCH}`, INTEGRATION_BRANCH]);
+    return true;
+  } catch {
+    return false;
+  }
 };
 
 const requireCleanIntegrationBranch = () => {
@@ -395,9 +450,9 @@ const reversion = async () => {
 // ---------------------------------------------------------------------------
 // ship — verify, merge, tag, publish, reset
 //
-// Pushes nothing of its own: everything that could block the merge is checked first, so a
-// failed pre-flight leaves the release exactly as it was. Fix the cause (or wait for CI)
-// and run ship again.
+// Everything that could block the merge is checked first, so a failed pre-flight leaves the
+// release exactly as it was. Fix the cause (or wait for CI) and run ship again. Past the
+// merge the PR is closed, and ship resumes from the merged PR — rerunning is always safe.
 // ---------------------------------------------------------------------------
 
 const describeChecks = (rollup) => {
@@ -474,74 +529,111 @@ const ship = async () => {
   git(['merge', '--ff-only', `origin/${INTEGRATION_BRANCH}`]);
 
   const open = openReleasePR();
-  if (!open) {
-    throw new Error('No open release PR found. Run "prep" first.');
+  const releasePR = open ?? mergedReleasePR();
+  if (!releasePR) {
+    throw new Error('No release PR found. Run "prep" first.');
   }
 
-  const prJson = gh([
-    'pr',
-    'view',
-    String(open.number),
-    '--repo',
-    REPO,
-    '--json',
-    'number,title,mergeable,mergeStateStatus,headRefOid,statusCheckRollup',
-  ]);
-  const pr = JSON.parse(prJson);
-  console.log(`Found PR: #${pr.number} "${pr.title}"`);
-
-  const match = pr.title.match(/v(\d+\.\d+\.\d+)/);
-  if (!match) {
-    throw new Error(`Could not read a version from the PR title "${pr.title}".`);
-  }
-  const version = match[1];
+  const version = versionFromTitle(releasePR.title);
   const releaseTag = `v${version}`;
 
-  const problems = await preflight(pr, version);
-  if (problems.length > 0) {
-    console.error(`Cannot ship ${releaseTag} yet:`);
-    for (const problem of problems) console.error(`  - ${problem}`);
-    console.error('');
-    console.error('Nothing has been changed. Fix the cause — or wait a few minutes if checks are still running — and run ship again.');
-    process.exit(1);
+  if (open) {
+    const pr = JSON.parse(
+      gh([
+        'pr',
+        'view',
+        String(open.number),
+        '--repo',
+        REPO,
+        '--json',
+        'number,title,mergeable,mergeStateStatus,headRefOid,statusCheckRollup',
+      ]),
+    );
+    console.log(`Found PR: #${pr.number} "${pr.title}"`);
+
+    const problems = await preflight(pr, version);
+    if (problems.length > 0) {
+      console.error(`Cannot ship ${releaseTag} yet:`);
+      for (const problem of problems) console.error(`  - ${problem}`);
+      console.error('');
+      console.error('Nothing has been changed. Fix the cause — or wait a few minutes if checks are still running — and run ship again.');
+      process.exit(1);
+    }
+
+    console.log(`Version:    ${version}`);
+    console.log(`Tag:        ${releaseTag}`);
+    console.log('Pre-flight: all clear');
+    console.log('');
+
+    if (dryRun) {
+      console.log('Dry run complete. No changes made.');
+      return;
+    }
+
+    // 1. Squash merge the PR — no --subject, so GitHub uses the PR title and appends
+    //    " (#N)". Only the auto-generated body is stripped.
+    console.log(`Squash-merging PR #${pr.number}...`);
+    gh(['pr', 'merge', String(pr.number), '--repo', REPO, '--squash', '--body', '']);
+    console.log('PR merged.');
+  } else {
+    // The merge closes the PR, so a failure in any later step lands here on the
+    // next run. Carry on with whichever steps are still outstanding.
+    if (tagExists(releaseTag) && githubReleaseExists(releaseTag) && integrationContainsDeploy()) {
+      throw new Error(`No open release PR, and ${releaseTag} is already complete. Run "prep" to start the next release.`);
+    }
+
+    console.log(`PR #${releasePR.number} for ${releaseTag} is already merged; resuming the remaining steps.`);
+    console.log('');
+
+    if (dryRun) {
+      console.log('Dry run complete. No changes made.');
+      return;
+    }
   }
-
-  console.log(`Version:    ${version}`);
-  console.log(`Tag:        ${releaseTag}`);
-  console.log('Pre-flight: all clear');
-  console.log('');
-
-  if (dryRun) {
-    console.log('Dry run complete. No changes made.');
-    return;
-  }
-
-  // 1. Squash merge the PR — no --subject, so GitHub uses the PR title and appends
-  //    " (#N)". Only the auto-generated body is stripped.
-  console.log(`Squash-merging PR #${pr.number}...`);
-  gh(['pr', 'merge', String(pr.number), '--repo', REPO, '--squash', '--body', '']);
-  console.log('PR merged.');
 
   // 2. Sync main from remote
   git(['checkout', DEPLOY_BRANCH]);
   git(['pull', 'origin', DEPLOY_BRANCH]);
   console.log(`Synced ${DEPLOY_BRANCH}.`);
 
+  // The squash must have carried dev's tree onto main. Anything else means the
+  // merge did not produce the reviewed content, so stop before tagging it.
+  const contentDiff = git(['diff', '--stat', DEPLOY_BRANCH, INTEGRATION_BRANCH]);
+  if (contentDiff) {
+    throw new Error(
+      `${DEPLOY_BRANCH} and ${INTEGRATION_BRANCH} have different content after the release PR merged:\n${contentDiff}\n` +
+        `Resolve the difference before tagging or resetting ${INTEGRATION_BRANCH}.`,
+    );
+  }
+  console.log(`${DEPLOY_BRANCH} and ${INTEGRATION_BRANCH} content trees match.`);
+
   // 3. Create annotated tag and push
-  git(['tag', '-a', releaseTag, '-m', `${APP_NAME} ${version}`]);
+  if (tagExists(releaseTag)) {
+    console.log(`Tag ${releaseTag} already exists.`);
+  } else {
+    git(['tag', '-a', releaseTag, '-m', `${APP_NAME} ${version}`]);
+  }
   git(['push', 'origin', releaseTag]);
-  console.log(`Tag ${releaseTag} pushed.`);
+  console.log(`Tag ${releaseTag} is on origin.`);
 
   // 4. Create GitHub release with the changelog section as notes
-  const releaseNotes = releasedSection(await readChangelog(), version);
-  gh(['release', 'create', releaseTag, '--repo', REPO, '--title', releaseTag, '--notes', releaseNotes || `${APP_NAME} ${version}`]);
-  console.log(`GitHub release ${releaseTag} created.`);
+  if (githubReleaseExists(releaseTag)) {
+    console.log(`GitHub release ${releaseTag} already exists.`);
+  } else {
+    const releaseNotes = releasedSection(await readChangelog(), version);
+    gh(['release', 'create', releaseTag, '--repo', REPO, '--title', releaseTag, '--notes', releaseNotes || `${APP_NAME} ${version}`]);
+    console.log(`GitHub release ${releaseTag} created.`);
+  }
 
   // 5. Reset dev to main and force push
   git(['checkout', INTEGRATION_BRANCH]);
-  git(['reset', '--hard', DEPLOY_BRANCH]);
-  git(['push', '--force-with-lease', 'origin', INTEGRATION_BRANCH]);
-  console.log(`Reset ${INTEGRATION_BRANCH} to ${DEPLOY_BRANCH} and force-pushed.`);
+  if (integrationContainsDeploy()) {
+    console.log(`${INTEGRATION_BRANCH} already carries ${DEPLOY_BRANCH}.`);
+  } else {
+    git(['reset', '--hard', DEPLOY_BRANCH]);
+    git(['push', '--force-with-lease', 'origin', INTEGRATION_BRANCH]);
+    console.log(`Reset ${INTEGRATION_BRANCH} to ${DEPLOY_BRANCH} and force-pushed.`);
+  }
 
   console.log('');
   console.log(`Release ${version} complete.`);
