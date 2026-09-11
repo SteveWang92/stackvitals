@@ -24,8 +24,7 @@ Typical tracked apps look like:
 - The dashboard itself (it can track its own Supabase project and deployment).
 
 Scope is status, cost, and basic aggregate usage for a single owner's projects. Tracked apps
-stay on their existing hosting; low cost is preferred over high-frequency monitoring. Version
-`1.0.0` was the first baseline release.
+stay on their existing hosting; low cost is preferred over high-frequency monitoring.
 
 ## Naming
 
@@ -139,7 +138,7 @@ Implemented adapters:
 - AWS app backend (watched app): collect Cognito user-pool availability and estimated user count plus each DynamoDB table's status, item count, and size, for apps whose auth/data layer is AWS primitives rather than a managed platform. `Describe*` calls only — the same count-only boundary the Supabase aggregate adapter keeps. A project opts in with `cognitoUserPoolId` / `dynamoDbTables`, and `awsBackendRegion` covers a backend in a different region from the Amplify app fronting it.
 - Supabase (watched app): call a count-only aggregate RPC in the app's own project (see `docs/examples/app-aggregate-rpc.sql`) so operational counts arrive without raw data.
 - Supabase (hub self-health): collect project status for the dashboard's own Supabase project, selected by the `hubSupabase` config flag.
-- Resend: collect sending-domain verification status and API health. Aggregate delivery counts are **not collectable** within this project's boundaries and have been removed: Resend exposes no analytics/statistics endpoint, `GET /emails` returns raw per-message rows (recipient addresses, subjects) with no date or tag filter, and the only documented aggregate path is streaming webhook events into a self-run database, which needs an always-on receiver. Both conflict with the non-goals above.
+- Resend: collect sending-domain verification status and API health. Aggregate delivery counts are **not collectable** within this project's boundaries and are not collected: Resend exposes no analytics/statistics endpoint, `GET /emails` returns raw per-message rows (recipient addresses, subjects) with no date or tag filter, and the only documented aggregate path is streaming webhook events into a self-run database, which needs an always-on receiver. Both conflict with the non-goals above.
 - OpenAI: collect aggregate organization API usage by API key/model plus cost totals without prompts, responses, files, user identifiers, or request payloads.
 - GitHub Actions: collect workflow status, CI failures, scheduled-run health, and runtime minutes from workflow run duration. Projects deployed by a GitHub Actions workflow (e.g. GitHub Pages) can name that workflow via `githubDeployWorkflow`; its latest run is reported as the project's deploy status, the same role Amplify metrics play for Amplify-hosted projects.
 - Cloudflare: collect zone status, paused state, relevant DNS record presence/counts, registrar name, and expiration days when the account exposes registrar data. For projects deployed on Cloudflare Pages, set `cloudflarePagesProject` in the collector config to report the latest production deployment status — a third deploy-status source alongside Amplify and GitHub Actions.
