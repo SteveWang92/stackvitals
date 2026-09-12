@@ -89,6 +89,6 @@ General commit, branch, reuse, and working rules live in the user-global `~/.cla
 - Releases use `scripts/release.mjs` through the active release skill. The script is the
   authoritative implementation for version fields and repository-specific checks; the
   shared `prep` / `reversion` / `ship` workflow lives only in Steve's global guidance.
-- `CHANGELOG.md` follows the changelog rules in Steve's global `CLAUDE.md`, which is where they are explained: user-facing results only, one entry to one line, Keep a Changelog categories in order.
+- `CHANGELOG.md` follows the changelog rules in Steve's global `CLAUDE.md`.
 - Two differences here. StackVitals is public and self-hosted, so an entry may carry a second sentence when it tells a self-hoster what they must **do** — apply a migration, add an IAM permission, change a config field — but never to explain the reasoning; such an entry wraps to the file's line width, since the one-line rule is about carrying one result, not about a character count. And the bottom compare links are left for `release:ship` to maintain.
 - This folder is a standalone project; do not touch `D:\Projects\Integration-Dashboard`.
