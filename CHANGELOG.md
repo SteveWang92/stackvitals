@@ -9,6 +9,14 @@ below as its notes.
 
 ## [Unreleased]
 
+### Security
+
+- Update the docs-site dependencies to patch a critical Astro image-optimization remote code execution, an Astro
+  base-path authorization bypass, and high-severity `sharp`, `svgo`, and `js-yaml` vulnerabilities.
+- Update the application build and test dependencies to patch high-severity `fast-uri` and `js-yaml`
+  vulnerabilities and a moderate `@vitest/mocker` path traversal.
+
+
 ## [1.7.8] - 2026-08-28
 
 ### Added
