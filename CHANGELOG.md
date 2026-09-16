@@ -9,6 +9,16 @@ below as its notes.
 
 ## [Unreleased]
 
+## [1.7.9] - 2026-09-16
+
+### Security
+
+- Update the docs-site dependencies to patch a critical Astro image-optimization remote code execution, an Astro
+  base-path authorization bypass, and high-severity `sharp`, `svgo`, and `js-yaml` vulnerabilities.
+- Update the application build and test dependencies to patch high-severity `fast-uri` and `js-yaml`
+  vulnerabilities and a moderate `@vitest/mocker` path traversal.
+
+
 ## [1.7.8] - 2026-08-28
 
 ### Added
@@ -220,7 +230,8 @@ source projects.
   to the GitHub Actions job summary.
 - Self-hosting guide and contributing guide (including how to add a new adapter).
 
-[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.7.8...HEAD
+[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.7.9...HEAD
+[1.7.9]: https://github.com/SteveWang92/stackvitals/compare/v1.7.8...v1.7.9
 [1.7.8]: https://github.com/SteveWang92/stackvitals/compare/v1.7.7...v1.7.8
 [1.7.7]: https://github.com/SteveWang92/stackvitals/compare/v1.7.6...v1.7.7
 [1.7.6]: https://github.com/SteveWang92/stackvitals/compare/v1.7.5...v1.7.6

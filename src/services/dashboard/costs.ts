@@ -39,9 +39,7 @@ export function latestCostRows(rows: CostSnapshotRow[]): PositiveCostSnapshotRow
     }
   }
 
-  return Array.from(latest.values()).filter(
-    (row): row is PositiveCostSnapshotRow => row.amount_usd !== null && row.amount_usd > 0,
-  );
+  return Array.from(latest.values()).filter((row): row is PositiveCostSnapshotRow => row.amount_usd !== null && row.amount_usd > 0);
 }
 
 export function costTotal(rows: CostSnapshotRow[]): number | null {

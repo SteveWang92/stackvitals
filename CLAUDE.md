@@ -74,8 +74,9 @@ Supabase Postgres, schema in `supabase/migrations/*.sql` (applied in numeric ord
 
 - **Amplify deploys from `main`.** The scheduled collector GitHub Action (`.github/workflows/collect.yml`) also runs only from `main` (guarded by `if: github.ref == 'refs/heads/main'`), on a daily cron. Its secrets are the canonical list of what each collector needs.
 - The docs/landing site in `site/` deploys to GitHub Pages at **stackvitals.dev** via `.github/workflows/deploy-site.yml`. A demo-mode build (`VITE_DEMO_MODE=true`, fictional data, no auth) is hosted at **stackvitals.app**.
-- **Checkout path constraint:** `npm run build` inside `site/` fails on a checkout whose absolute path contains an apostrophe — Expressive Code embeds the build path into a generated JS string and the apostrophe breaks the parse. Keep the local clone under an apostrophe-free path (it now lives under `D:\Projects\steve-projects\`). It never affected GitHub runners, and `ci.yml` builds `site/` on every PR regardless.
-- **`vite-node` is a direct devDependency, pinned to 6.x.** `collect:status` runs the collectors through it, and it used to be available only because Vitest 2 depended on it — Vitest 4 dropped it, which would have silently broken the daily collector. 6.x requires Vite 8, so keep it in lockstep with Vite.
+- **Checkout path constraint:** `npm run build` inside `site/` fails on a checkout whose absolute path contains an apostrophe — Expressive Code embeds the build path into a generated JS string and the apostrophe breaks the parse. Keep the local clone under an apostrophe-free path such as `D:\Projects\steve-projects\`. GitHub runners are unaffected, and `ci.yml` builds `site/` on every PR regardless.
+- **`vite-node` is a direct devDependency, pinned to 6.x.** `collect:status` runs the collectors through it, and Vitest does not bring it in, so removing it silently breaks the daily collector. 6.x requires Vite 8, so keep it in lockstep with Vite.
+- Planned work and its progress live in GitHub issues.
 - Steve's production mirror and its deploy trigger are owned by the shared projects-root `CLAUDE.md`. This repository owns the manual `Mirror to project-status-hub` workflow; never do feature work or commit in the mirror repository.
 - Keep it low-cost by default: no always-on services, paid monitoring, or extra hosting unless the plan or user explicitly calls for it.
 
@@ -88,6 +89,6 @@ General commit, branch, reuse, and working rules live in the user-global `~/.cla
 - Releases use `scripts/release.mjs` through the active release skill. The script is the
   authoritative implementation for version fields and repository-specific checks; the
   shared `prep` / `reversion` / `ship` workflow lives only in Steve's global guidance.
-- `CHANGELOG.md` follows the changelog rules in Steve's global `CLAUDE.md`, which is where they are explained: user-facing results only, one entry to one line, Keep a Changelog categories in order.
+- `CHANGELOG.md` follows the changelog rules in Steve's global `CLAUDE.md`.
 - Two differences here. StackVitals is public and self-hosted, so an entry may carry a second sentence when it tells a self-hoster what they must **do** — apply a migration, add an IAM permission, change a config field — but never to explain the reasoning; such an entry wraps to the file's line width, since the one-line rule is about carrying one result, not about a character count. And the bottom compare links are left for `release:ship` to maintain.
 - This folder is a standalone project; do not touch `D:\Projects\Integration-Dashboard`.
