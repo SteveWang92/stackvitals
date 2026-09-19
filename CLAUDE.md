@@ -32,7 +32,7 @@ npm run demo:screenshots # 1080p demo screenshots via scripts/demo-screenshots/c
 
 npm run release:prep     # bump, finalize changelog, push dev, open/refresh release PR
 npm run release:reversion -- X.Y.Z  # change a prepped release's version (files left uncommitted)
-npm run release:ship     # verify the PR can merge, then squash-merge, tag, GitHub release
+npm run release:ship     # verify the PR can merge, then merge it, tag, GitHub release, fast-forward dev
 ```
 
 Run a single test file: `npx vitest run src/tests/services/dashboardData.test.ts`. Filter by name: `npx vitest run -t "openai"`. There is no Vitest config file and globals are off — every test imports `describe`, `it`, `expect`, and `vi` from `vitest` directly. Component tests under `src/tests/components/` opt into a DOM with a `// @vitest-environment jsdom` pragma on the first line rather than a config file, use `@testing-library/react`, and assert with plain DOM checks (`container.innerHTML`, `getAttribute`, `textContent`) — jest-dom's matchers would need a setup file, which would mean adding the config this repo does without.
@@ -86,9 +86,10 @@ General commit, branch, reuse, and working rules live in the user-global `~/.cla
 
 - Add mocked tests for provider adapters before relying on live provider APIs.
 - Tests live under `src/tests/` mirroring the source tree — do **not** colocate `*.test.ts` beside implementation files.
-- Releases use `scripts/release.mjs` through the active release skill. The script is the
-  authoritative implementation for version fields and repository-specific checks; the
-  shared `prep` / `reversion` / `ship` workflow lives only in Steve's global guidance.
+- Releases run through the globally installed `changedeck` CLI via the active release skill;
+  the release scripts above call it. `changedeck.json` lists the version fields and the
+  post-release reminder; the shared `prep` / `reversion` / `ship` workflow lives only in
+  Steve's global guidance.
 - `CHANGELOG.md` follows the changelog rules in Steve's global `CLAUDE.md`.
 - Two differences here. StackVitals is public and self-hosted, so an entry may carry a second sentence when it tells a self-hoster what they must **do** — apply a migration, add an IAM permission, change a config field — but never to explain the reasoning; such an entry wraps to the file's line width, since the one-line rule is about carrying one result, not about a character count. And the bottom compare links are left for `release:prep` to maintain.
 - This folder is a standalone project; do not touch `D:\Projects\Integration-Dashboard`.
