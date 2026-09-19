@@ -1,0 +1,9 @@
+{
+  "appName": "StackVitals",
+  "repo": "SteveWang92/stackvitals",
+  "versionFiles": [
+    { "path": "package.json", "type": "json", "key": "version" },
+    { "path": "package-lock.json", "type": "npm-lock", "packages": [""] }
+  ],
+  "afterShip": "Run the \"Mirror to project-status-hub\" workflow if the hub should get this release."
+}
