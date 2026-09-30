@@ -9,6 +9,8 @@ below as its notes.
 
 ## [Unreleased]
 
+## [1.7.10] - 2026-09-30
+
 ### Changed
 
 - The README links to the live demo and documentation site and shows license and latest-release badges.
@@ -234,7 +236,8 @@ source projects.
   to the GitHub Actions job summary.
 - Self-hosting guide and contributing guide (including how to add a new adapter).
 
-[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.7.9...HEAD
+[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.7.10...HEAD
+[1.7.10]: https://github.com/SteveWang92/stackvitals/compare/v1.7.9...v1.7.10
 [1.7.9]: https://github.com/SteveWang92/stackvitals/compare/v1.7.8...v1.7.9
 [1.7.8]: https://github.com/SteveWang92/stackvitals/compare/v1.7.7...v1.7.8
 [1.7.7]: https://github.com/SteveWang92/stackvitals/compare/v1.7.6...v1.7.7
