@@ -9,6 +9,10 @@ below as its notes.
 
 ## [Unreleased]
 
+### Changed
+
+- The README links to the live demo and documentation site and shows license and latest-release badges.
+
 ## [1.7.9] - 2026-09-16
 
 ### Security
