@@ -33,11 +33,11 @@
 !/.prettierignore
 !/.prettierrc.json
 !/CHANGELOG.md
-!/AGENTS.md
 !/CONTRIBUTING.md
 !/LICENSE
 !/README.md
 !/SECURITY.md
+!/changedeck.json
 !/commitlint.config.cjs
 !/eslint.config.js
 !/index.html
