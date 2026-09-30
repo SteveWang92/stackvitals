@@ -20,7 +20,8 @@ This page is adapted from the repo's
 - **Commits**: [Conventional Commits](https://www.conventionalcommits.org/), one line, no body
   unless there's a reason. Enforced by commitlint + Husky.
 - **Tests**: live under `src/tests/`, mirroring the source tree — do not colocate `*.test.ts`
-  beside implementation files. Vitest globals are enabled.
+  beside implementation files. Vitest globals are off, so every test imports `describe`, `it`,
+  `expect`, and `vi` from `vitest`.
 - **Formatting/linting**: `npm run format` (Prettier, single quotes, `printWidth: 140`),
   `npm run lint` (ESLint). Both should pass before opening a PR.
 - **Build**: `npm run build` should pass.

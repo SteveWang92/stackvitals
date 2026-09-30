@@ -11,8 +11,10 @@ as a fork — open an issue first if you're unsure.
   unless there's a reason (`feat: add cloudflare domains adapter`, `fix: handle empty github
   runs`). Enforced by commitlint + Husky on commit.
 - **Tests**: live under `src/tests/`, mirroring the source tree — do not colocate `*.test.ts`
-  beside implementation files. Run with `npm test` (vitest, globals enabled — no need to import
-  `describe`/`it`/`expect`).
+  beside implementation files. Run with `npm test` (vitest). There is no vitest config file and
+  globals are **off**, so import `describe`, `it`, `expect`, and `vi` from `vitest` in every test.
+  Component tests additionally start with a `// @vitest-environment jsdom` pragma and assert with
+  plain DOM checks — jest-dom's matchers would require a setup file, and therefore a config file.
 - **Formatting/linting**: `npm run format` (Prettier, single quotes, `printWidth: 140`),
   `npm run lint` (ESLint). Both should pass before you open a PR.
 - **Build**: `npm run build` (`tsc -b` then `vite build`) should pass.

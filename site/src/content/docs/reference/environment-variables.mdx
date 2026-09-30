@@ -39,6 +39,8 @@ These are used by `npm run collect:status` and the GitHub Actions workflow.
 | Variable | Required | Purpose |
 |---|---|---|
 | `PROJECTS_CONFIG_JSON` | CI only | Collector config JSON (used by the GitHub Actions workflow) |
+| `VITE_SUPABASE_URL` | Yes | Dashboard Supabase URL the collector syncs inventory to and writes results into |
+| `VITE_SUPABASE_ANON_KEY` | Optional | Enables the hub's own Supabase health check, together with a `hubSupabase` project |
 | `HUB_SUPABASE_SECRET_KEY` | Yes | Dashboard's `sb_secret_` key for collector inventory sync and writes |
 
 ### AWS
