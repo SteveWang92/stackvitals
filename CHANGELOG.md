@@ -9,6 +9,8 @@ below as its notes.
 
 ## [Unreleased]
 
+## [1.7.11] - 2026-09-30
+
 ### Fixed
 
 - The contributing guide and project site now state that Vitest globals are off, and the environment variable reference lists the dashboard Supabase variables the collector needs.
@@ -240,7 +242,8 @@ source projects.
   to the GitHub Actions job summary.
 - Self-hosting guide and contributing guide (including how to add a new adapter).
 
-[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.7.10...HEAD
+[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.7.11...HEAD
+[1.7.11]: https://github.com/SteveWang92/stackvitals/compare/v1.7.10...v1.7.11
 [1.7.10]: https://github.com/SteveWang92/stackvitals/compare/v1.7.9...v1.7.10
 [1.7.9]: https://github.com/SteveWang92/stackvitals/compare/v1.7.8...v1.7.9
 [1.7.8]: https://github.com/SteveWang92/stackvitals/compare/v1.7.7...v1.7.8
