@@ -9,6 +9,10 @@ below as its notes.
 
 ## [Unreleased]
 
+### Fixed
+
+- The contributing guide and project site now state that Vitest globals are off, and the environment variable reference lists the dashboard Supabase variables the collector needs.
+
 ## [1.7.10] - 2026-09-30
 
 ### Changed

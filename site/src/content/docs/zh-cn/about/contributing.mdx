@@ -15,7 +15,7 @@ import { Aside } from '@astrojs/starlight/components';
 ## 仓库约定
 
 - **提交**: [约定式提交](https://www.conventionalcommits.org/)，单行，除非有特殊原因否则不写正文。由 commitlint + Husky 强制执行。
-- **测试**: 放在 `src/tests/` 下，镜像源代码树——不要将 `*.test.ts` 与实现文件放在一起。已启用 Vitest 全局变量。
+- **测试**: 放在 `src/tests/` 下，镜像源代码树——不要将 `*.test.ts` 与实现文件放在一起。Vitest 全局变量未启用，每个测试都需从 `vitest` 导入 `describe`、`it`、`expect` 和 `vi`。
 - **格式化/代码检查**: `npm run format`（Prettier，单引号，`printWidth: 140`），`npm run lint`（ESLint）。提交 PR 前两者都应通过。
 - **构建**: `npm run build` 应该通过。
 - **CI**: `.github/workflows/ci.yml` 在每个 PR 上运行测试、代码检查和构建。
