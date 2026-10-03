@@ -189,9 +189,6 @@ is an alert the owner learns to ignore — so warnings stay confined to the dash
 panel and the workflow step summary. Snapshots are recorded before the exit code is set, so a
 failing run still stores everything it collected.
 
-Development flow: feature work happens on short-lived `feat/*` branches that merge into `dev` for
-a combined manual check; the owner merges `dev` into `main` to trigger the production deploy.
-
 The project documentation site (`site/`) deploys separately to GitHub Pages via
 `.github/workflows/deploy-site.yml`, triggered by pushes to `main` that change `site/**` or
 `docs/screenshots/**`.

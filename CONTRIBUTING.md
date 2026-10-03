@@ -7,6 +7,8 @@ as a fork — open an issue first if you're unsure.
 
 ## Repo conventions
 
+- **Branches**: open pull requests against `dev`; they are squash-merged there, and `main`
+  receives only reviewed releases from `dev`.
 - **Commits**: [Conventional Commits](https://www.conventionalcommits.org/), one line, no body
   unless there's a reason (`feat: add cloudflare domains adapter`, `fix: handle empty github
   runs`). Enforced by commitlint + Husky on commit.
