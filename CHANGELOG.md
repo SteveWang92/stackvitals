@@ -9,6 +9,10 @@ below as its notes.
 
 ## [Unreleased]
 
+### Security
+
+- Update the docs-site dependencies past a high-severity `devalue` serialization advisory.
+
 ## [1.7.11] - 2026-09-30
 
 ### Fixed
