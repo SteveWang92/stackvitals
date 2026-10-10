@@ -72,6 +72,7 @@ Supabase Postgres, schema in `supabase/migrations/*.sql` (applied in numeric ord
 
 ## Deployment & runtime
 
+- **Supabase applies migrations itself.** The hub's Supabase project is connected to this repository through Supabase's GitHub integration, which applies new `supabase/migrations/` files when they reach `main`; never push migrations to it by hand.
 - **Amplify deploys from `main`.** The scheduled collector GitHub Action (`.github/workflows/collect.yml`) also runs only from `main` (guarded by `if: github.ref == 'refs/heads/main'`), on a daily cron. Its secrets are the canonical list of what each collector needs.
 - The docs/landing site in `site/` deploys to GitHub Pages at **stackvitals.dev** via `.github/workflows/deploy-site.yml`. A demo-mode build (`VITE_DEMO_MODE=true`, fictional data, no auth) is hosted at **stackvitals.app**.
 - **Security headers:** `customHttp.yml` (Amplify) and `public/_headers` (Cloudflare Pages) carry the same Content-Security-Policy; its `connect-src` allows only `*.supabase.co`, so a new browser-side endpoint must be added to both.
