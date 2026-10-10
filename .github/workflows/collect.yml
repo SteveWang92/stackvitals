@@ -8,6 +8,7 @@ on:
 permissions:
   actions: read
   contents: read
+  id-token: write
 
 jobs:
   collect-status:
@@ -40,14 +41,24 @@ jobs:
             echo "PROJECTS_CONFIG_PATH=projects.example.json" >> "$GITHUB_ENV"
           fi
 
+      # With the AWS_ROLE_ARN repository variable set, AWS access comes from short-lived
+      # GitHub OIDC credentials; otherwise the AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY
+      # secrets are used.
+      - name: Assume AWS role
+        if: vars.AWS_ROLE_ARN != ''
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
       # This env block is deployment config, not code: it must pass through every env
       # var name that the collector config's `${...}` placeholders reference. Forks edit
       # this block (and repository secrets) to match their own projects.config.json.
       - name: Run configured collectors
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID || secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY || secrets.AWS_SECRET_ACCESS_KEY }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           HUB_SUPABASE_SECRET_KEY: ${{ secrets.HUB_SUPABASE_SECRET_KEY }}

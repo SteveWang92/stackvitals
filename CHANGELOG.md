@@ -9,6 +9,11 @@ below as its notes.
 
 ## [Unreleased]
 
+### Added
+
+- The collector workflow can assume an AWS role through GitHub OIDC instead of access keys.
+  Set the `AWS_ROLE_ARN` repository variable to use it.
+
 ### Security
 
 - Update the docs-site dependencies past a high-severity `devalue` serialization advisory.
