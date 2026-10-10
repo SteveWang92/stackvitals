@@ -12,7 +12,7 @@ below as its notes.
 ### Security
 
 - Update the docs-site dependencies past a high-severity `devalue` serialization advisory.
-- Send anti-framing, referrer and permissions security headers on every page.
+- Enforce a content security policy and send security headers on every page.
 
 ## [1.7.11] - 2026-09-30
 

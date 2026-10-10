@@ -74,6 +74,7 @@ Supabase Postgres, schema in `supabase/migrations/*.sql` (applied in numeric ord
 
 - **Amplify deploys from `main`.** The scheduled collector GitHub Action (`.github/workflows/collect.yml`) also runs only from `main` (guarded by `if: github.ref == 'refs/heads/main'`), on a daily cron. Its secrets are the canonical list of what each collector needs.
 - The docs/landing site in `site/` deploys to GitHub Pages at **stackvitals.dev** via `.github/workflows/deploy-site.yml`. A demo-mode build (`VITE_DEMO_MODE=true`, fictional data, no auth) is hosted at **stackvitals.app**.
+- **Security headers:** `customHttp.yml` (Amplify) and `public/_headers` (Cloudflare Pages) carry the same Content-Security-Policy; its `connect-src` allows only `*.supabase.co`, so a new browser-side endpoint must be added to both.
 - **Checkout path constraint:** `npm run build` inside `site/` fails on a checkout whose absolute path contains an apostrophe — Expressive Code embeds the build path into a generated JS string and the apostrophe breaks the parse. Keep the local clone under an apostrophe-free path such as `D:\Projects\steve-projects\`. GitHub runners are unaffected, and `ci.yml` builds `site/` on every PR regardless.
 - **`vite-node` is a direct devDependency, pinned to 6.x.** `collect:status` runs the collectors through it, and Vitest does not bring it in, so removing it silently breaks the daily collector. 6.x requires Vite 8, so keep it in lockstep with Vite.
 - Planned work and its progress live in GitHub issues.
