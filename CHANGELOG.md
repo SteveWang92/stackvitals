@@ -9,6 +9,8 @@ below as its notes.
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-10-17
+
 ### Added
 
 - The collector workflow can assume an AWS role through GitHub OIDC instead of access keys.
@@ -252,7 +254,8 @@ source projects.
   to the GitHub Actions job summary.
 - Self-hosting guide and contributing guide (including how to add a new adapter).
 
-[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.7.11...HEAD
+[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.8.0...HEAD
+[1.8.0]: https://github.com/SteveWang92/stackvitals/compare/v1.7.11...v1.8.0
 [1.7.11]: https://github.com/SteveWang92/stackvitals/compare/v1.7.10...v1.7.11
 [1.7.10]: https://github.com/SteveWang92/stackvitals/compare/v1.7.9...v1.7.10
 [1.7.9]: https://github.com/SteveWang92/stackvitals/compare/v1.7.8...v1.7.9
