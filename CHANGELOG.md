@@ -13,13 +13,12 @@ below as its notes.
 
 ### Added
 
-- The collector workflow can assume an AWS role through GitHub OIDC instead of access keys.
-  Set the `AWS_ROLE_ARN` repository variable to use it.
+- The collector workflow can assume an AWS role through GitHub OIDC.
 
 ### Security
 
 - Update the docs-site dependencies past a high-severity `devalue` serialization advisory.
-- Enforce a content security policy and send security headers on every page.
+- Amplify and Cloudflare Pages deployments send a content security policy and security headers.
 
 ## [1.7.11] - 2026-09-30
 

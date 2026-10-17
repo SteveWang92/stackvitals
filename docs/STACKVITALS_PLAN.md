@@ -70,7 +70,8 @@ These boundaries are deliberate and hold across the project:
 
 Supabase is the backend database and auth layer for this tool. The frontend is a static
 React/Vite app that can be deployed cheaply on any static host. There are no always-on servers:
-collection runs on a schedule plus manual refresh.
+collection runs on a schedule plus manual refresh. Amplify and Cloudflare Pages deployments
+send a Content-Security-Policy whose `connect-src` limits the browser to Supabase origins.
 
 High-level structure:
 

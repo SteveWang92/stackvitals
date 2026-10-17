@@ -50,7 +50,7 @@ These are used by `npm run collect:status` and the GitHub Actions workflow.
 | `AWS_REGION` | For AWS adapters | AWS region |
 | `AWS_ACCESS_KEY_ID` | For AWS adapters | IAM access key |
 | `AWS_SECRET_ACCESS_KEY` | For AWS adapters | IAM secret key |
-| `AWS_ROLE_ARN` | Optional, GitHub Actions variable | IAM role assumed through GitHub OIDC instead of the access key pair |
+| `AWS_ROLE_ARN` | Optional, GitHub Actions variable | IAM role assumed through GitHub OIDC instead of the access key pair; needs `AWS_REGION` and an IAM OIDC provider for GitHub |
 
 ### Provider-specific
 

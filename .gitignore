@@ -38,8 +38,8 @@
 !/README.md
 !/SECURITY.md
 !/changedeck.json
-!/customHttp.yml
 !/commitlint.config.cjs
+!/customHttp.yml
 !/eslint.config.js
 !/index.html
 !/package.json

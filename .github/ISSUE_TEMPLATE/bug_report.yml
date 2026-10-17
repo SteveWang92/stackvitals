@@ -61,7 +61,7 @@ body:
     attributes:
       label: Version
       description: Release tag, or the commit SHA if you are running from a branch.
-      placeholder: v1.7.11
+      placeholder: vX.Y.Z
     validations:
       required: true
 
