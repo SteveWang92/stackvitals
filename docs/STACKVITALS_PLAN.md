@@ -70,7 +70,8 @@ These boundaries are deliberate and hold across the project:
 
 Supabase is the backend database and auth layer for this tool. The frontend is a static
 React/Vite app that can be deployed cheaply on any static host. There are no always-on servers:
-collection runs on a schedule plus manual refresh.
+collection runs on a schedule plus manual refresh. Amplify and Cloudflare Pages deployments
+send a Content-Security-Policy whose `connect-src` limits the browser to Supabase origins.
 
 High-level structure:
 
@@ -188,9 +189,6 @@ email. Warning-level results deliberately do not fail the run — a known warnin
 is an alert the owner learns to ignore — so warnings stay confined to the dashboard's attention
 panel and the workflow step summary. Snapshots are recorded before the exit code is set, so a
 failing run still stores everything it collected.
-
-Development flow: feature work happens on short-lived `feat/*` branches that merge into `dev` for
-a combined manual check; the owner merges `dev` into `main` to trigger the production deploy.
 
 The project documentation site (`site/`) deploys separately to GitHub Pages via
 `.github/workflows/deploy-site.yml`, triggered by pushes to `main` that change `site/**` or

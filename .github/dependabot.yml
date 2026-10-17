@@ -12,7 +12,7 @@ updates:
     groups:
       github-actions:
         patterns:
-          - "*"
+          - '*'
     commit-message:
       prefix: chore
       include: scope
@@ -28,18 +28,23 @@ updates:
     cooldown:
       default-days: 21
       semver-major-days: 30
+    # @types/node tracks the Node major pinned in .nvmrc.
+    ignore:
+      - dependency-name: '@types/node'
+        update-types:
+          - version-update:semver-major
     groups:
       npm-production:
         dependency-type: production
         patterns:
-          - "*"
+          - '*'
         update-types:
           - minor
           - patch
       npm-development:
         dependency-type: development
         patterns:
-          - "*"
+          - '*'
         update-types:
           - minor
           - patch
@@ -62,14 +67,14 @@ updates:
       npm-production:
         dependency-type: production
         patterns:
-          - "*"
+          - '*'
         update-types:
           - minor
           - patch
       npm-development:
         dependency-type: development
         patterns:
-          - "*"
+          - '*'
         update-types:
           - minor
           - patch

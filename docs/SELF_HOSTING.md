@@ -140,9 +140,11 @@ project.
   `"supabaseUrl": "${MY_APP_SUPABASE_URL}"`); create a secret per referenced variable and pass
   it through in the workflow env block in `.github/workflows/collect.yml` (or your scheduler's
   equivalent).
-- `AWS_REGION`
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
+- `AWS_REGION` (also required by the OIDC role step)
+- `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`, or instead an `AWS_ROLE_ARN` repository
+  variable naming an IAM role the workflow assumes through GitHub OIDC. The AWS account needs
+  `token.actions.githubusercontent.com` registered as an IAM OIDC identity provider, and the
+  role's trust policy must allow this repository's `main` branch
 - `RESEND_API_KEY` (the sending domain comes from `resources.resendDomain` in the collector
   config, not an env var)
 - `OPENAI_ADMIN_API_KEY`
@@ -289,7 +291,12 @@ Output directory:
 dist
 ```
 
-Any static host works identically — Amplify, Vercel, Netlify, Cloudflare Pages. Optional first
+Any static host serves the build — Amplify, Vercel, Netlify, Cloudflare Pages. Amplify
+(`customHttp.yml`) and Cloudflare Pages (`public/_headers`) also send a Content-Security-Policy
+and security headers; on other hosts, configure equivalent headers yourself. The policy's
+`connect-src` allows only `https://*.supabase.co` and `wss://*.supabase.co`: with a Supabase
+custom domain or self-hosted Supabase, add that origin to `connect-src` in both files, or the
+browser blocks every Supabase request. Optional first
 layer: most hosts offer branch-level access control/password protection; keep Supabase Auth and
 RLS regardless.
 

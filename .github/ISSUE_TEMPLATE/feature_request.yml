@@ -1,0 +1,42 @@
+name: Feature request
+description: Suggest a capability, a dashboard view, or a new provider adapter.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        StackVitals is deliberately small and single-owner. Some things are permanent non-goals —
+        copying raw application data out of watched apps, always-on servers or paid monitoring
+        services, requiring write access to watched apps, and broad multi-user administration.
+        `docs/STACKVITALS_PLAN.md` records the full list.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What operational question can you not answer today?
+      description: Describe the situation, not the implementation — it usually suggests a simpler fix than the one you had in mind.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like it to do?
+    validations:
+      required: true
+
+  - type: input
+    id: provider
+    attributes:
+      label: Provider (for new adapters)
+      description: Which service, and which API endpoint exposes the data as an aggregate?
+      placeholder: Fly.io — GET /v1/apps returns per-app status
+
+  - type: checkboxes
+    id: boundaries
+    attributes:
+      label: Data boundaries
+      options:
+        - label: This needs only aggregate or operational data — no raw records from the watched app.
+        - label: This works with read-only credentials.
+        - label: This needs no always-on service (it can run in a scheduled job).

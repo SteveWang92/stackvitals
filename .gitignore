@@ -39,6 +39,7 @@
 !/SECURITY.md
 !/changedeck.json
 !/commitlint.config.cjs
+!/customHttp.yml
 !/eslint.config.js
 !/index.html
 !/package.json
