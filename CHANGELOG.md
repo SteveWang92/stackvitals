@@ -9,6 +9,22 @@ below as its notes.
 
 ## [Unreleased]
 
+### Changed
+
+- `collect:http` runs the collector's HTTP check, including bypass headers and `${ENV_VAR}` placeholders.
+- The hub Supabase health check uses `HUB_SUPABASE_SECRET_KEY`; collectors no longer read `VITE_SUPABASE_ANON_KEY`.
+- An `openAi.usageLookbackDays` above 31 now fails the collector run. Lower it to 31 or less.
+
+### Fixed
+
+- The collector refuses to write to the hub while running from `projects.example.json`.
+- OpenAI spend counts every OpenAI project that bills the same line item.
+- The daily spend chart no longer dips and spikes after a partially failed collection.
+
+### Security
+
+- Update the docs-site Astro dependency past a high-severity `http-cache-semantics` advisory.
+
 ## [1.8.0] - 2026-10-17
 
 ### Added

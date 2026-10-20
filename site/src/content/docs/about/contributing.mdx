@@ -25,7 +25,7 @@ This page is adapted from the repo's
 - **Formatting/linting**: `npm run format` (Prettier, single quotes, `printWidth: 140`),
   `npm run lint` (ESLint). Both should pass before opening a PR.
 - **Build**: `npm run build` should pass.
-- **CI**: `.github/workflows/ci.yml` runs test, lint, and build on every PR.
+- **CI**: `.github/workflows/ci.yml` runs test, lint, format check, and build on every PR.
 - Add mocked tests for provider adapters — never gate a PR on hitting a real external service.
 
 ## Adding a provider adapter

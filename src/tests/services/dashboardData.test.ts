@@ -133,6 +133,35 @@ describe('fetchDashboardData', () => {
     expect(data.lastMonthCostUsd).toBeNull();
   });
 
+  it('counts the same OpenAI line item once per OpenAI project', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-29T12:00:00.000Z'));
+
+    const openAiCost = (projectId: string, amountUsd: number) => ({
+      project_id: null,
+      service_name: 'gpt-4o, input',
+      period_start: '2026-06-01',
+      period_end: '2026-06-30',
+      amount_usd: amountUsd,
+      metadata: { source: 'openai_organization_costs', projectId },
+      collected_at: '2026-06-29T12:00:00.000Z',
+      providers: { key: 'openai', name: 'OpenAI' },
+    });
+    const client = createClient({
+      projects: [],
+      resources: [],
+      metric_snapshots: [],
+      cost_snapshots: [openAiCost('proj_a', 1.25), openAiCost('proj_b', 0.75)],
+      health_checks: [],
+      collector_runs: [],
+    });
+
+    const data = await fetchDashboardData(client as never);
+
+    expect(data.costs.map((cost) => cost.monthToDateUsd)).toEqual([1.25, 0.75]);
+    expect(data.openAiUsage.spendUsd).toBe(2);
+  });
+
   it('sums latest previous-month cost snapshots separately from current month', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-06-29T12:00:00.000Z'));
@@ -837,6 +866,25 @@ describe('buildMtdCostSeries', () => {
     expect(series).toEqual([
       { day: '2026-06-28', cumulativeUsd: 1.15 },
       { day: '2026-06-29', cumulativeUsd: 1.28 },
+    ]);
+  });
+
+  it('keeps a line that missed a collection day at its last amount', () => {
+    const series = buildMtdCostSeries(
+      [
+        cost('AWS Amplify', 0.64, '2026-06-27T12:00:00.000Z'),
+        cost('Amazon Route 53', 0.5, '2026-06-27T12:00:00.000Z'),
+        cost('AWS Amplify', 0.7, '2026-06-28T12:00:00.000Z'),
+        cost('AWS Amplify', 0.8, '2026-06-29T12:00:00.000Z'),
+        cost('Amazon Route 53', 0.6, '2026-06-29T12:00:00.000Z'),
+      ],
+      now,
+    );
+
+    expect(series.map((point) => [point.day, Number(point.cumulativeUsd.toFixed(2))])).toEqual([
+      ['2026-06-27', 1.14],
+      ['2026-06-28', 1.2],
+      ['2026-06-29', 1.4],
     ]);
   });
 

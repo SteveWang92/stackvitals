@@ -25,7 +25,7 @@ import { Aside, Steps } from '@astrojs/starlight/components';
 2. **添加 `src/collectors/providers/<name>.ts`**——纯适配器逻辑。接收一个类型化的客户端接口，将响应映射为 `CollectorAdapterResult` 格式。此处不使用 `fetch`、不构造 SDK 客户端、不读取环境变量。
 3. **添加 `src/collectors/liveClients/<name>.ts`**——该客户端接口的真正实现（实际的 API/SDK 调用，凭证作为普通参数传入）。
 4. **接入 `src/collectors/runConfiguredCollectors.ts`**——在凭证检查之后添加适配器，只有当所需的环境变量/配置字段存在时才将适配器加入运行。这个文件是唯一读取环境变量和配置的地方。
-5. **添加标签和图标**——在 `src/App.tsx` 中的 `providerLabels` / 图标映射中添加条目，使前端能正确显示你的提供商。
+5. **添加标签和图标**——在 `src/services/dashboard/rows.ts` 的 `providerLabels` 和 `src/components/providerIcon.ts` 的图标映射中添加条目，使前端能正确显示你的提供商。
 6. **添加模拟测试**——在 `src/tests/collectors/providers/<name>.test.ts` 中至少覆盖成功、部分成功/降级和错误三种情况，使用假客户端——CI 中不进行真正的网络调用。
 7. **记录凭证信息**——在
    [`docs/SELF_HOSTING.md`](https://github.com/SteveWang92/stackvitals/blob/main/docs/SELF_HOSTING.md)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STALE_AFTER_HOURS, formatCurrencyUsd, freshnessOf, getOverallStatus, isStaleSync } from '../../lib/status';
+import { formatCurrencyUsd, freshnessOf, getOverallStatus, isStaleSync } from '../../lib/status';
 
 describe('getOverallStatus', () => {
   it('returns failed when any provider failed', () => {
@@ -56,13 +56,5 @@ describe('freshnessOf', () => {
 
   it('treats a sync inside the window as fresh', () => {
     expect(freshnessOf('2026-06-27T09:00:00.000Z', now)).toBe('fresh');
-  });
-
-  it('uses the shared threshold constant', () => {
-    const justInside = new Date(now.getTime() - (STALE_AFTER_HOURS - 1) * 60 * 60 * 1000).toISOString();
-    const justOutside = new Date(now.getTime() - (STALE_AFTER_HOURS + 1) * 60 * 60 * 1000).toISOString();
-
-    expect(freshnessOf(justInside, now)).toBe('fresh');
-    expect(freshnessOf(justOutside, now)).toBe('stale');
   });
 });

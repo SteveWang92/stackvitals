@@ -1,4 +1,12 @@
+import { access, readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import type { ProjectSlug, ProviderKey } from '../types';
+
+export const EXAMPLE_CONFIG_PATH = 'projects.example.json';
+
+// The OpenAI usage and cost endpoints return at most 31 daily buckets per request.
+export const MAX_OPENAI_LOOKBACK_DAYS = 31;
 
 export interface ProjectCollectorConfig {
   slug: ProjectSlug;
@@ -145,6 +153,45 @@ export function resolveEnvPlaceholders<T>(value: T, env: Record<string, string |
   }
 
   return value;
+}
+
+/** `--config <path>` when given, else `projects.config.json` when present, else the example. */
+export async function configPathFromArgs(args: string[]): Promise<string> {
+  const explicit = getArgValue(args, '--config');
+
+  if (explicit) {
+    return explicit;
+  }
+
+  try {
+    await access(resolve('projects.config.json'));
+    return 'projects.config.json';
+  } catch {
+    return EXAMPLE_CONFIG_PATH;
+  }
+}
+
+export function isExampleConfigPath(path: string): boolean {
+  return resolve(path) === resolve(EXAMPLE_CONFIG_PATH);
+}
+
+/**
+ * The inventory is derived from the config as written, before placeholders resolve, so a
+ * blank secret only skips its adapter for one run and never deletes that provider's stored data.
+ */
+export async function readCollectorConfig(
+  path: string,
+  env: Record<string, string | undefined>,
+): Promise<{ config: CollectorConfig; inventory: ConfiguredProjectInventory[] }> {
+  const parsed = JSON.parse(await readFile(pathToFileURL(resolve(path)), 'utf8')) as CollectorConfig;
+  const config = resolveEnvPlaceholders(parsed, env, path);
+  const openAiLookbackDays = config.openAi?.usageLookbackDays;
+
+  if (openAiLookbackDays !== undefined && openAiLookbackDays > MAX_OPENAI_LOOKBACK_DAYS) {
+    throw new Error(`openAi.usageLookbackDays must be at most ${MAX_OPENAI_LOOKBACK_DAYS} in ${path}, got ${openAiLookbackDays}.`);
+  }
+
+  return { config, inventory: configuredProjectInventory(parsed) };
 }
 
 export function getArgValue(args: string[], name: string): string | null {

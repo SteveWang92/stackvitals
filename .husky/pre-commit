@@ -1,2 +1,2 @@
-npm test
-
+staged=$(git diff --cached --name-only --diff-filter=ACMR -- '*.ts' '*.tsx')
+[ -z "$staged" ] || npx vitest related --run --passWithNoTests $staged

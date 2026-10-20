@@ -114,7 +114,7 @@ export function createLiveOpenAiUsageClient(apiKey: string): OpenAiUsageClient {
   }
 
   // Both endpoints use daily buckets with limit: 31 and no pagination, so at most 31 days
-  // of data come back per call — an openAi.usageLookbackDays above 31 silently truncates.
+  // of data come back per call; readCollectorConfig rejects a longer openAi.usageLookbackDays.
   return {
     getUsage: async ({ startTime, endTime }) => {
       const response = await request<OpenAiUsageResponse>('/v1/organization/usage/completions', {
