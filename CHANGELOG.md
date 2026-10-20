@@ -20,6 +20,9 @@ below as its notes.
 - The collector refuses to write to the hub while running from `projects.example.json`.
 - OpenAI spend counts every OpenAI project that bills the same line item.
 - The daily spend chart no longer dips and spikes after a partially failed collection.
+- Usage trend charts cover the full 30-day window instead of roughly the last week.
+- Domains and project details hide DNS records, domains, and resources the collector stopped reporting.
+- Local stacks let the inventory sync delete retired resources. Apply migration `011_service_role_resource_delete_privilege.sql`.
 
 ### Security
 

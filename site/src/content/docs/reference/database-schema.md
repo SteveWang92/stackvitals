@@ -67,4 +67,5 @@ Migrations are applied in numeric order from `supabase/migrations/`:
 Run `npm run db:reset` to reapply all migrations and seeds from scratch during development.
 Existing installations should apply every newer migration in order. Migration 008 removes retired
 Resend rows, 009 enables retention deletes, and 010 prevents shared provider resources from
-colliding across configured projects.
+colliding across configured projects, and 011 lets the inventory sync remove retired resources on
+local stacks.

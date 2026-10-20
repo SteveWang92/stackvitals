@@ -13,6 +13,7 @@ import { buildMtdCostSeries, costTotal, currentMonthBounds, isPeriodRow, lastMon
 import { buildDomainSummaries } from './dashboard/domains';
 import { HISTORY_WINDOW_DAYS, historySince } from './dashboard/history';
 import { projectFromRows } from './dashboard/projects';
+import { currentResources } from './dashboard/snapshots';
 import { providerKey } from './dashboard/rows';
 import type {
   CollectorRunRow,
@@ -23,7 +24,7 @@ import type {
   ProjectRow,
   ResourceRow,
 } from './dashboard/rows';
-import { githubActionsUsageSummary, openAiUsageSummary } from './dashboard/usage';
+import { TREND_METRIC_KEYS, githubActionsUsageSummary, openAiUsageSummary } from './dashboard/usage';
 
 // The aggregation itself lives in ./dashboard/*, split by the shape it produces. This module is
 // the read boundary: it owns the Supabase queries and assembles their results into DashboardData.
@@ -57,7 +58,7 @@ export async function fetchDashboardData(client: SupabaseClient): Promise<Dashbo
   // daily collector cadence; with many more projects/domains (or a much faster cadence)
   // older-but-still-current keys could fall outside the window and disappear from the
   // dashboard — raise the limits if the fleet grows.
-  const [projects, resources, metrics, costs, healthChecks, healthCheckHistory, collectorRuns] = await Promise.all([
+  const [projects, allResources, metrics, trendMetrics, costs, healthChecks, healthCheckHistory, collectorRuns] = await Promise.all([
     selectRows<ProjectRow>(
       client
         .from('projects')
@@ -78,6 +79,17 @@ export async function fetchDashboardData(client: SupabaseClient): Promise<Dashbo
         .select('project_id, metric_key, metric_value, status, metadata, collected_at, providers(key, name)')
         .order('collected_at', { ascending: false })
         .limit(1000),
+    ),
+    // The Usage trend charts need the whole history window, which the newest-1000 read above
+    // does not reach, so their few metric keys get their own window-bounded read.
+    selectRows<MetricSnapshotRow>(
+      client
+        .from('metric_snapshots')
+        .select('project_id, metric_key, metric_value, status, metadata, collected_at, providers(key, name)')
+        .in('metric_key', TREND_METRIC_KEYS)
+        .gte('collected_at', historySince(HISTORY_WINDOW_DAYS))
+        .order('collected_at', { ascending: false })
+        .limit(2000),
     ),
     selectRows<CostSnapshotRow>(
       client
@@ -119,6 +131,7 @@ export async function fetchDashboardData(client: SupabaseClient): Promise<Dashbo
     ),
   ]);
 
+  const resources = currentResources(allResources);
   const currentPeriod = currentMonthBounds();
   const lastMonthPeriod = lastMonthBounds();
   const latestCosts = latestCostRows(costs.filter((cost) => isPeriodRow(cost, currentPeriod)));
@@ -151,8 +164,8 @@ export async function fetchDashboardData(client: SupabaseClient): Promise<Dashbo
     domains: buildDomainSummaries(resources, metrics),
     costs: costSnapshots.sort((a, b) => b.monthToDateUsd - a.monthToDateUsd),
     collectorRuns: collectorRunSummaries(collectorRuns),
-    openAiUsage: openAiUsageSummary(metrics, costs),
-    githubActionsUsage: githubActionsUsageSummary(metrics, projects),
+    openAiUsage: openAiUsageSummary(metrics, costs, trendMetrics),
+    githubActionsUsage: githubActionsUsageSummary(metrics, projects, trendMetrics),
     lastMonthCostUsd,
     mtdCostSeries: buildMtdCostSeries(costs),
   };

@@ -15,6 +15,7 @@ interface MockQuery<T> extends PromiseLike<{ data: T[]; error: null }> {
   eq: (...args: unknown[]) => MockQuery<T>;
   order: (...args: unknown[]) => MockQuery<T>;
   limit: (...args: unknown[]) => MockQuery<T>;
+  in: (...args: unknown[]) => MockQuery<T>;
   gte: (...args: unknown[]) => MockQuery<T>;
 }
 
@@ -36,6 +37,7 @@ function query<T>(table: TableName, data: T[], calls: RecordedCall[]): MockQuery
     eq: record('eq'),
     order: record('order'),
     limit: record('limit'),
+    in: record('in'),
     gte: record('gte'),
     then: (resolve, reject) => Promise.resolve({ data, error: null }).then(resolve, reject),
   };
@@ -585,6 +587,41 @@ describe('fetchDashboardData', () => {
     expect(data.projects[0].resources).toEqual([]);
   });
 
+  it('drops domains and DNS records the collector stopped reporting', async () => {
+    const resource = (resourceType: string, displayName: string, metadata: Record<string, unknown>, lastSeenAt: string) => ({
+      project_id: null,
+      resource_type: resourceType,
+      display_name: displayName,
+      metadata,
+      last_seen_at: lastSeenAt,
+      providers: { key: 'cloudflare', name: 'Cloudflare' },
+    });
+    const client = createClient({
+      projects: [],
+      resources: [
+        resource('zone', 'example.com', { status: 'active' }, '2026-06-30T10:00:00.000Z'),
+        resource('dns_record', 'A example.com', { domain: 'example.com', type: 'A', name: 'example.com' }, '2026-06-30T10:00:00.000Z'),
+        resource(
+          'dns_record',
+          'TXT old.example.com',
+          { domain: 'example.com', type: 'TXT', name: 'old.example.com' },
+          '2026-06-20T10:00:00.000Z',
+        ),
+        resource('zone', 'retired.example', { status: 'active' }, '2026-06-20T10:00:00.000Z'),
+      ],
+      metric_snapshots: [],
+      cost_snapshots: [],
+      health_checks: [],
+      collector_runs: [],
+    });
+
+    const data = await fetchDashboardData(client as never);
+
+    expect(data.domains.map((domain) => [domain.domain, domain.dnsRecords.map((record) => record.name)])).toEqual([
+      ['example.com', ['example.com']],
+    ]);
+  });
+
   it('keeps runs and errors separate for adapters sharing the supabase provider key', async () => {
     const client = createClient({
       projects: [
@@ -684,7 +721,7 @@ describe('fetchDashboardData', () => {
     ]);
   });
 
-  it('bounds the health check history query to the start of the 30 day window', async () => {
+  it('bounds the health check and trend history queries to the start of the 30 day window', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-06-29T12:00:00.000Z'));
 
@@ -703,6 +740,11 @@ describe('fetchDashboardData', () => {
       table: 'health_checks',
       method: 'gte',
       args: ['checked_at', '2026-05-31T00:00:00.000Z'],
+    });
+    expect(client.calls).toContainEqual({
+      table: 'metric_snapshots',
+      method: 'gte',
+      args: ['collected_at', '2026-05-31T00:00:00.000Z'],
     });
   });
 

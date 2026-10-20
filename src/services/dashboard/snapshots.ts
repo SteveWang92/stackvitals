@@ -1,5 +1,5 @@
 import { STALE_AFTER_HOURS, isStaleSync } from '../../lib/status';
-import { metadataText, providerKey, type MetricSnapshotRow } from './rows';
+import { metadataText, providerKey, type MetricSnapshotRow, type ResourceRow } from './rows';
 
 /**
  * "Recent snapshots" on a project's detail view: the newest reading per provider/subject,
@@ -58,6 +58,31 @@ export function latestMetricRowsBySubject(rows: MetricSnapshotRow[]): MetricSnap
   return Array.from(latest.values())
     .filter((entry) => !isStaleSync(entry.collectedAt, newest, STALE_AFTER_HOURS))
     .flatMap((entry) => entry.rows);
+}
+
+/**
+ * Resources are upserted and never deleted, so a DNS record or domain removed at the provider
+ * would otherwise stay listed forever. Within one project's provider, a resource is dropped once
+ * it is a full staleness window behind the newest one written there. Grouping by project keeps a
+ * provider that went quiet as a whole visible as stale, and a never-seen resource (null
+ * `last_seen_at`) stays as the inventory's "Unknown, never synced" marker.
+ */
+export function currentResources(resources: ResourceRow[]): ResourceRow[] {
+  const groupKey = (resource: ResourceRow) => `${resource.project_id ?? 'unallocated'}:${providerKey(resource)}`;
+  const newestByGroup = new Map<string, number>();
+
+  for (const resource of resources) {
+    if (resource.last_seen_at) {
+      const key = groupKey(resource);
+
+      newestByGroup.set(key, Math.max(newestByGroup.get(key) ?? 0, new Date(resource.last_seen_at).getTime()));
+    }
+  }
+
+  return resources.filter(
+    (resource) =>
+      !resource.last_seen_at || !isStaleSync(resource.last_seen_at, new Date(newestByGroup.get(groupKey(resource))!), STALE_AFTER_HOURS),
+  );
 }
 
 // GitHub Actions metrics have their own tab and would otherwise crowd out every other

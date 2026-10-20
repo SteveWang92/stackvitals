@@ -3,6 +3,13 @@ import { costTotal, currentMonthBounds, isPeriodRow, lastMonthBounds, latestCost
 import { buildTrendSeries } from './history';
 import { latestBy, metadataText, providerKey, type CostSnapshotRow, type MetricSnapshotRow, type ProjectRow } from './rows';
 
+/**
+ * The metrics the Usage trend charts plot. They are read by their own query bounded to the history
+ * window, because the newest-N metric read that feeds every other view holds only about a week of
+ * a typical fleet's daily snapshots.
+ */
+export const TREND_METRIC_KEYS = ['openai_input_tokens', 'openai_output_tokens', 'github_actions_recent_duration_seconds'];
+
 function metadataPeriod(metadata: Record<string, unknown> | null): string | null {
   const value = metadata?.period;
 
@@ -23,7 +30,11 @@ function latestMetricsByKey(metrics: MetricSnapshotRow[]): Map<string, MetricSna
   return latest;
 }
 
-export function openAiUsageSummary(metrics: MetricSnapshotRow[], costs: CostSnapshotRow[]): OpenAiUsageSummary {
+export function openAiUsageSummary(
+  metrics: MetricSnapshotRow[],
+  costs: CostSnapshotRow[],
+  trendMetrics: MetricSnapshotRow[],
+): OpenAiUsageSummary {
   const latestByUsageMetric = new Map<string, MetricSnapshotRow>();
   const usageMetricKeys = new Set(['openai_input_tokens', 'openai_output_tokens', 'openai_cached_input_tokens', 'openai_requests']);
 
@@ -79,7 +90,7 @@ export function openAiUsageSummary(metrics: MetricSnapshotRow[], costs: CostSnap
 
   const rows = Array.from(usageByKey.values()).sort((a, b) => b.inputTokens + b.outputTokens - (a.inputTokens + a.outputTokens));
   const tokenSeries = buildTrendSeries(
-    metrics.filter(
+    trendMetrics.filter(
       (row) =>
         providerKey(row) === 'openai' &&
         row.project_id === null &&
@@ -166,7 +177,11 @@ function latestRunDescription(metric: MetricSnapshotRow | undefined): string {
   return `${workflowName}: ${conclusion} on ${branch}`;
 }
 
-export function githubActionsUsageSummary(metrics: MetricSnapshotRow[], projects: ProjectRow[]): GitHubActionsUsageSummary {
+export function githubActionsUsageSummary(
+  metrics: MetricSnapshotRow[],
+  projects: ProjectRow[],
+  trendMetrics: MetricSnapshotRow[],
+): GitHubActionsUsageSummary {
   const projectById = new Map(projects.map((project) => [project.id, project]));
   const grouped = new Map<string, MetricSnapshotRow[]>();
 
@@ -236,7 +251,7 @@ export function githubActionsUsageSummary(metrics: MetricSnapshotRow[], projects
     lastSync: lastSync ?? null,
     rows,
     runtimeSeries: buildTrendSeries(
-      metrics.filter((row) => providerKey(row) === 'github' && row.metric_key === 'github_actions_recent_duration_seconds'),
+      trendMetrics.filter((row) => providerKey(row) === 'github' && row.metric_key === 'github_actions_recent_duration_seconds'),
       (row) => `${row.project_id}:${metadataText(row.metadata, ['repository']) ?? ''}`,
       1 / 60,
     ),
