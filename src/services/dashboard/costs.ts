@@ -71,7 +71,10 @@ export function buildMtdCostSeries(costs: CostSnapshotRow[], now = new Date()): 
   const cumulativeByDay = new Map<string, number>();
 
   for (const row of rows) {
-    latestByLine.set(costLineKey(row), row.amount_usd ?? 0);
+    if (row.amount_usd !== null) {
+      latestByLine.set(costLineKey(row), row.amount_usd);
+    }
+
     cumulativeByDay.set(
       utcDayKey(row.collected_at),
       Array.from(latestByLine.values()).reduce((total, amount) => total + amount, 0),

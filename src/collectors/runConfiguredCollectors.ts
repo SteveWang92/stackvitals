@@ -1,5 +1,4 @@
 import { appendFile } from 'node:fs/promises';
-import { loadEnv } from 'vite';
 import { createAmplifyAdapter } from './providers/amplify';
 import { createAwsAppBackendAdapter } from './providers/awsAppBackend';
 import { createAwsCostExplorerAdapter } from './providers/awsCostExplorer';
@@ -15,7 +14,14 @@ import { buildGithubStepSummary } from './githubStepSummary';
 import { collectRunFailures, formatRunFailures } from './runFailures';
 import { runCollectors } from './runCollectors';
 import { createSupabaseCollectorRunRecorder } from './stores/supabaseCollectorRunRecorder';
-import { EXAMPLE_CONFIG_PATH, configPathFromArgs, isAwsCostExplorerEnabled, isExampleConfigPath, readCollectorConfig } from './config';
+import {
+  EXAMPLE_CONFIG_PATH,
+  configPathFromArgs,
+  isAwsCostExplorerEnabled,
+  isExampleConfigPath,
+  loadLocalEnv,
+  readCollectorConfig,
+} from './config';
 import { createLiveAmplifyClient, createLiveAwsAppBackendClient, createLiveCostExplorerClient } from './liveClients/aws';
 import { createLiveResendClient } from './liveClients/resend';
 import {
@@ -30,14 +36,6 @@ import type { ProviderAdapter } from './types';
 import { createLiveCloudflareClient, createLiveCloudflarePagesClient } from './liveClients/cloudflare';
 import { createLiveGitHubActionsClient } from './liveClients/github';
 import { createLiveOpenAiUsageClient } from './liveClients/openai';
-
-function loadLocalEnv(): void {
-  const env = loadEnv(process.env.NODE_ENV ?? 'development', process.cwd(), '');
-
-  for (const [key, value] of Object.entries(env)) {
-    process.env[key] ??= value;
-  }
-}
 
 function hasAwsCredentials(): boolean {
   return Boolean(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY);

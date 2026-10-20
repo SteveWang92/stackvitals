@@ -1,6 +1,7 @@
 import { access, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { loadEnv } from 'vite';
 import type { ProjectSlug, ProviderKey } from '../types';
 
 export const EXAMPLE_CONFIG_PATH = 'projects.example.json';
@@ -155,6 +156,15 @@ export function resolveEnvPlaceholders<T>(value: T, env: Record<string, string |
   return value;
 }
 
+/** Fills process.env from the local `.env` files without overriding variables already set. */
+export function loadLocalEnv(): void {
+  const env = loadEnv(process.env.NODE_ENV ?? 'development', process.cwd(), '');
+
+  for (const [key, value] of Object.entries(env)) {
+    process.env[key] ??= value;
+  }
+}
+
 /** `--config <path>` when given, else `projects.config.json` when present, else the example. */
 export async function configPathFromArgs(args: string[]): Promise<string> {
   const explicit = getArgValue(args, '--config');
@@ -175,6 +185,11 @@ export function isExampleConfigPath(path: string): boolean {
   return resolve(path) === resolve(EXAMPLE_CONFIG_PATH);
 }
 
+/** The config as written, with `${ENV_VAR}` placeholders left unresolved. */
+export async function readRawCollectorConfig(path: string): Promise<CollectorConfig> {
+  return JSON.parse(await readFile(pathToFileURL(resolve(path)), 'utf8')) as CollectorConfig;
+}
+
 /**
  * The inventory is derived from the config as written, before placeholders resolve, so a
  * blank secret only skips its adapter for one run and never deletes that provider's stored data.
@@ -183,7 +198,7 @@ export async function readCollectorConfig(
   path: string,
   env: Record<string, string | undefined>,
 ): Promise<{ config: CollectorConfig; inventory: ConfiguredProjectInventory[] }> {
-  const parsed = JSON.parse(await readFile(pathToFileURL(resolve(path)), 'utf8')) as CollectorConfig;
+  const parsed = await readRawCollectorConfig(path);
   const config = resolveEnvPlaceholders(parsed, env, path);
   const openAiLookbackDays = config.openAi?.usageLookbackDays;
 

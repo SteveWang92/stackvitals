@@ -587,7 +587,7 @@ describe('fetchDashboardData', () => {
     expect(data.projects[0].resources).toEqual([]);
   });
 
-  it('drops domains and DNS records the collector stopped reporting', async () => {
+  it('drops DNS records the collector stopped reporting while keeping a quiet zone', async () => {
     const resource = (resourceType: string, displayName: string, metadata: Record<string, unknown>, lastSeenAt: string) => ({
       project_id: null,
       resource_type: resourceType,
@@ -619,6 +619,7 @@ describe('fetchDashboardData', () => {
 
     expect(data.domains.map((domain) => [domain.domain, domain.dnsRecords.map((record) => record.name)])).toEqual([
       ['example.com', ['example.com']],
+      ['retired.example', []],
     ]);
   });
 
@@ -927,6 +928,18 @@ describe('buildMtdCostSeries', () => {
       ['2026-06-27', 1.14],
       ['2026-06-28', 1.2],
       ['2026-06-29', 1.4],
+    ]);
+  });
+
+  it('keeps a line at its last amount when a later reading has no amount', () => {
+    const series = buildMtdCostSeries(
+      [cost('AWS Amplify', 0.64, '2026-06-28T12:00:00.000Z'), { ...cost('AWS Amplify', 0, '2026-06-29T12:00:00.000Z'), amount_usd: null }],
+      now,
+    );
+
+    expect(series).toEqual([
+      { day: '2026-06-28', cumulativeUsd: 0.64 },
+      { day: '2026-06-29', cumulativeUsd: 0.64 },
     ]);
   });
 

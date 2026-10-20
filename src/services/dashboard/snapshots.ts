@@ -1,5 +1,5 @@
 import { STALE_AFTER_HOURS, isStaleSync } from '../../lib/status';
-import { metadataText, providerKey, type MetricSnapshotRow, type ResourceRow } from './rows';
+import { metadataText, providerKey, stringMetadata, type MetricSnapshotRow, type ResourceRow } from './rows';
 
 /**
  * "Recent snapshots" on a project's detail view: the newest reading per provider/subject,
@@ -61,14 +61,21 @@ export function latestMetricRowsBySubject(rows: MetricSnapshotRow[]): MetricSnap
 }
 
 /**
- * Resources are upserted and never deleted, so a DNS record or domain removed at the provider
- * would otherwise stay listed forever. Within one project's provider, a resource is dropped once
- * it is a full staleness window behind the newest one written there. Grouping by project keeps a
- * provider that went quiet as a whole visible as stale, and a never-seen resource (null
+ * Resources are upserted and never deleted, so a DNS record removed at the provider would
+ * otherwise stay listed forever. A resource is dropped once it is a full staleness window behind
+ * the newest resource written by the same listing: one project's provider and resource type, and
+ * for DNS records one zone. Several adapters share a provider key, so grouping by listing keeps an
+ * adapter or zone that went quiet as a whole visible as stale. A never-seen resource (null
  * `last_seen_at`) stays as the inventory's "Unknown, never synced" marker.
  */
 export function currentResources(resources: ResourceRow[]): ResourceRow[] {
-  const groupKey = (resource: ResourceRow) => `${resource.project_id ?? 'unallocated'}:${providerKey(resource)}`;
+  const groupKey = (resource: ResourceRow) =>
+    [
+      resource.project_id ?? 'unallocated',
+      providerKey(resource),
+      resource.resource_type,
+      resource.resource_type === 'zone' ? resource.display_name : (stringMetadata(resource.metadata, 'domain') ?? ''),
+    ].join(':');
   const newestByGroup = new Map<string, number>();
 
   for (const resource of resources) {

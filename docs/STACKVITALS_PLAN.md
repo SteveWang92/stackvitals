@@ -127,9 +127,9 @@ are read by a second `metric_snapshots` query bounded to the same 30-day window,
 newest-N read that feeds the status views holds only about a week of a typical fleet's snapshots.
 
 Resources are upserted, never deleted per run, so the read layer hides a resource once it is a
-full staleness window behind the newest resource of the same project and provider. A DNS record
-or domain removed at the provider drops off the dashboard, while a provider that went quiet as a
-whole still shows as stale.
+full staleness window behind the newest resource of the same listing (project, provider, resource
+type, and zone for DNS records). A DNS record removed at the provider drops off the dashboard,
+while an adapter or zone that went quiet as a whole still shows as stale.
 
 ## Provider Adapters
 

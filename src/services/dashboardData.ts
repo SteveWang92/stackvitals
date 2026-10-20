@@ -89,7 +89,8 @@ export async function fetchDashboardData(client: SupabaseClient): Promise<Dashbo
         .in('metric_key', TREND_METRIC_KEYS)
         .gte('collected_at', historySince(HISTORY_WINDOW_DAYS))
         .order('collected_at', { ascending: false })
-        .limit(2000),
+        // PostgREST's default max_rows; a higher limit would be capped there anyway.
+        .limit(1000),
     ),
     selectRows<CostSnapshotRow>(
       client
