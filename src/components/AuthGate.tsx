@@ -50,16 +50,34 @@ export function AuthGate({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function handleSignIn(event: FormEvent<HTMLFormElement>) {
+  if (loading) {
+    return (
+      <main className="auth-shell">
+        <div className="auth-panel">
+          <RefreshCw aria-hidden="true" size={22} />
+          <h1>StackVitals</h1>
+          <p>Checking private dashboard session.</p>
+        </div>
+      </main>
+    );
+  }
+
+  const client = supabase;
+
+  if (!client || !isSupabaseAuthConfigured) {
+    return (
+      <main className="auth-shell">
+        <div className="auth-panel">
+          <LockKeyhole aria-hidden="true" size={26} />
+          <h1>StackVitals</h1>
+          <p>Set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and `VITE_DASHBOARD_ALLOWED_EMAIL` before deployment.</p>
+        </div>
+      </main>
+    );
+  }
+
+  const handleSignIn = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    const client = supabase;
-
-    if (!client) {
-      setAuthMessage('Supabase auth is not configured.');
-      return;
-    }
-
     setSubmitting(true);
     setAuthMessage('');
 
@@ -78,31 +96,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
     }
 
     setSubmitting(false);
-  }
-
-  if (loading) {
-    return (
-      <main className="auth-shell">
-        <div className="auth-panel">
-          <RefreshCw aria-hidden="true" size={22} />
-          <h1>StackVitals</h1>
-          <p>Checking private dashboard session.</p>
-        </div>
-      </main>
-    );
-  }
-
-  if (!supabase || !isSupabaseAuthConfigured) {
-    return (
-      <main className="auth-shell">
-        <div className="auth-panel">
-          <LockKeyhole aria-hidden="true" size={26} />
-          <h1>StackVitals</h1>
-          <p>Set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and `VITE_DASHBOARD_ALLOWED_EMAIL` before deployment.</p>
-        </div>
-      </main>
-    );
-  }
+  };
 
   if (!session) {
     return (
@@ -140,12 +134,6 @@ export function AuthGate({ children }: { children: ReactNode }) {
         </form>
       </main>
     );
-  }
-
-  const client = supabase;
-
-  if (!client) {
-    return null;
   }
 
   return (

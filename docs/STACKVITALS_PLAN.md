@@ -122,7 +122,14 @@ than spiking on the day collection resumed.
 The OpenAI and GitHub Actions usage charts are not the same kind of series. Those metrics are
 rolling-window totals, not period totals, so each point is the figure the collector reported
 that day rather than that day's own consumption — the charts show whether usage is climbing,
-and their headings say "by collection day" to keep that distinction visible.
+and their headings say "by collection day" to keep that distinction visible. Their few metric keys
+are read by a second `metric_snapshots` query bounded to the same 30-day window, because the
+newest-N read that feeds the status views holds only about a week of a typical fleet's snapshots.
+
+Resources are upserted, never deleted per run, so the read layer hides a resource once it is a
+full staleness window behind the newest resource of the same listing (project, provider, resource
+type, and zone for DNS records). A DNS record removed at the provider drops off the dashboard,
+while an adapter or zone that went quiet as a whole still shows as stale.
 
 ## Provider Adapters
 

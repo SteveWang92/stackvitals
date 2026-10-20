@@ -20,8 +20,8 @@ as a fork — open an issue first if you're unsure.
 - **Formatting/linting**: `npm run format` (Prettier, single quotes, `printWidth: 140`),
   `npm run lint` (ESLint). Both should pass before you open a PR.
 - **Build**: `npm run build` (`tsc -b` then `vite build`) should pass.
-- **CI**: `.github/workflows/ci.yml` runs `npm test`, `npm run lint`, and `npm run build` on
-  every PR — a green local run of those three means a green PR.
+- **CI**: `.github/workflows/ci.yml` runs `npm test`, `npm run lint`, `npx prettier --check .`,
+  and `npm run build` on every PR — a green local run of those four means a green PR.
 - Add mocked tests for provider adapters before relying on live provider APIs — never gate a PR
   on hitting a real external service.
 
@@ -51,8 +51,10 @@ as a reference:
    vars/config fields are present, so a fork with no credentials for your provider still runs
    cleanly. This file is the one place that reads env vars and `projects.config.json` to decide
    which adapters to instantiate.
-5. **Add a label and icon** in `providerLabels` / the icon map in [`src/App.tsx`](src/App.tsx)
-   so the frontend renders your provider's status nicely.
+5. **Add a label and icon** in `providerLabels` in
+   [`src/services/dashboard/rows.ts`](src/services/dashboard/rows.ts) and the icon map in
+   [`src/components/providerIcon.ts`](src/components/providerIcon.ts) so the frontend renders
+   your provider's status nicely.
 6. **Add a mocked test** under `src/tests/collectors/providers/<name>.test.ts` covering at least
    a success case, a partial/degraded case, and an error case, using a fake client — no real
    network calls in CI.

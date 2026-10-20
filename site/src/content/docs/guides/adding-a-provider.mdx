@@ -35,8 +35,8 @@ Use an existing adapter (e.g. `src/collectors/providers/cloudflare.ts`) as a ref
 4. **Wire it into `src/collectors/runConfiguredCollectors.ts`** behind a credential check — the
    adapter is only added to the run when its required env vars/config fields are present. This
    file is the one place that reads env vars and config.
-5. **Add a label and icon** in `providerLabels` / the icon map in `src/App.tsx` so the frontend
-   renders your provider nicely.
+5. **Add a label and icon** in `providerLabels` in `src/services/dashboard/rows.ts` and the icon
+   map in `src/components/providerIcon.ts` so the frontend renders your provider nicely.
 6. **Add a mocked test** under `src/tests/collectors/providers/<name>.test.ts` covering at least
    success, partial/degraded, and error cases with a fake client — no real network calls in CI.
 7. **Document credentials** in the config table and required-secrets list in

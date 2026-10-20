@@ -1,4 +1,5 @@
 import type { ProjectSlug, StatusLevel } from '../../types';
+import type { CollectorConfig } from '../config';
 import type { CollectorAdapterResult, CollectorHealthCheck, ProviderAdapter } from '../types';
 import { getErrorMessage } from '../errorMessage';
 
@@ -12,6 +13,16 @@ export interface HttpHealthOptions {
   fetch: typeof fetch;
   bypassHeaderName?: string;
   bypassHeaderValue?: string;
+}
+
+export function httpHealthTargets(config: CollectorConfig): HttpHealthTarget[] {
+  return config.projects
+    .filter((project) => project.resources?.healthCheckUrl || project.publicUrl)
+    .map((project) => ({
+      projectSlug: project.slug,
+      url: project.resources?.healthCheckUrl ?? project.publicUrl!,
+      followRedirects: project.resources?.healthCheckFollowRedirects,
+    }));
 }
 
 function statusFromHttpStatus(httpStatus: number): StatusLevel {

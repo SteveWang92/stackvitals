@@ -1,11 +1,8 @@
-import { access, appendFile, readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
-import { loadEnv } from 'vite';
+import { appendFile } from 'node:fs/promises';
 import { createAmplifyAdapter } from './providers/amplify';
 import { createAwsAppBackendAdapter } from './providers/awsAppBackend';
 import { createAwsCostExplorerAdapter } from './providers/awsCostExplorer';
-import { createHttpHealthAdapter } from './providers/httpHealth';
+import { createHttpHealthAdapter, httpHealthTargets } from './providers/httpHealth';
 import { createCloudflareDomainsAdapter } from './providers/cloudflare';
 import { createCloudflarePagesAdapter } from './providers/cloudflarePages';
 import { createGitHubActionsAdapter } from './providers/githubActions';
@@ -17,7 +14,14 @@ import { buildGithubStepSummary } from './githubStepSummary';
 import { collectRunFailures, formatRunFailures } from './runFailures';
 import { runCollectors } from './runCollectors';
 import { createSupabaseCollectorRunRecorder } from './stores/supabaseCollectorRunRecorder';
-import { configuredProjectInventory, getArgValue, isAwsCostExplorerEnabled, resolveEnvPlaceholders, type CollectorConfig } from './config';
+import {
+  EXAMPLE_CONFIG_PATH,
+  configPathFromArgs,
+  isAwsCostExplorerEnabled,
+  isExampleConfigPath,
+  loadLocalEnv,
+  readCollectorConfig,
+} from './config';
 import { createLiveAmplifyClient, createLiveAwsAppBackendClient, createLiveCostExplorerClient } from './liveClients/aws';
 import { createLiveResendClient } from './liveClients/resend';
 import {
@@ -33,24 +37,8 @@ import { createLiveCloudflareClient, createLiveCloudflarePagesClient } from './l
 import { createLiveGitHubActionsClient } from './liveClients/github';
 import { createLiveOpenAiUsageClient } from './liveClients/openai';
 
-function loadLocalEnv(): void {
-  const env = loadEnv(process.env.NODE_ENV ?? 'development', process.cwd(), '');
-
-  for (const [key, value] of Object.entries(env)) {
-    process.env[key] ??= value;
-  }
-}
-
 function hasAwsCredentials(): boolean {
   return Boolean(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY);
-}
-
-function getHubSupabaseSecretKey(): string | undefined {
-  return process.env.HUB_SUPABASE_SECRET_KEY;
-}
-
-function isHubSupabaseSecretKey(key: string | undefined): key is string {
-  return Boolean(key?.startsWith('sb_secret_'));
 }
 
 function githubActionsToken(): string | undefined {
@@ -67,44 +55,30 @@ function githubRepositoryParts(repository: string): { owner: string; repo: strin
   return { owner, repo };
 }
 
-async function readConfig(path: string): Promise<{ config: CollectorConfig; inventory: ReturnType<typeof configuredProjectInventory> }> {
-  const url = pathToFileURL(resolve(path));
-  const parsed = JSON.parse(await readFile(url, 'utf8')) as CollectorConfig;
-
-  return {
-    config: resolveEnvPlaceholders(parsed, process.env, path),
-    inventory: configuredProjectInventory(parsed),
-  };
-}
-
-async function defaultConfigPath(): Promise<string> {
-  try {
-    await access(resolve('projects.config.json'));
-    return 'projects.config.json';
-  } catch {
-    return 'projects.example.json';
-  }
-}
-
 loadLocalEnv();
 
-const configPath = getArgValue(process.argv, '--config') ?? (await defaultConfigPath());
-const { config, inventory } = await readConfig(configPath);
+const hubSupabaseUrl = process.env.VITE_SUPABASE_URL;
+const rawHubSupabaseSecretKey = process.env.HUB_SUPABASE_SECRET_KEY;
+const hubSupabaseSecretKey = rawHubSupabaseSecretKey?.startsWith('sb_secret_') ? rawHubSupabaseSecretKey : undefined;
+const hubWrite = hubSupabaseUrl && hubSupabaseSecretKey ? { url: hubSupabaseUrl, secretKey: hubSupabaseSecretKey } : undefined;
+const configPath = await configPathFromArgs(process.argv);
+
+// The inventory sync deactivates every project the config omits and deletes its data, so
+// syncing the example's placeholder projects would wipe a real dashboard.
+if (hubWrite && isExampleConfigPath(configPath)) {
+  throw new Error(
+    `Refusing to write to the hub Supabase from ${EXAMPLE_CONFIG_PATH}. Create projects.config.json, pass --config, or set PROJECTS_CONFIG_JSON in CI.`,
+  );
+}
+
+const { config, inventory } = await readCollectorConfig(configPath, process.env);
 // Parsed before any provider work so a bad retention value fails immediately instead of
 // after a full round of API calls.
 const retentionDays = parseRetentionDays(process.env.SNAPSHOT_RETENTION_DAYS);
 const adapters: ProviderAdapter[] = [];
 
-const httpTargets = config.projects
-  .filter((project) => project.resources?.healthCheckUrl || project.publicUrl)
-  .map((project) => ({
-    projectSlug: project.slug,
-    url: project.resources?.healthCheckUrl ?? project.publicUrl!,
-    followRedirects: project.resources?.healthCheckFollowRedirects,
-  }));
-
 adapters.push(
-  createHttpHealthAdapter(httpTargets, {
+  createHttpHealthAdapter(httpHealthTargets(config), {
     fetch,
     bypassHeaderName: process.env.HTTP_HEALTH_CHECK_HEADER_NAME,
     bypassHeaderValue: process.env.HTTP_HEALTH_CHECK_HEADER_VALUE,
@@ -144,27 +118,22 @@ if (hasAwsCredentials()) {
   }
 }
 
-const hubSupabaseSecretKey = getHubSupabaseSecretKey();
-const hubSupabaseReadKey = process.env.VITE_SUPABASE_ANON_KEY;
-
-if (process.env.VITE_SUPABASE_URL && hubSupabaseReadKey) {
+// The REST root probe requires a secret-tier key; publishable/anon keys get a 401
+// "Secret API key required".
+if (hubWrite) {
   const hubSupabaseProject = config.projects.find((project) => project.resources?.hubSupabase && project.resources?.supabaseProjectRef);
 
   if (hubSupabaseProject?.resources?.supabaseProjectRef) {
-    // The REST root probe requires a secret-tier key; publishable/anon keys get a 401
-    // "Secret API key required".
-    const healthCheckKey = isHubSupabaseSecretKey(hubSupabaseSecretKey) ? hubSupabaseSecretKey : hubSupabaseReadKey;
-
     adapters.push(
       createSupabaseProjectHealthAdapter(
         [
           {
             projectSlug: hubSupabaseProject.slug,
             projectRef: hubSupabaseProject.resources.supabaseProjectRef,
-            projectUrl: process.env.VITE_SUPABASE_URL,
+            projectUrl: hubWrite.url,
           },
         ],
-        { client: createLiveSupabaseProjectHealthClient(healthCheckKey, healthCheckKey) },
+        { client: createLiveSupabaseProjectHealthClient(hubWrite.secretKey) },
       ),
     );
   }
@@ -295,16 +264,15 @@ if (githubToken) {
   );
 }
 
-const recorder =
-  process.env.VITE_SUPABASE_URL && isHubSupabaseSecretKey(hubSupabaseSecretKey)
-    ? createSupabaseCollectorRunRecorder(createLiveSupabaseCollectorRunClient(process.env.VITE_SUPABASE_URL, hubSupabaseSecretKey))
-    : undefined;
+const recorder = hubWrite
+  ? createSupabaseCollectorRunRecorder(createLiveSupabaseCollectorRunClient(hubWrite.url, hubWrite.secretKey))
+  : undefined;
 
-if (process.env.VITE_SUPABASE_URL && isHubSupabaseSecretKey(hubSupabaseSecretKey)) {
-  await createLiveSupabaseConfiguredInventoryClient(process.env.VITE_SUPABASE_URL, hubSupabaseSecretKey).sync(inventory);
+if (hubWrite) {
+  await createLiveSupabaseConfiguredInventoryClient(hubWrite.url, hubWrite.secretKey).sync(inventory);
 }
 
-if (process.env.VITE_SUPABASE_URL && hubSupabaseSecretKey && !isHubSupabaseSecretKey(hubSupabaseSecretKey)) {
+if (hubSupabaseUrl && rawHubSupabaseSecretKey && !hubSupabaseSecretKey) {
   console.warn('Collector result recording skipped: configure HUB_SUPABASE_SECRET_KEY with an sb_secret_ key.');
 }
 
@@ -363,9 +331,9 @@ if (process.env.GITHUB_STEP_SUMMARY) {
 // collector that just failed to record anything would trim history while adding none. A prune
 // failure is logged rather than thrown: the run's collected data is already safely stored, and
 // storage housekeeping is not worth turning a good run into a failed one.
-if (process.env.VITE_SUPABASE_URL && isHubSupabaseSecretKey(hubSupabaseSecretKey)) {
+if (hubWrite) {
   try {
-    const pruneClient = createLiveSupabaseSnapshotPruneClient(process.env.VITE_SUPABASE_URL, hubSupabaseSecretKey);
+    const pruneClient = createLiveSupabaseSnapshotPruneClient(hubWrite.url, hubWrite.secretKey);
 
     console.log(formatPruneResults(await pruneSnapshots(pruneClient, { retentionDays }), retentionDays));
   } catch (error) {

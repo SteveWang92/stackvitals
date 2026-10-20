@@ -132,8 +132,8 @@ project.
 
 - `PROJECTS_CONFIG_JSON`: private collector config JSON for your scheduler.
 - `VITE_SUPABASE_URL`: your dashboard's Supabase URL.
-- `VITE_SUPABASE_ANON_KEY`: your dashboard's publishable key (or legacy anon key).
-- `HUB_SUPABASE_SECRET_KEY`: your dashboard's `sb_secret_` key for collector writes.
+- `HUB_SUPABASE_SECRET_KEY`: your dashboard's `sb_secret_` key for collector writes and the hub's
+  own Supabase health check.
 - Per-app credentials referenced by `${...}` placeholders in the collector config. A project
   with `resources.supabaseAggregateRpcName` also declares `supabaseUrl` /
   `supabaseServiceRoleKey` / `supabaseAnonKey` whose values are placeholders (e.g.

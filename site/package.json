@@ -2,6 +2,9 @@
   "name": "stackvitals-site",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "24.18.1"
+  },
   "scripts": {
     "prebuild": "node scripts/copy-assets.mjs",
     "dev": "node scripts/copy-assets.mjs && astro dev",
@@ -9,8 +12,8 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "astro": "^7.3.2",
-    "@astrojs/starlight": "^0.42.0",
+    "@astrojs/starlight": "^0.42.6",
+    "astro": "^7.4.1",
     "sharp": "^0.35.4"
   }
 }

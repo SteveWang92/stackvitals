@@ -9,6 +9,27 @@ below as its notes.
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-10-20
+
+### Changed
+
+- `collect:http` runs the collector's HTTP check, including bypass headers and `${ENV_VAR}` placeholders.
+- The hub Supabase health check uses `HUB_SUPABASE_SECRET_KEY`; collectors no longer read `VITE_SUPABASE_ANON_KEY`.
+- An `openAi.usageLookbackDays` above 31 now fails the collector run. Lower it to 31 or less.
+
+### Fixed
+
+- The collector refuses to write to the hub while running from `projects.example.json`.
+- OpenAI spend counts every OpenAI project that bills the same line item.
+- The daily spend chart no longer dips and spikes after a partially failed collection.
+- Usage trend charts cover the full 30-day window instead of roughly the last week.
+- Domains and project details hide DNS records and resources the collector stopped reporting.
+- Local stacks let the inventory sync delete retired resources. Apply migration `011_service_role_resource_delete_privilege.sql`.
+
+### Security
+
+- Update the docs-site Astro dependency past a high-severity `http-cache-semantics` advisory.
+
 ## [1.8.0] - 2026-10-17
 
 ### Added
@@ -253,7 +274,8 @@ source projects.
   to the GitHub Actions job summary.
 - Self-hosting guide and contributing guide (including how to add a new adapter).
 
-[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.8.0...HEAD
+[Unreleased]: https://github.com/SteveWang92/stackvitals/compare/v1.9.0...HEAD
+[1.9.0]: https://github.com/SteveWang92/stackvitals/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/SteveWang92/stackvitals/compare/v1.7.11...v1.8.0
 [1.7.11]: https://github.com/SteveWang92/stackvitals/compare/v1.7.10...v1.7.11
 [1.7.10]: https://github.com/SteveWang92/stackvitals/compare/v1.7.9...v1.7.10

@@ -192,7 +192,7 @@ export function createLiveSupabaseAggregateClient(url: string, authKey: string, 
   };
 }
 
-export function createLiveSupabaseProjectHealthClient(authKey: string, apiKey?: string): SupabaseProjectHealthClient {
+export function createLiveSupabaseProjectHealthClient(secretKey: string): SupabaseProjectHealthClient {
   return {
     checkRestHealth: async (projectUrl) => {
       // Probe the PostgREST root, not a specific table. The root only validates that the
@@ -201,7 +201,7 @@ export function createLiveSupabaseProjectHealthClient(authKey: string, apiKey?: 
       // from-scratch local stack where anon has no table privileges.
       const response = await fetch(`${projectUrl}/rest/v1/`, {
         method: 'GET',
-        headers: headers(authKey, apiKey),
+        headers: secretKeyHeaders(secretKey),
       });
       const body = await response.text();
 
