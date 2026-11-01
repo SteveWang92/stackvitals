@@ -48,12 +48,12 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@aws-sdk/client-amplify": "^3.1101.0",
-    "@aws-sdk/client-cognito-identity-provider": "^3.1116.0",
-    "@aws-sdk/client-cost-explorer": "^3.1101.0",
-    "@aws-sdk/client-dynamodb": "^3.1116.0",
-    "@supabase/supabase-js": "^2.111.0",
-    "lucide-react": "^1.28.0",
+    "@aws-sdk/client-amplify": "^3.1149.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.1149.0",
+    "@aws-sdk/client-cost-explorer": "^3.1149.0",
+    "@aws-sdk/client-dynamodb": "^3.1149.0",
+    "@supabase/supabase-js": "^2.117.3",
+    "lucide-react": "^1.55.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-icons": "^5.7.0"
