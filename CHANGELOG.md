@@ -9,6 +9,11 @@ below as its notes.
 
 ## [Unreleased]
 
+### Fixed
+
+- The daily spend chart and last-month total cover the whole billing period on large fleets.
+- Domains removed from the collector config leave the Domains tab on the next collector run.
+
 ## [1.9.0] - 2026-10-20
 
 ### Changed

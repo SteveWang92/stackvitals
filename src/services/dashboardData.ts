@@ -52,8 +52,27 @@ async function selectRows<T>(query: PromiseLike<{ data: T[] | null; error: { mes
   return data ?? [];
 }
 
+// PostgREST's default max_rows: a single request never returns more, whatever its limit.
+const PAGE_SIZE = 1000;
+
+/** Every row a query matches, read in PAGE_SIZE pages until one comes back short. */
+async function selectAllRows<T>(
+  page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+): Promise<T[]> {
+  const rows: T[] = [];
+
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const batch = await selectRows(page(from, from + PAGE_SIZE - 1));
+    rows.push(...batch);
+
+    if (batch.length < PAGE_SIZE) {
+      return rows;
+    }
+  }
+}
+
 export async function fetchDashboardData(client: SupabaseClient): Promise<DashboardData> {
-  // Snapshots are append-only, so each select reads only the newest N rows and the
+  // Snapshots are append-only, so most selects read only the newest N rows and the
   // dedup-to-latest happens client-side. The limits assume a handful of projects on a
   // daily collector cadence; with many more projects/domains (or a much faster cadence)
   // older-but-still-current keys could fall outside the window and disappear from the
@@ -92,15 +111,17 @@ export async function fetchDashboardData(client: SupabaseClient): Promise<Dashbo
         // PostgREST's default max_rows; a higher limit would be capped there anyway.
         .limit(1000),
     ),
-    selectRows<CostSnapshotRow>(
+    // Bounded by billing period rather than row count: the daily-spend chart and the last-month
+    // total need every reading of the current and previous month, however many lines the fleet
+    // bills, so the read pages past PostgREST's per-request cap.
+    selectAllRows<CostSnapshotRow>((from, to) =>
       client
         .from('cost_snapshots')
         .select('project_id, service_name, period_start, period_end, amount_usd, metadata, collected_at, providers(key, name)')
-        .order('collected_at', { ascending: false })
-        // Wide enough for a month of daily collection, which the daily-spend chart needs: at 100
-        // rows a fleet with a dozen cost lines only kept about a week and the rest of the month
-        // flattened into a single averaged step.
-        .limit(400),
+        .gte('period_start', lastMonthBounds().startDate)
+        // A stable order is what keeps consecutive pages from skipping or repeating rows.
+        .order('id')
+        .range(from, to),
     ),
     selectRows<HealthCheckRow>(
       client

@@ -17,6 +17,7 @@ interface MockQuery<T> extends PromiseLike<{ data: T[]; error: null }> {
   limit: (...args: unknown[]) => MockQuery<T>;
   in: (...args: unknown[]) => MockQuery<T>;
   gte: (...args: unknown[]) => MockQuery<T>;
+  range: (from: number, to: number) => MockQuery<T>;
 }
 
 /**
@@ -39,6 +40,11 @@ function query<T>(table: TableName, data: T[], calls: RecordedCall[]): MockQuery
     limit: record('limit'),
     in: record('in'),
     gte: record('gte'),
+    // The one builder that changes the data, since paging stops on a short page.
+    range: (from, to) => {
+      calls.push({ table, method: 'range', args: [from, to] });
+      return query(table, data.slice(from, to + 1), calls);
+    },
     then: (resolve, reject) => Promise.resolve({ data, error: null }).then(resolve, reject),
   };
 }
@@ -218,6 +224,36 @@ describe('fetchDashboardData', () => {
     const data = await fetchDashboardData(client as never);
 
     expect(data.lastMonthCostUsd).toBe(2.91);
+  });
+
+  it('reads every cost reading of the previous and current billing period, past one page', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-29T12:00:00.000Z'));
+
+    const reading = (serviceName: string, amountUsd: number) => ({
+      project_id: null,
+      service_name: serviceName,
+      period_start: '2026-06-01',
+      period_end: '2026-06-30',
+      amount_usd: amountUsd,
+      metadata: {},
+      collected_at: '2026-06-28T12:00:00.000Z',
+      providers: { key: 'aws', name: 'AWS' },
+    });
+    const client = createClient({
+      projects: [],
+      resources: [],
+      metric_snapshots: [],
+      // 1,200 distinct lines: more than one PostgREST page holds.
+      cost_snapshots: Array.from({ length: 1200 }, (_, index) => reading(`Service ${index}`, 1)),
+      health_checks: [],
+      collector_runs: [],
+    });
+
+    const data = await fetchDashboardData(client as never);
+
+    expect(data.costs).toHaveLength(1200);
+    expect(client.calls).toContainEqual({ table: 'cost_snapshots', method: 'gte', args: ['period_start', '2026-05-01'] });
   });
 
   it('lists a provider known only from resources, but does not claim it is healthy', async () => {

@@ -103,7 +103,7 @@ describe('createLiveSupabaseCollectorRunClient', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const client = createLiveSupabaseConfiguredInventoryClient('https://example.supabase.co', 'sb_secret_test-key');
-    await client.sync([{ slug: 'shared_bill', name: 'Shared Bill', publicUrl: 'https://share.example', providers: ['http'] }]);
+    await client.sync([{ slug: 'shared_bill', name: 'Shared Bill', publicUrl: 'https://share.example', providers: ['http'] }], []);
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://example.supabase.co/rest/v1/metric_snapshots?project_id=eq.shared-bill-id&provider_id=in.(resend-id,supabase-id)',
@@ -131,6 +131,56 @@ describe('createLiveSupabaseCollectorRunClient', () => {
     );
     expect(fetchMock).toHaveBeenCalledWith(
       'https://example.supabase.co/rest/v1/health_checks?project_id=eq.retired-id',
+      expect.objectContaining({ method: 'DELETE' }),
+    );
+  });
+
+  it('removes zone and DNS resources of domains no longer configured for their owner', async () => {
+    const emptyResponse = { ok: true, status: 204, text: async () => '' } as Response;
+    const json = (body: unknown) => ({ ok: true, status: 200, text: async () => JSON.stringify(body) }) as Response;
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(emptyResponse)
+      .mockResolvedValueOnce(json([{ id: 'site-id', slug: 'site', is_active: true }]))
+      .mockResolvedValueOnce(json([{ id: 'cloudflare-id', key: 'cloudflare' }]))
+      // The configured project has no HTTP provider, so its health checks are cleared first.
+      .mockResolvedValueOnce(emptyResponse)
+      .mockResolvedValueOnce(
+        json([
+          { id: 'kept-zone', project_id: 'site-id', resource_type: 'zone', display_name: 'Site.example', metadata: {} },
+          {
+            id: 'kept-record',
+            project_id: 'site-id',
+            resource_type: 'dns_record',
+            display_name: 'A site.example',
+            metadata: { domain: 'site.example' },
+          },
+          { id: 'shared-zone', project_id: null, resource_type: 'zone', display_name: 'shared.example', metadata: {} },
+          { id: 'removed-zone', project_id: 'site-id', resource_type: 'zone', display_name: 'old.example', metadata: {} },
+          {
+            id: 'removed-record',
+            project_id: 'site-id',
+            resource_type: 'dns_record',
+            display_name: 'MX old.example',
+            metadata: { domain: 'old.example' },
+          },
+          { id: 'moved-zone', project_id: null, resource_type: 'zone', display_name: 'site.example', metadata: {} },
+        ]),
+      )
+      .mockResolvedValue(emptyResponse);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = createLiveSupabaseConfiguredInventoryClient('https://example.supabase.co', 'test-key');
+    await client.sync(
+      [{ slug: 'site', name: 'Site', publicUrl: null, providers: ['cloudflare'] }],
+      [
+        { provider: 'cloudflare', projectSlug: 'site', domains: ['site.example'] },
+        { provider: 'cloudflare', domains: ['shared.example'] },
+      ],
+    );
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://example.supabase.co/rest/v1/resources?id=in.(removed-zone,removed-record,moved-zone)',
       expect.objectContaining({ method: 'DELETE' }),
     );
   });

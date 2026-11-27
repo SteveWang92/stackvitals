@@ -269,7 +269,7 @@ const recorder = hubWrite
   : undefined;
 
 if (hubWrite) {
-  await createLiveSupabaseConfiguredInventoryClient(hubWrite.url, hubWrite.secretKey).sync(inventory);
+  await createLiveSupabaseConfiguredInventoryClient(hubWrite.url, hubWrite.secretKey).sync(inventory, config.domains ?? []);
 }
 
 if (hubSupabaseUrl && rawHubSupabaseSecretKey && !hubSupabaseSecretKey) {

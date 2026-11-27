@@ -1,7 +1,7 @@
 import type { SupabaseAggregateClient } from '../providers/supabaseAggregate';
 import type { SupabaseProjectHealthClient } from '../providers/supabaseProjectHealth';
 import type { SnapshotPruneClient } from '../stores/pruneSnapshots';
-import type { ConfiguredProjectInventory } from '../config';
+import type { ConfiguredProjectInventory, DomainGroupConfig } from '../config';
 import type { ProviderKey } from '../../types';
 import type {
   CostSnapshotInsert,
@@ -72,6 +72,18 @@ interface ProviderInventoryRow {
   key: string;
 }
 
+interface DomainResourceRow {
+  id: string;
+  project_id: string | null;
+  resource_type: 'zone' | 'dns_record';
+  display_name: string;
+  metadata: Record<string, unknown> | null;
+}
+
+function domainOwnerKey(projectSlug: string | null, domain: string): string {
+  return `${projectSlug ?? ''}:${domain.toLowerCase()}`;
+}
+
 export function createLiveSupabaseConfiguredInventoryClient(url: string, secretKey: string) {
   const apiHeaders = secretKeyHeaders(secretKey);
 
@@ -84,7 +96,7 @@ export function createLiveSupabaseConfiguredInventoryClient(url: string, secretK
   }
 
   return {
-    sync: async (configuredProjects: ConfiguredProjectInventory[]): Promise<void> => {
+    sync: async (configuredProjects: ConfiguredProjectInventory[], configuredDomains: DomainGroupConfig[]): Promise<void> => {
       const now = new Date().toISOString();
 
       if (configuredProjects.length > 0) {
@@ -156,6 +168,35 @@ export function createLiveSupabaseConfiguredInventoryClient(url: string, secretK
 
         if (!configuredProviders.has('http')) {
           await deleteRows('health_checks', `project_id=eq.${encodeURIComponent(project.id)}`);
+        }
+      }
+
+      // Resources are only upserted, so a domain dropped from the config, or moved to another
+      // owner, keeps its zone and DNS rows until they are removed here. A configured zone whose
+      // Cloudflare call fails is untouched and stays visible as stale.
+      const cloudflare = providers.find((provider) => provider.key === 'cloudflare');
+
+      if (cloudflare) {
+        const domainResources = await requestJson<DomainResourceRow[]>(
+          `${url}/rest/v1/resources?select=id,project_id,resource_type,display_name,metadata&provider_id=eq.${encodeURIComponent(cloudflare.id)}&resource_type=in.(zone,dns_record)`,
+          { method: 'GET', headers: apiHeaders },
+          'resources configured-domain lookup failed',
+        );
+        const slugById = new Map(projects.map((project) => [project.id, project.slug]));
+        const configured = new Set(
+          configuredDomains.flatMap((group) => group.domains.map((domain) => domainOwnerKey(group.projectSlug ?? null, domain))),
+        );
+        const staleIds = domainResources
+          .filter((resource) => {
+            const domain = resource.resource_type === 'zone' ? resource.display_name : resource.metadata?.domain;
+            const owner = resource.project_id ? (slugById.get(resource.project_id) ?? resource.project_id) : null;
+
+            return typeof domain !== 'string' || !configured.has(domainOwnerKey(owner, domain));
+          })
+          .map((resource) => resource.id);
+
+        if (staleIds.length > 0) {
+          await deleteRows('resources', `id=in.(${staleIds.join(',')})`);
         }
       }
     },
