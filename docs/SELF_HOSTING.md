@@ -292,11 +292,14 @@ dist
 ```
 
 Any static host serves the build — Amplify, Vercel, Netlify, Cloudflare Pages. Amplify
-(`customHttp.yml`) and Cloudflare Pages (`public/_headers`) also send a Content-Security-Policy
-and security headers; on other hosts, configure equivalent headers yourself. The policy's
-`connect-src` allows only `https://*.supabase.co` and `wss://*.supabase.co`: with a Supabase
-custom domain or self-hosted Supabase, add that origin to `connect-src` in both files, or the
-browser blocks every Supabase request. Optional first
+(`customHttp.yml`) and Cloudflare Pages (`_headers`, emitted into `dist` by the build) also send
+a Content-Security-Policy and security headers; on other hosts, configure equivalent headers
+yourself. Both files come from `scripts/securityHeaders.ts`. The policy's `connect-src` always
+allows `https://*.supabase.co` and `wss://*.supabase.co`, and adds the origin of
+`VITE_SUPABASE_URL` when it is a Supabase custom domain or self-hosted Supabase. Cloudflare Pages
+derives it at build time. Amplify reads `customHttp.yml` from the repository, so with such a URL
+run `VITE_SUPABASE_URL=<url> npm run headers`, commit the file, and set the same
+`VITE_SUPABASE_URL` for CI, whose `headers:check` step fails on a stale file. Optional first
 layer: most hosts offer branch-level access control/password protection; keep Supabase Auth and
 RLS regardless.
 

@@ -39,6 +39,8 @@
     "collect:status": "vite-node src/collectors/runConfiguredCollectors.ts",
     "demo:screenshots": "node scripts/demo-screenshots/capture.mjs",
     "preview": "vite preview",
+    "headers": "node scripts/amplifyHeaders.ts",
+    "headers:check": "node scripts/amplifyHeaders.ts --check",
     "test": "vitest run",
     "lint": "eslint .",
     "format": "prettier --write .",

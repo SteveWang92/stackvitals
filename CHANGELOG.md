@@ -9,6 +9,11 @@ below as its notes.
 
 ## [Unreleased]
 
+### Changed
+
+- Cloudflare Pages builds allow a custom-domain or self-hosted `VITE_SUPABASE_URL` in the CSP. On
+  Amplify, run `npm run headers` with that URL set and commit `customHttp.yml`.
+
 ### Fixed
 
 - The daily spend chart and last-month total cover the whole billing period on large fleets.

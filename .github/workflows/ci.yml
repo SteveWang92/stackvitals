@@ -74,6 +74,10 @@ jobs:
         id: format
         run: npx prettier --check .
 
+      - name: Security headers
+        id: headers
+        run: npm run headers:check
+
       - name: Build
         id: build
         run: npm run build
@@ -85,16 +89,18 @@ jobs:
           TEST_OUTCOME: ${{ steps.test.outcome }}
           LINT_OUTCOME: ${{ steps.lint.outcome }}
           FORMAT_OUTCOME: ${{ steps.format.outcome }}
+          HEADERS_OUTCOME: ${{ steps.headers.outcome }}
           BUILD_OUTCOME: ${{ steps.build.outcome }}
         run: |
           icon() { case "$1" in success) echo "✅";; failure) echo "❌";; skipped) echo "⏭️";; *) echo "❓";; esac; }
           {
-            echo "## CI: test, lint, format, and build"
+            echo "## CI: test, lint, format, headers, and build"
             echo ""
             echo "| Step | Result |"
             echo "| --- | --- |"
             echo "| Test | $(icon "$TEST_OUTCOME") $TEST_OUTCOME |"
             echo "| Lint | $(icon "$LINT_OUTCOME") $LINT_OUTCOME |"
             echo "| Format | $(icon "$FORMAT_OUTCOME") $FORMAT_OUTCOME |"
+            echo "| Security headers | $(icon "$HEADERS_OUTCOME") $HEADERS_OUTCOME |"
             echo "| Build | $(icon "$BUILD_OUTCOME") $BUILD_OUTCOME |"
           } >> "$GITHUB_STEP_SUMMARY"
